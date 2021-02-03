@@ -1,5 +1,6 @@
-iso/*
-cross/*
+isodir/*
+sysroot/*
 *.o
+*.a
 *.bin
 *.iso
