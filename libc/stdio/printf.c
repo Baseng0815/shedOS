@@ -4,14 +4,67 @@
 #include <stdio.h>
 #include <string.h>
 
-static bool print(const char *data,
-                  size_t length)
+static int _printf(const char **format,
+                   va_list *parameters)
 {
-        const unsigned char *bytes = (const unsigned char*)data;
-        for (size_t i = 0; i < length; i++) {
-                if (putchar(bytes[i]) == EOF) { return false; }
+        int written = 0;
+
+        const char *format_begun_at = (*format)++;
+        switch (**format) {
+                case 'c': {
+                        (*format)++;
+                        char c = (char)va_arg(*parameters, int);
+                        putchar(c);
+
+                        written++;
+                        break;
+                }
+                case 's': {
+                        (*format)++;
+                        const char *str = va_arg(*parameters, const char*);
+                        size_t len = strlen(str);
+                        for (size_t i = 0; i < len; i++) {
+                                putchar(str[i]);
+                        }
+
+                        written += len;
+                        break;
+                }
+                case 'i': {
+                        (*format)++;
+                        int va = va_arg(*parameters, int);
+
+                        size_t len = 0;
+                        char str[16] = {0};
+                        bool negative = va < 0;
+
+                        do {
+                                str[16 - ++len] = (char)(va % 10) + '0';
+                                va /= 10;
+                        } while (va > 0);
+
+                        if (negative) { str[16 - ++len] = '-'; }
+                        char *str_off = str + 16 - len;
+
+                        for (size_t i = 0; i < len; i++) {
+                                putchar(str_off[i]);
+                        }
+                        break;
+                }
+                default: {
+                        (*format) = format_begun_at;
+                        size_t len = strlen(*format);
+                        for (size_t i = 0; i < len; i++) {
+                                putchar((*format)[i]);
+                        }
+
+                        written += len;
+                        (*format) += len;
+                        break;
+                }
         }
-        return true;
+
+        return written;
 }
 
 int printf(const char *__restrict format,
@@ -23,48 +76,27 @@ int printf(const char *__restrict format,
         int written = 0;
 
         while (*format != '\0') {
-                size_t maxrem = INT_MAX - written;
-
+                /* print until format specifier is found */
                 if (format[0] != '%' || format[1] == '%') {
                         if (format[0] == '%') { format++; }
                         size_t amount = 1;
                         while (format[amount]
                                && format[amount] != '%') { amount++; }
                         /* TODO set errno to EOVERFLOW */
-                        if (!print(format, amount)) { return -1; }
+                        for (size_t i = 0; i < amount; i++) {
+                                putchar(format[i]);
+                        }
 
                         format += amount;
                         written += amount;
                         continue;
                 }
 
-                const char *format_begun_at = format++;
-                if (*format == 'c') {
-                        format++;
-                        char c = (char)va_arg(parameters, int/* char to int */);
-                        /* TODO set errno to EOVERFLOW */
-                        if (!maxrem) {  return -1; }
-                        if (!print(&c, sizeof(c))) { return -1; }
-
-                        written++;
-                } else if (*format == 's') {
-                        format++;
-                        const char *str = va_arg(parameters, const char*);
-                        size_t len = strlen(str);
-                        if (!print(str, len)) { return -1; }
-
-                        written += len;
-                } else {
-                        format = format_begun_at;
-                        size_t len = strlen(format);
-                        /* TODO set errno to EOVERFLOW */
-                        if (maxrem < len) { return -1; }
-                        if (!print(format, len)) { return -1; }
-
-                        written += len;
-                        format += len;
-                }
+                int w = _printf(&format, &parameters);
+                if (w == -1) { continue; }
+                else { written += w; }
         }
+
 
         va_end(parameters);
         return written;

@@ -4,8 +4,7 @@
 
 void kernel_main(void)
 {
-    terminal_initialize();
-    for (size_t i = 0; i < 300; i++) {
-            terminal_putchar('A');
-    }
+        terminal_initialize();
+        printf("Hallo Welt\n");
+        printf("%i*%i=%i", 10, 20, 10*20);
 }
