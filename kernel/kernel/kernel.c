@@ -5,6 +5,8 @@
 void kernel_main(void)
 {
         terminal_initialize();
-        printf("Hallo Welt\n");
-        printf("%i*%i=%i", 10, 20, 10*20);
+        for (int i = 0; i < 28; i++) {
+                printf("Hallo Nummer %i!\n", i);
+        }
+        printf("DUUUUUUU!");
 }

@@ -34,14 +34,18 @@ void terminal_putchar(char c)
 {
         if (c == '\n') {
                 /* remove cursor */
-                uint8_t empty = vga_entry('\0', vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
-                terminal_buffer[terminal_index] = empty;
+                terminal_buffer[terminal_index] = vga_entry('\0',
+                                                            terminal_color);
+
+                /* move index to beginning of next line */
                 terminal_index += VGA_WIDTH - terminal_index % VGA_WIDTH;
         } else {
-                terminal_buffer[terminal_index++] = vga_entry(c, terminal_color);
-                if (terminal_index > LAST_VALID_INDEX) {
-                        terminal_scroll();
-                }
+                terminal_buffer[terminal_index++] = vga_entry(c,
+                                                              terminal_color);
+        }
+
+        if (terminal_index > LAST_VALID_INDEX) {
+                terminal_scroll();
         }
 
         /* set cursor */
@@ -58,17 +62,19 @@ void terminal_putstring(const char *data, size_t size)
 
 void terminal_scroll()
 {
-        /* remove cursor */
-        uint8_t empty = vga_entry('\0', vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK));
-        terminal_buffer[terminal_index] = empty;
-
         /* copy from line down below */
         for (size_t index = 0; index <= LAST_VALID_INDEX - VGA_WIDTH; index++) {
                 terminal_buffer[index] = terminal_buffer[index + VGA_WIDTH];
         }
 
-        /* set index to beginning of current line (not on next line!) */
-        terminal_index -= terminal_index % VGA_WIDTH;
+        /* last line needs to be reset too */
+        for (size_t index = 0; index < VGA_WIDTH; index++) {
+                terminal_buffer[index + LAST_VALID_INDEX - VGA_WIDTH]
+                        = vga_entry('\0', terminal_color);
+        }
+
+        /* move index to previous line */
+        terminal_index -= VGA_WIDTH;
 
         /* set cursor */
         uint8_t white = vga_entry_color(VGA_COLOR_WHITE, VGA_COLOR_WHITE);
