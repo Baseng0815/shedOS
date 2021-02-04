@@ -7,4 +7,4 @@ done
 
 rm -rf sysroot
 rm -rf isodir
-rm -rf shedos.iso
+rm -rf shedOS.iso

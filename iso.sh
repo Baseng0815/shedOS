@@ -6,10 +6,10 @@ mkdir -p isodir
 mkdir -p isodir/boot
 mkdir -p isodir/boot/grub
 
-cp sysroot/boot/shedos.kernel isodir/boot/shedos.kernel
+cp sysroot/boot/shedOS.kernel isodir/boot/shedOS.kernel
 cat > isodir/boot/grub/grub.cfg << EOF
-menuentry "shedos" {
-        multiboot /boot/shedos.kernel
+menuentry "shedOS" {
+        multiboot /boot/shedOS.kernel
     }
 EOF
-grub-mkrescue -o shedos.iso isodir
+grub-mkrescue -o shedOS.iso isodir
