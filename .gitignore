@@ -1,6 +1,6 @@
-isodir/*
-sysroot/*
+iso/*
+*.EFI
 *.o
-*.a
+*.img
 *.bin
 *.iso
