@@ -1,0 +1,46 @@
+[
+  {
+    "arguments": [
+      "/usr/bin/clang-11",
+      "-target",
+      "x86_64-unknown-windows",
+      "-ffreestanding",
+      "-fshort-wchar",
+      "-mno-red-zone",
+      "-I/home/bastian/kern/gnu-efi/inc",
+      "-I/home/bastian/kern/gnu-efi/inc/x86_64",
+      "-I/home/bastian/kern/gnu-efi/inc/protocol",
+      "-Iinclude",
+      "-std=gnu11",
+      "-c",
+      "-o",
+      "data.o",
+      "/home/bastian/kern/gnu-efi/lib/data.c"
+    ],
+    "directory": "/home/bastian/kern/shedOS/kernel",
+    "file": "/home/bastian/kern/gnu-efi/lib/data.c",
+    "output": "/home/bastian/kern/shedOS/kernel/data.o"
+  },
+  {
+    "arguments": [
+      "/usr/bin/clang-11",
+      "-target",
+      "x86_64-unknown-windows",
+      "-ffreestanding",
+      "-fshort-wchar",
+      "-mno-red-zone",
+      "-I/home/bastian/kern/gnu-efi/inc",
+      "-I/home/bastian/kern/gnu-efi/inc/x86_64",
+      "-I/home/bastian/kern/gnu-efi/inc/protocol",
+      "-Iinclude",
+      "-std=gnu11",
+      "-c",
+      "-o",
+      "src/boot/main.o",
+      "src/boot/main.c"
+    ],
+    "directory": "/home/bastian/kern/shedOS/kernel",
+    "file": "/home/bastian/kern/shedOS/kernel/src/boot/main.c",
+    "output": "/home/bastian/kern/shedOS/kernel/src/boot/main.o"
+  }
+]

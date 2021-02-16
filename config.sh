@@ -1,4 +1,4 @@
 #!/bin/sh
 export DESTDIR=$(pwd)/out
-export BIOS_BIN=external/bios64.bin
+export EXTERNAL=$(pwd)/external
 export PROJECTS=("kernel")
