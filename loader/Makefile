@@ -4,10 +4,6 @@ EXTERNAL?=
 # (and because I can't get a w64-mingw32 cc to work properly. Too bad!)
 CC:=clang
 
-# maybe make this platform-independent some time in the future
-# for now, everything is put into include and src and linked together
-ARCH_DIR:=src
-
 CFLAGS:=-target x86_64-unknown-windows \
     -ffreestanding \
     -fshort-wchar \
@@ -22,32 +18,19 @@ LDFLAGS:=-target x86_64-unknown-windows \
     -Wl,-subsystem:efi_application \
     -fuse-ld=lld-link
 
-include $(ARCH_DIR)/make.config
-OBJS:=$(ARCH_OBJS) data.o
+OBJS:=src/main.o \
+    data.o
 
-.PHONY: all clean run install
+.PHONY: all clean install
 
 all: install
 
-install: ISO
+install: EFI
 	mkdir -p $(DESTDIR)
-	cp -f cdimage.iso $(DESTDIR)/cdimage.iso
+	cp -f BOOTX64.EFI $(DESTDIR)
 
 EFI: $(OBJS)
 	$(CC) $(LDFLAGS) -o BOOTX64.EFI $(OBJS)
-
-IMG: EFI
-	dd if=/dev/zero of=fat.img bs=1k count=1440
-	mformat -i fat.img -f 1440 ::
-	mmd -i fat.img ::/EFI
-	mmd -i fat.img ::/EFI/BOOT
-	mcopy -i fat.img BOOTX64.EFI ::/EFI/BOOT
-
-ISO: IMG
-	mkdir -p iso
-	cp -f fat.img iso
-	xorriso -as mkisofs -R -f -e fat.img -no-emul-boot \
-	-o cdimage.iso iso
 
 # this is needed by GNU-EFI
 data.o: $(EXTERNAL)/gnuefi/data.c

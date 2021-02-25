@@ -2,7 +2,9 @@
 set -e
 . ./config.sh
 
-for project in $PROJECTS; do
+PROJECTS=(kernel loader)
+
+for project in ${PROJECTS[@]}; do
     (cd $project && make clean)
 done
 

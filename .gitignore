@@ -1,6 +1,10 @@
-iso/*
-*.EFI
+sysroot/*
 *.o
-*.img
+*.so
 *.bin
+*.elf
+*.efi
+*.EFI
+*.img
 *.iso
+./compile_commands.json

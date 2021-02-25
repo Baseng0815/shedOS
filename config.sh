@@ -1,4 +1,3 @@
 #!/bin/sh
-export DESTDIR=$(pwd)/out
+export DESTDIR=$(pwd)/sysroot
 export EXTERNAL=$(pwd)/external
-export PROJECTS=("loader")
