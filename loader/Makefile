@@ -10,7 +10,7 @@ CFLAGS:=-target x86_64-unknown-windows \
     -mno-red-zone \
     -I$(EXTERNAL)/gnuefi/inc -I$(EXTERNAL)/gnuefi/inc/x86_64 \
     -I$(EXTERNAL)/gnuefi/inc/protocol \
-    -Iinclude
+    -I$(EXTERNAL)/include
 
 LDFLAGS:=-target x86_64-unknown-windows \
     -nostdlib \

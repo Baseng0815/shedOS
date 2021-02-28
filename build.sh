@@ -11,7 +11,7 @@ done
 (
 # img
 cd $DESTDIR;
-dd if=/dev/zero of=fat.img bs=1k count=1440;
+dd if=/dev/zero of=fat.img bs=512 count=93750;
 mformat -i fat.img -f 1440 ::;
 mmd -i fat.img ::/EFI;
 mmd -i fat.img ::/EFI/BOOT;
