@@ -1,7 +1,7 @@
 EXTERNAL?=
 
-CC=gcc
-LD=ld
+CC=clang
+LD=ld.lld
 LDS=kernel.ld
 
 CFLAGS=-ffreestanding -fshort-wchar
