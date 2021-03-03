@@ -1,17 +1,10 @@
-#include <stddef.h>
-#include <stdint.h>
-
-struct framebuffer {
-        void *addr;
-        size_t size;
-        uint32_t width;
-        uint32_t height;
-        uint32_t scanline_width;
-        uint32_t pitch;
-};
+#include "framebuffer.h"
+#include "font.h"
+#include "terminal.h"
 
 struct bootinfo {
-        struct framebuffer *framebuffer;
+        struct framebuffer  *framebuffer;
+        struct psf1_font    *font;
 };
 
 static inline void ppx(int x, int y,
@@ -24,7 +17,19 @@ static inline void ppx(int x, int y,
 
 void _start(struct bootinfo *bootinfo)
 {
-        for (int x = 200; x < 400; x++)
-                for (int y = 200; y < 400; y++)
-                        ppx(x, y, 0x0fff0fff, bootinfo->framebuffer);
+        framebuffer_initialize(bootinfo->framebuffer);
+        font_initialize(bootinfo->font);
+
+        /* number of characters in x/y direction */
+        int cx = 80;
+        int cy = 80;
+        terminal_initialize(cx, cy);
+
+        const char *a = "ASD";
+        for (int i = 0; i < 10; i++) {
+                /* for some reason, this doesn't work */
+                terminal_puts("Hello World!");
+        }
+
+        while (true) {}
 }

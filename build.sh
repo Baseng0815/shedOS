@@ -8,6 +8,8 @@ for project in ${PROJECTS[@]}; do
     (cd $project && make install)
 done
 
+cp -r resources/* $DESTDIR
+
 (
 # img
 cd $DESTDIR;
@@ -17,6 +19,7 @@ mmd -i fat.img ::/EFI;
 mmd -i fat.img ::/EFI/BOOT;
 mcopy -i fat.img $DESTDIR/BOOTX64.EFI ::/EFI/BOOT;
 mcopy -i fat.img $DESTDIR/kernel.elf ::;
+mcopy -i fat.img $DESTDIR/font.psf ::;
 
 # iso
 mkdir -p iso;

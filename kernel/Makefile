@@ -10,7 +10,8 @@ LDFLAGS=-T$(LDS) \
 	-Bsymbolic \
 	-nostdlib
 
-OBJS:=src/main.o
+OBJS:=src/main.o src/terminal.o src/framebuffer.o src/font.o \
+    src/libk/string.o
 
 .PHONY: all clean install
 
