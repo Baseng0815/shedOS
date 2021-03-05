@@ -1,4 +1,5 @@
 sysroot/*
+iso/*
 *.o
 *.so
 *.bin

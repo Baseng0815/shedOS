@@ -38,10 +38,10 @@ EFI_BOOT_SERVICES       *eBS;
 EFI_RUNTIME_SERVICES    *eRT;
 
 EFI_STATUS                  efi_main(EFI_HANDLE, EFI_SYSTEM_TABLE*);
-static EFI_FILE             *load_file(EFI_FILE*, CHAR16*, EFI_HANDLE);
+static EFI_FILE             *load_file(CHAR16*, EFI_HANDLE);
 static EFI_STATUS           get_tables(EFI_SYSTEM_TABLE*);
 static struct framebuffer   initialize_gop();
-static struct psf1_font     *load_font(EFI_FILE*, CHAR16*, EFI_HANDLE);
+static struct psf1_font     *load_font(CHAR16*, EFI_HANDLE);
 
 static void print(CHAR16 *str);
 static void println(CHAR16 *str);
@@ -61,7 +61,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle,
         }
 
         /* kernel file */
-        EFI_FILE *kernel = load_file(NULL, L"kernel.elf", ImageHandle);
+        EFI_FILE *kernel = load_file(L"boot\\kernel.elf", ImageHandle);
         if (kernel == NULL) {
                 println(L"Failed to get kernel file.");
         } else {
@@ -148,7 +148,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle,
         }
 
         /* font */
-        struct psf1_font *font = load_font(NULL, L"font.psf", ImageHandle);
+        struct psf1_font *font = load_font(L"res\\font.psf", ImageHandle);
         if (font == NULL) {
                 println(L"Failed to load font.");
         } else {
@@ -161,13 +161,13 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle,
                 .font = font
         };
 
-        void (*kernel_start)()
-                = ((__attribute__((sysv_abi))
-                    void(*)())header.e_entry);
+        void (*kernel_start)() = (void(*)())(header.e_entry);
+        println(L"Got kernel entry point.");
 
         asm volatile("leaq %0, %%rdi;"
                      : "+m" (bootinfo));
 
+        println(L"Running kernel...");
         kernel_start();
         println(L"Kernel finished. Exiting now.");
 
@@ -176,12 +176,9 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle,
         return EFI_SUCCESS;
 }
 
-EFI_FILE *load_file(EFI_FILE *directory,
-                    CHAR16 *path,
+EFI_FILE *load_file(CHAR16 *path,
                     EFI_HANDLE imageHandle)
 {
-        EFI_FILE *loadedFile;
-
         EFI_LOADED_IMAGE_PROTOCOL *loadedImage;
         EFI_STATUS status = eBS->HandleProtocol(imageHandle,
                                                 &gEfiLoadedImageProtocolGuid,
@@ -204,17 +201,17 @@ EFI_FILE *load_file(EFI_FILE *directory,
                 println(L"Successfully got loaded file system protocol.");
         }
 
-        if (directory == NULL) {
-                status = fileSystem->OpenVolume(fileSystem, &directory);
-                if (EFI_ERROR(status)) {
-                        println(L"Failed to open volume.");
-                        return NULL;
-                } else {
-                        println(L"Successfully opened volume.");
-                }
+        EFI_FILE_PROTOCOL *root = NULL;
+        status = fileSystem->OpenVolume(fileSystem, &root);
+        if (EFI_ERROR(status)) {
+                println(L"Failed to open root volume.");
+                return NULL;
+        } else {
+                println(L"Successfully opened root volume.");
         }
 
-        status = directory->Open(directory, &loadedFile, path,
+        EFI_FILE_PROTOCOL *loadedFile = NULL;
+        status = root->Open(root, &loadedFile, path,
                                  EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
 
         if (EFI_ERROR(status)) {
@@ -303,11 +300,10 @@ struct framebuffer initialize_gop()
         return framebuffer;
 }
 
-struct psf1_font *load_font(EFI_FILE *directory,
-                            CHAR16 *path,
+struct psf1_font *load_font(CHAR16 *path,
                             EFI_HANDLE imageHandle)
 {
-        EFI_FILE *font = load_file(directory, path, imageHandle);
+        EFI_FILE *font = load_file(path, imageHandle);
         if (font == NULL) {
                 println(L"Failed to load font: file could not be opened.");
                 return NULL;

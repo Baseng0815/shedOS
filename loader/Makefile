@@ -26,8 +26,8 @@ OBJS:=src/main.o \
 all: install
 
 install: EFI
-	mkdir -p $(DESTDIR)
-	cp -f BOOTX64.EFI $(DESTDIR)
+	mkdir -p $(DESTDIR)/EFI/BOOT
+	cp -f BOOTX64.EFI $(DESTDIR)/EFI/BOOT
 
 EFI: $(OBJS)
 	$(CC) $(LDFLAGS) -o BOOTX64.EFI $(OBJS)

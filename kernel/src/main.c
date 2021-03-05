@@ -2,6 +2,8 @@
 #include "font.h"
 #include "terminal.h"
 
+#include "libk/printk.h"
+
 struct bootinfo {
         struct framebuffer  *framebuffer;
         struct psf1_font    *font;
@@ -17,19 +19,32 @@ static inline void ppx(int x, int y,
 
 void _start(struct bootinfo *bootinfo)
 {
-        framebuffer_initialize(bootinfo->framebuffer);
+        struct framebuffer *fb = bootinfo->framebuffer;
+
+        framebuffer_initialize(fb);
         font_initialize(bootinfo->font);
+        terminal_initialize(fb->width / 8, fb->height / 16);
 
-        /* number of characters in x/y direction */
-        int cx = 80;
-        int cy = 80;
-        terminal_initialize(cx, cy);
+        printk(KMSG_URGENCY_LOW,
+               "Framebuffer, font and terminal initialized.\n"
+               "bootinfo @ %x\n"
+               "|-> framebuffer @ %x\n"
+               "|---> addr @ %x, size=%dKiB, %dx%dpx, pitch=%d bytes\n"
+               "|-> font @ %x\n"
+               "|---> header @ %x\n"
+               "|-----> mode=%d, charsize=%d\n"
+               "|---> glyphs @ %x\n",
+               bootinfo,
+               fb,
+               fb->addr, fb->size / 1000, fb->width, fb->height, fb->pitch,
+               bootinfo->font,
+               bootinfo->font->header,
+               bootinfo->font->header->mode, bootinfo->font->header->charsize,
+               bootinfo->font->glyphs);
 
-        const char *a = "ASD";
-        for (int i = 0; i < 10; i++) {
-                /* for some reason, this doesn't work */
-                terminal_puts("Hello World!");
-        }
+        printk(KMSG_URGENCY_MEDIUM,
+               "Kernel finished. You are now hanging in an infinite loop. "
+               "Congratulations :)");
 
         while (true) {}
 }

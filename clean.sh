@@ -9,3 +9,4 @@ for project in ${PROJECTS[@]}; do
 done
 
 rm -rf $DESTDIR
+rm -rf $ISODIR
