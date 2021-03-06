@@ -1,31 +1,37 @@
 EXTERNAL?=
 
-CC=clang
+CC?=clang
 LD=ld
 LDS=kernel.ld
 
-CFLAGS=-ffreestanding -fshort-wchar -fno-stack-protector
+CFLAGS=-ffreestanding -fno-stack-protector \
+       -Iinclude
+
 LDFLAGS=-T$(LDS) \
 	-static \
-	-Bsymbolic \
-	-nostdlib
+	-nostdlib \
+	-L$(SYSROOT)/lib \
+	-lk
 
-OBJS:=src/main.o src/terminal.o src/framebuffer.o src/font.o \
-    src/libk/string.o src/libk/printk.o
+OBJS:=src/main.o src/terminal.o src/framebuffer.o src/font.o
 
-.PHONY: all clean install
+.PHONY: all clean install install-headers
 
 all: install
 
 install: kernel.elf
-	mkdir -p $(DESTDIR)/boot
-	cp -f kernel.elf $(DESTDIR)/boot
+	mkdir -p $(SYSROOT)/boot
+	cp -f kernel.elf $(SYSROOT)/boot
+
+install-headers:
+	mkdir -p $(SYSROOT)/include/kernel
+	cp -f src/*.h $(SYSROOT)/include/kernel
 
 kernel.elf: $(OBJS)
-	$(LD) $(LDFLAGS) $(OBJS) -o kernel.elf
+	$(LD) $(OBJS) $(LDFLAGS) -o kernel.elf
 
 %.o: %.c
 	$(CC) $(CFLAGS) -std=gnu11 -c -o $@ $<
 
 clean:
-	rm -rf $(OBJS)
+	rm -rf $(OBJS) kernel.elf

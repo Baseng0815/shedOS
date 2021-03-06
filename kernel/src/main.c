@@ -2,7 +2,7 @@
 #include "font.h"
 #include "terminal.h"
 
-#include "libk/printk.h"
+#include <printk.h>
 
 struct bootinfo {
         struct framebuffer  *framebuffer;
@@ -23,7 +23,9 @@ void _start(struct bootinfo *bootinfo)
 
         framebuffer_initialize(fb);
         font_initialize(bootinfo->font);
-        terminal_initialize(fb->width / 8, fb->height / 16);
+        int term_width = 80;
+        int term_height = 25;
+        terminal_initialize(term_width, term_height);
 
         printk(KMSG_URGENCY_LOW,
                "Framebuffer, font and terminal initialized.\n"
@@ -41,6 +43,14 @@ void _start(struct bootinfo *bootinfo)
                bootinfo->font->header,
                bootinfo->font->header->mode, bootinfo->font->header->charsize,
                bootinfo->font->glyphs);
+
+        printk(KMSG_URGENCY_LOW,
+               "Term dimensions: %dx%d\n",
+               term_width, term_height);
+
+        for (int i = 0; i < 200; i++) {
+                printk(KMSG_URGENCY_MEDIUM, "Hello%d!\n", i*i);
+        }
 
         printk(KMSG_URGENCY_MEDIUM,
                "Kernel finished. You are now hanging in an infinite loop. "

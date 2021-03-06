@@ -1,7 +1,7 @@
 #include "printk.h"
 
 #include "string.h"
-#include "../terminal.h"
+#include <kernel/terminal.h>
 
 #include <stdarg.h>
 
@@ -59,10 +59,10 @@ void printk(int urgency, const char *fmt, ...)
                         terminal_setcolor(0x00ff00, 0x0);
                         break;
                 case KMSG_URGENCY_MEDIUM:
-                        terminal_setcolor(0xff0f00, 0x0);
+                        terminal_setcolor(0xfff000, 0x0);
                         break;
                 case KMSG_URGENCY_HIGH:
-                        terminal_setcolor(0xff0000, 0x0);
+                        terminal_setcolor(0x0000ff, 0x0);
                         break;
         }
 
@@ -87,10 +87,15 @@ void printk(int urgency, const char *fmt, ...)
 
 void putchar(char c)
 {
+#ifdef __IS_LIBK
         terminal_putchar(c);
+#endif
 }
 
 void puts(const char *str)
 {
-        terminal_puts(str);
+        while (*str != '\0') {
+                putchar(*str);
+                str++;
+        }
 }

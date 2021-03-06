@@ -3,6 +3,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 struct framebuffer {
         void *addr;
         size_t size;
@@ -13,7 +14,9 @@ struct framebuffer {
 };
 
 static struct framebuffer *framebuffer;
+
 void framebuffer_initialize(struct framebuffer*);
 void framebuffer_putpixel(int, int, uint32_t);
+uint32_t framebuffer_getpixel(int, int);
 
 #endif

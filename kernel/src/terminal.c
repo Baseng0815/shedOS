@@ -3,11 +3,6 @@
 #include "font.h"
 #include "framebuffer.h"
 
-/* number of characters in x/y direction */
-static int width, height;
-static int chr_index;
-static uint32_t fg, bg;
-
 void terminal_initialize(int _width, int _height)
 {
         width = _width;
@@ -28,13 +23,19 @@ void terminal_setcolor(uint32_t _fg, uint32_t _bg)
 
 void terminal_putchar(char c)
 {
-        // handle newline
+        /* check for necessary scroll (is chr_index out of bounds?) */
+        chr_index++;
+        if (chr_index >= width * height) {
+                terminal_scroll();
+        }
+
+        /* handle newline */
         if (c == '\n') {
-                chr_index += width - (chr_index + width) % width;
+                chr_index += width - chr_index % width;
                 return;
         }
 
-        // handle other chars
+        /* handle other chars */
         int ci_x = chr_index % width;
         int ci_y = chr_index / width;
         for (int ix = 0; ix < 8; ix++) {
@@ -46,8 +47,6 @@ void terminal_putchar(char c)
                                              : bg);
                 }
         }
-
-        chr_index++;
 }
 
 void terminal_puts(const char *str)
@@ -69,4 +68,26 @@ void terminal_clear(void)
         }
 
         chr_index = 0;
+}
+
+void terminal_scroll(void)
+{
+        /* copy lines pixel by pixel
+           maybe optimize using double buffering/memcopy/SSE ? */
+        for (int py = 0; py < (height - 1) * 16; py++) {
+                for (int px = 0; px < width * 8; px++) {
+                        uint32_t color = framebuffer_getpixel(px, py + 16);
+                        framebuffer_putpixel(px, py, color);
+                }
+        }
+
+        /* clear last line */
+        for (int py = 0; py < 16; py++) {
+                for (int px = 0; px < width * 8; px++) {
+                        framebuffer_putpixel(px, (height - 1) * 16 + py,
+                                             0x0);
+                }
+        }
+
+        chr_index -= width;
 }
