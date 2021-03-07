@@ -13,10 +13,12 @@ struct framebuffer {
         uint32_t pitch;
 };
 
-static struct framebuffer *framebuffer;
+static struct framebuffer *fb;
 
 void framebuffer_initialize(struct framebuffer*);
 void framebuffer_putpixel(int, int, uint32_t);
 uint32_t framebuffer_getpixel(int, int);
+
+static void framebuffer_drawborder(uint32_t);
 
 #endif

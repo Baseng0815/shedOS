@@ -23,8 +23,9 @@ void _start(struct bootinfo *bootinfo)
 
         framebuffer_initialize(fb);
         font_initialize(bootinfo->font);
-        int term_width = 80;
-        int term_height = 25;
+        /* leave room for 8px border on each side */
+        int term_width = (fb->width - 16) / 8;
+        int term_height = (fb->height - 16) / 16;
         terminal_initialize(term_width, term_height);
 
         printk(KMSG_URGENCY_LOW,
@@ -47,10 +48,6 @@ void _start(struct bootinfo *bootinfo)
         printk(KMSG_URGENCY_LOW,
                "Term dimensions: %dx%d\n",
                term_width, term_height);
-
-        for (int i = 0; i < 200; i++) {
-                printk(KMSG_URGENCY_MEDIUM, "Hello%d!\n", i*i);
-        }
 
         printk(KMSG_URGENCY_MEDIUM,
                "Kernel finished. You are now hanging in an infinite loop. "

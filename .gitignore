@@ -1,7 +1,9 @@
 sysroot/*
 iso/*
+hdd/*
 *.o
 *.so
+*.a
 *.bin
 *.elf
 *.efi

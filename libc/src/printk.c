@@ -5,39 +5,26 @@
 
 #include <stdarg.h>
 
-/* unsigned integer to string */
-void _utos(uint64_t i, uint64_t base, char *buf)
-{
-        size_t len = 0;
-        uint64_t _i = i;
-        do {
-                len++;
-        } while ((_i /= base) > 0);
-
-        buf[len] = '\0';
-        for (size_t n = 0; n < len; n++) {
-                char m = '0' + i % base;
-                if (m > '9') { m += 0x7; }
-                buf[len - n - 1] = m;
-
-                i /= base;
-        }
-}
-
 /* returns number of characters of the format string (%d = 1, %lu = 2...)*/
 int _printk(va_list args, char fmtc)
 {
         switch (fmtc) {
                 case 'd': {
                         char buf[16];
-                        _utos(va_arg(args, int), 10, buf);
+                        utos(va_arg(args, int), 10, buf);
                         puts(buf);
                         return 1;
                 }
                 case 'x': {
                         char buf[16];
-                        _utos(va_arg(args, size_t), 16, buf);
+                        size_t len = utos(va_arg(args, size_t), 16, buf);
                         puts("0x");
+                        /* pad with zeroes for a nicer format */
+                        if (len < 8) {
+                                for (size_t i = 0; i < 8 - len; i++) {
+                                        terminal_putchar('0');
+                                }
+                        }
                         puts(buf);
                         return 1;
                 }
@@ -98,4 +85,25 @@ void puts(const char *str)
                 putchar(*str);
                 str++;
         }
+}
+
+/* unsigned integer to string */
+size_t utos(uint64_t i, uint64_t base, char *buf)
+{
+        size_t len = 0;
+        uint64_t _i = i;
+        do {
+                len++;
+        } while ((_i /= base) > 0);
+
+        buf[len] = '\0';
+        for (size_t n = 0; n < len; n++) {
+                char m = '0' + i % base;
+                if (m > '9') { m += 0x7; }
+                buf[len - n - 1] = m;
+
+                i /= base;
+        }
+
+        return len;
 }

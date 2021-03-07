@@ -9,7 +9,7 @@ void terminal_initialize(int _width, int _height)
         height = _height;
 
         chr_index = 0;
-        fg = 0xffffffff;
+        fg = 0xffffff;
         bg = 0x0;
 
         terminal_clear();

@@ -1,4 +1,5 @@
 EXTERNAL?=
+EFI_FILE=bootx64.efi
 
 # using LLVM/Clang because it natively supports cross-compilation
 # (and because I can't get a w64-mingw32 cc to work properly. Too bad!)
@@ -25,12 +26,12 @@ OBJS:=src/main.o \
 
 all: install
 
-install: EFI
+install: $(EFI_FILE)
 	mkdir -p $(SYSROOT)/EFI/BOOT
-	cp -f BOOTX64.EFI $(SYSROOT)/EFI/BOOT
+	cp -f $(EFI_FILE) $(SYSROOT)/EFI/BOOT
 
-EFI: $(OBJS)
-	$(CC) $(LDFLAGS) -o BOOTX64.EFI $(OBJS)
+$(EFI_FILE): $(OBJS)
+	$(CC) $(LDFLAGS) -o $(EFI_FILE) $(OBJS)
 
 # this is needed by GNU-EFI
 data.o: $(EXTERNAL)/gnuefi/data.c
@@ -40,4 +41,4 @@ data.o: $(EXTERNAL)/gnuefi/data.c
 	$(CC) $(CFLAGS) -std=gnu11 -c -o $@ $<
 
 clean:
-	rm -rf $(OBJS) BOOTX64.EFI fat.img iso cdimage.iso data.o
+	rm -rf $(OBJS) $(EFI_FILE) data.o
