@@ -1,5 +1,7 @@
 #include "framebuffer.h"
 
+struct framebuffer *fb;
+
 void framebuffer_initialize(struct framebuffer *_fb)
 {
         fb = _fb;

@@ -1,5 +1,7 @@
 #include "font.h"
 
+struct psf1_font *font;
+
 void font_initialize(struct psf1_font *_font)
 {
         font = _font;

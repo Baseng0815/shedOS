@@ -3,6 +3,15 @@
 #include "font.h"
 #include "framebuffer.h"
 
+/* number of characters in x/y direction */
+int width, height;
+int chr_index;
+uint32_t fg, bg;
+
+int width, height;
+int chr_index;
+uint32_t fg, bg;
+
 void terminal_initialize(int _width, int _height)
 {
         width = _width;

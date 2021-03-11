@@ -14,7 +14,6 @@ struct psf1_font {
         void                *glyphs;
 };
 
-static struct psf1_font *font;
 void font_initialize(struct psf1_font*);
 /* returns true if font pixel is foreground */
 bool font_is_pixel(char, int, int);

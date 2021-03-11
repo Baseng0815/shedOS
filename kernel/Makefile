@@ -1,7 +1,7 @@
 EXTERNAL?=
 
 CC?=clang
-LD?=lld-link
+LD?=ld
 LDS=kernel.ld
 
 CFLAGS=-ffreestanding -fno-stack-protector \
