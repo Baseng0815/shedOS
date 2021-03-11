@@ -3,9 +3,9 @@ EXTERNAL?=
 CC?=clang
 LD?=ld
 
-CFLAGS=-ffreestanding -fno-stack-protector \
-       -Iinclude \
-       -static
+override CFLAGS+=-ffreestanding -fno-stack-protector \
+    -Iinclude \
+    -static
 LDFLAGS=
 
 LIBK_CFLAGS=$(CFLAGS) -D__IS_LIBK

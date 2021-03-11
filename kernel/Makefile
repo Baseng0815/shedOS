@@ -4,8 +4,8 @@ CC?=clang
 LD?=ld
 LDS=kernel.ld
 
-CFLAGS=-ffreestanding -fno-stack-protector \
-       -Iinclude
+override CFLAGS+=-ffreestanding -fno-stack-protector \
+    -Iinclude
 
 LDFLAGS=-T$(LDS) \
 	-static \

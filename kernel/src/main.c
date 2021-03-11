@@ -9,14 +9,6 @@ struct bootinfo {
         struct psf1_font    *font;
 };
 
-static inline void ppx(int x, int y,
-                       uint32_t pixel,
-                       struct framebuffer *framebuffer)
-{
-        *((uint32_t*)(framebuffer->addr + framebuffer->pitch * y + 4 * x))
-                = pixel;
-}
-
 void _start(struct bootinfo *bootinfo)
 {
         struct framebuffer *fb = bootinfo->framebuffer;

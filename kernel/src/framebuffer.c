@@ -2,6 +2,8 @@
 
 struct framebuffer *fb;
 
+void framebuffer_drawborder(uint32_t);
+
 void framebuffer_initialize(struct framebuffer *_fb)
 {
         fb = _fb;
@@ -24,7 +26,7 @@ uint32_t framebuffer_getpixel(int x, int y)
                  (fb->addr + fb->pitch * y + x * 4));
 }
 
-static void framebuffer_drawborder(uint32_t color)
+void framebuffer_drawborder(uint32_t color)
 {
         /* rows */
         for (int x = 0; x < fb->width; x++) {

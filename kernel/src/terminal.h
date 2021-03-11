@@ -10,6 +10,4 @@ void terminal_putchar(char);
 void terminal_puts(const char*);
 void terminal_clear(void);
 
-static void terminal_scroll(void);
-
 #endif

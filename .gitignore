@@ -1,6 +1,7 @@
 sysroot/*
 iso/*
 hdd/*
+*.fd
 *.o
 *.so
 *.a
