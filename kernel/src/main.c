@@ -1,12 +1,16 @@
 #include "framebuffer.h"
 #include "font.h"
 #include "terminal.h"
+#include "memory/efi_memory.h"
 
 #include <printk.h>
 
 struct bootinfo {
         struct framebuffer  *framebuffer;
         struct psf1_font    *font;
+        void                *mmap;
+        size_t              mm_size;
+        size_t              md_size;
 };
 
 void _start(struct bootinfo *bootinfo)
@@ -28,14 +32,16 @@ void _start(struct bootinfo *bootinfo)
                "|-> font @ %x\n"
                "|---> header @ %x\n"
                "|-----> mode=%d, charsize=%d\n"
-               "|---> glyphs @ %x\n",
+               "|---> glyphs @ %x\n"
+               "|-> mmap @ %x, mm_size=%d bytes, md_size=%d bytes\n",
                bootinfo,
                fb,
                fb->addr, fb->size / 1000, fb->width, fb->height, fb->pitch,
                bootinfo->font,
                bootinfo->font->header,
                bootinfo->font->header->mode, bootinfo->font->header->charsize,
-               bootinfo->font->glyphs);
+               bootinfo->font->glyphs,
+               bootinfo->mmap, bootinfo->mm_size, bootinfo->md_size);
 
         printk(KMSG_URGENCY_LOW,
                "Term dimensions: %dx%d\n",

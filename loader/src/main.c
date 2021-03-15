@@ -31,6 +31,9 @@ struct psf1_font {
 struct bootinfo {
         struct framebuffer  *framebuffer;
         struct psf1_font    *font;
+        void                *mmap;      /* UEFI memory map          */
+        size_t              mm_size;    /* memory map size          */
+        size_t              md_size;    /* memory descriptor size   */
 };
 
 EFI_SYSTEM_TABLE        *eST;
@@ -131,12 +134,6 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle,
         }
 
         println(L"Kernel loaded.");
-        /* kernel entry point
-           The UEFI loader uses some weird Microsoft calling convention while we
-           use the good ol' x86-64 sysv abi. Because I am too stupid to change
-           the calling convention using compiler settings, we just pass kernel
-           arguments manually using some inline assembly.
-           Not pretty, but it works. */
 
         /* gop */
         struct framebuffer framebuffer = initialize_gop();
@@ -155,17 +152,52 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle,
                 println(L"Successfully loaded font.");
         }
 
+        /* memory map */
+        EFI_MEMORY_DESCRIPTOR   *mmap;
+        UINTN                   mm_size;
+        UINTN                   mm_key;
+        UINTN                   md_size;
+        UINT32                  md_version;
+        {
+                eBS->GetMemoryMap(&mm_size, mmap, &mm_key,
+                                  &md_size, &md_version);
+                /* allocate a bit more because AllocatePool may add entries */
+                eBS->AllocatePool(EfiLoaderData, mm_size + 512,
+                                  (void**)&mmap);
+                status = eBS->GetMemoryMap(&mm_size + 512, mmap, &mm_key,
+                                           &md_size, &md_version);
+        }
+
+        if (EFI_ERROR(status)) {
+                println(L"Failed to get the EFI memory map.");
+                return status;
+        }
+
+        println(L"Successfully got EFI memory map.");
+
         /* exit boot services and transfer control to kernel */
         struct bootinfo bootinfo = {
-                .framebuffer = &framebuffer,
-                .font = font
+                .framebuffer    = &framebuffer,
+                .font           = font,
+                .mmap           = mmap,
+                .mm_size        = mm_size,
+                .md_size        = md_size
         };
 
+
+        /* kernel entry point
+           The UEFI loader uses some weird Microsoft calling convention while we
+           use the good ol' x86-64 sysv abi. Because I am too stupid to change
+           the calling convention using compiler settings, we just pass kernel
+           arguments manually using some inline assembly.
+           Not pretty, but it works. */
         void (*kernel_start)() = (void(*)())(header.e_entry);
         println(L"Got kernel entry point.");
 
         asm volatile("leaq %0, %%rdi;"
                      : "+m" (bootinfo));
+
+        eBS->ExitBootServices(ImageHandle, mm_key);
 
         println(L"Running kernel...");
         kernel_start();
@@ -212,7 +244,7 @@ EFI_FILE *load_file(CHAR16 *path,
 
         EFI_FILE_PROTOCOL *loadedFile = NULL;
         status = root->Open(root, &loadedFile, path,
-                                 EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
+                            EFI_FILE_MODE_READ, EFI_FILE_READ_ONLY);
 
         if (EFI_ERROR(status)) {
                 print(L"Failed to open file ");
