@@ -2,6 +2,11 @@
 set -e
 . ./config.sh
 
+for project in $SYSTEM_HEADER_PROJECTS; do
+    echo "=====! INSTALLING $project HEADERS !====="
+    (cd $project && make install-headers)
+done
+
 for project in $PROJECTS; do
     echo "=====! BUILDING PROJECT $project !====="
     (cd $project && make install)

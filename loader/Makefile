@@ -2,7 +2,6 @@ EXTERNAL?=
 EFI_FILE=bootx64.efi
 
 # using LLVM/Clang because it natively supports cross-compilation
-# (and because I can't get a w64-mingw32 cc to work properly. Too bad!)
 CC:=clang
 
 CFLAGS:=-target x86_64-unknown-windows \

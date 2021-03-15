@@ -1,11 +1,14 @@
 EXTERNAL?=
 
-CC?=clang
+CC?=gcc
 LD?=ld
+AR?=ar
 
 override CFLAGS+=-ffreestanding -fno-stack-protector \
-    -Iinclude \
+    -I/home/bastian/shedOS/sysroot/include \
+    -mno-red-zone \
     -static
+
 LDFLAGS=
 
 LIBK_CFLAGS=$(CFLAGS) -D__IS_LIBK
