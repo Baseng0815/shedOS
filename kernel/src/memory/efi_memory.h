@@ -11,4 +11,6 @@ struct efi_memory_descriptor {
         uint64_t    attr;
 };
 
+extern const char *efi_memory_strings[];
+
 #endif

@@ -14,6 +14,4 @@ void printk(int, const char*, ...);
 void putchar(char);
 void puts(const char*);
 
-static size_t utos(uint64_t, uint64_t, char*);
-
 #endif

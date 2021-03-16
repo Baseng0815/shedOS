@@ -2,6 +2,7 @@
 #include "font.h"
 #include "terminal.h"
 #include "memory/efi_memory.h"
+#include "cpuinfo.h"
 
 #include <printk.h>
 
@@ -36,7 +37,7 @@ void _start(struct bootinfo *bootinfo)
                "|-> mmap @ %x, mm_size=%d bytes, md_size=%d bytes\n",
                bootinfo,
                fb,
-               fb->addr, fb->size / 1000, fb->width, fb->height, fb->pitch,
+               fb->addr, fb->size / 1024, fb->width, fb->height, fb->pitch,
                bootinfo->font,
                bootinfo->font->header,
                bootinfo->font->header->mode, bootinfo->font->header->charsize,
@@ -46,6 +47,34 @@ void _start(struct bootinfo *bootinfo)
         printk(KMSG_URGENCY_LOW,
                "Term dimensions: %dx%d\n",
                term_width, term_height);
+
+        printk(KMSG_URGENCY_LOW,
+               "Dumping memory map entries with 16 or more pages...\n");
+
+        size_t mm_entries = bootinfo->mm_size / bootinfo->md_size;
+        for (size_t i = 0; i < mm_entries; i++) {
+                struct efi_memory_descriptor *md =
+                        (struct efi_memory_descriptor*)
+                        (bootinfo->mmap + (i * bootinfo->md_size));
+                if (md->page_count < 16) { continue; }
+
+                printk(KMSG_URGENCY_LOW,
+                       "|-> type=%s(%d), size=%dKiB, paddr=%x, pc=%d\n",
+                       efi_memory_strings[md->type], md->type,
+                       md->page_count * 4096 / 1024, md->paddr, md->page_count);
+        }
+
+        struct cpuinfo cpuinfo;
+        bool cpuid_present = cpuinfo_query(&cpuinfo);
+        if (cpuid_present) {
+                printk(KMSG_URGENCY_LOW, "CPU: %s (%s)\n",
+                       cpuinfo.vendor_string, cpuinfo.brand_string);
+                printk(KMSG_URGENCY_LOW,
+                       "|-> stepping=%d, model=%d, family=%d, "
+                       "processor_type=%d\n",
+                       cpuinfo.stepping, cpuinfo.model, cpuinfo.family,
+                       cpuinfo.processor_type);
+        }
 
         printk(KMSG_URGENCY_MEDIUM,
                "Kernel finished. You are now hanging in an infinite loop. "

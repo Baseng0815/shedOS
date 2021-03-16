@@ -15,7 +15,8 @@ LDFLAGS=-T$(LDS) \
 	-L$(SYSROOT)/lib \
 	-lk
 
-OBJS:=src/main.o src/terminal.o src/framebuffer.o src/font.o
+OBJS:=src/main.o src/terminal.o src/framebuffer.o src/font.o \
+    src/memory/efi_memory.o src/cpuinfo.o
 
 .PHONY: all clean install install-headers
 

@@ -5,6 +5,8 @@
 
 #include <stdarg.h>
 
+size_t utos(uint64_t, uint64_t, char*);
+
 /* returns number of characters of the format string (%d = 1, %lu = 2...)*/
 int _printk(va_list args, char fmtc)
 {
