@@ -59,7 +59,7 @@ bool cpuinfo_query(struct cpuinfo *info)
         *((uint32_t*)(info->vendor_string + 4)) = d;
         *((uint32_t*)(info->vendor_string + 8)) = c;
 
-        /* version information */
+        /* version information and feature bits*/
         __cpuid(0x1);
         info->stepping          = (a & 0x0000000f);
         info->model             = (a & 0x000000f0) >> 4;
@@ -76,5 +76,28 @@ bool cpuinfo_query(struct cpuinfo *info)
                 info->family += efamily_id;
         }
 
+        info->featureset = d + ((uint64_t)c << 32);
+
         return true;
 }
+
+const char *cpu_featureset[64] = {
+        /* first 32 bit */
+        "fpu", "vme", "de", "pse",
+        "tsc", "msr", "pae", "mce",
+        "cx8", "apic",  "RESERVED", "sep",
+        "mtrr", "pge", "mca", "cmov",
+        "pat", "pse-36", "psn", "clfsh",
+        "RESERVED", "ds", "acpi", "mmx",
+        "fxsr", "sse", "sse2", "ss",
+        "htt", "tm", "ia64", "pbe",
+        /* last 32 bit */
+        "sse3", "pclmulqdq", "dtes64", "monitor",
+        "ds-cpl", "vmx", "smx", "est",
+        "tm2", "ssse3", "cnxt-id", "sdbg",
+        "fma", "xc16", "xtpr", "pdcm",
+        "RESERVED", "pcid", "dca", "sse4.1",
+        "sse4.2", "x2apic", "movbe", "popcnt",
+        "tsc-deadline", "aes", "xsave", "osxsave",
+        "avx", "f16c", "rdrnd", "hypervisor"
+};

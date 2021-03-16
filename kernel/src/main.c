@@ -67,6 +67,7 @@ void _start(struct bootinfo *bootinfo)
         struct cpuinfo cpuinfo;
         bool cpuid_present = cpuinfo_query(&cpuinfo);
         if (cpuid_present) {
+                /* dump some CPU information */
                 printk(KMSG_URGENCY_LOW, "CPU: %s (%s)\n",
                        cpuinfo.vendor_string, cpuinfo.brand_string);
                 printk(KMSG_URGENCY_LOW,
@@ -74,6 +75,19 @@ void _start(struct bootinfo *bootinfo)
                        "processor_type=%d\n",
                        cpuinfo.stepping, cpuinfo.model, cpuinfo.family,
                        cpuinfo.processor_type);
+                printk(KMSG_URGENCY_LOW, "|-> features: ");
+                for (int i = 0; i < 64; i++) {
+                        /* reserved bits */
+                        if (i == 10 || i == 20 || i == 47) {
+                                continue;
+                        }
+
+                        if ((cpuinfo.featureset & (1L << i)) > 0) {
+                                printk(KMSG_URGENCY_LOW,
+                                       "%s ", cpu_featureset[i]);
+                        }
+                }
+                printk(KMSG_URGENCY_LOW, "\n");
         }
 
         printk(KMSG_URGENCY_MEDIUM,
