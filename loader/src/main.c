@@ -28,12 +28,16 @@ struct psf1_font {
         void                *glyphs;
 };
 
+struct efi_memory_map {
+        void    *paddr;
+        size_t  size;
+        size_t  desc_size;
+};
+
 struct bootinfo {
-        struct framebuffer  *framebuffer;
-        struct psf1_font    *font;
-        void                *mmap;      /* UEFI memory map          */
-        size_t              mm_size;    /* memory map size          */
-        size_t              md_size;    /* memory descriptor size   */
+        struct framebuffer      *framebuffer;
+        struct psf1_font        *font;
+        struct efi_memory_map   *memory_map;
 };
 
 EFI_SYSTEM_TABLE        *eST;
@@ -153,19 +157,18 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle,
         }
 
         /* memory map */
-        EFI_MEMORY_DESCRIPTOR   *mmap;
-        UINTN                   mm_size;
-        UINTN                   mm_key;
-        UINTN                   md_size;
-        UINT32                  md_version;
+        struct efi_memory_map memory_map;
+        UINTN   mm_key; /* this is needed to exit UEFI boot services */
+        UINT32  md_version;
         {
-                eBS->GetMemoryMap(&mm_size, mmap, &mm_key,
-                                  &md_size, &md_version);
+                eBS->GetMemoryMap(&memory_map.size, memory_map.paddr,
+                                  &mm_key, &memory_map.desc_size, &md_version);
                 /* allocate a bit more because AllocatePool may add entries */
-                eBS->AllocatePool(EfiLoaderData, mm_size + 512,
-                                  (void**)&mmap);
-                status = eBS->GetMemoryMap(&mm_size + 512, mmap, &mm_key,
-                                           &md_size, &md_version);
+                eBS->AllocatePool(EfiLoaderData, memory_map.size + 512,
+                                  (void**)&memory_map.paddr);
+                status = eBS->GetMemoryMap(&memory_map.size + 512,
+                                           memory_map.paddr, &mm_key,
+                                           &memory_map.desc_size, &md_version);
         }
 
         if (EFI_ERROR(status)) {
@@ -179,9 +182,7 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle,
         struct bootinfo bootinfo = {
                 .framebuffer    = &framebuffer,
                 .font           = font,
-                .mmap           = mmap,
-                .mm_size        = mm_size,
-                .md_size        = md_size
+                .memory_map     = &memory_map
         };
 
 

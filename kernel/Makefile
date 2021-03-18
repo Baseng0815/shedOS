@@ -16,7 +16,8 @@ LDFLAGS=-T$(LDS) \
 	-lk
 
 OBJS:=src/main.o src/terminal.o src/framebuffer.o src/font.o \
-    src/memory/efi_memory.o src/cpuinfo.o
+    src/memory/efi_memory.o src/memory/pfa.o src/memory/bitmap.o \
+    src/cpuinfo.o
 
 .PHONY: all clean install install-headers
 

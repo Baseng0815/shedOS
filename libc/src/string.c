@@ -1,7 +1,5 @@
 #include "string.h"
 
-#include <stdint.h>
-
 int memcmp(const void *str1, const void *str2, size_t n)
 {
         uint8_t *str1p = (uint8_t*)str1;
@@ -28,9 +26,9 @@ void *memcpy(void *dst, const void *src, size_t n)
         return dst;
 }
 
-void *memset(void *str, int c, size_t n)
+void *memset(void *str, uint8_t c, size_t n)
 {
-        int *strp = (int*)str;
+        uint8_t *strp = (uint8_t*)str;
         for (size_t i = 0; i < n; i++) {
                 strp[i] = c;
         }

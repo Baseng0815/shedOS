@@ -29,7 +29,7 @@ uint32_t framebuffer_getpixel(int x, int y)
 void framebuffer_drawborder(uint32_t color)
 {
         /* rows */
-        for (int x = 0; x < fb->width; x++) {
+        for (int x = 0; x < (int)fb->width; x++) {
                 for (int y = 0; y < 8; y++) {
                         framebuffer_putpixel(x - 8, y - 8, color);
                         framebuffer_putpixel(x - 8, y - 16 + fb->height, color);
@@ -37,7 +37,7 @@ void framebuffer_drawborder(uint32_t color)
         }
 
         /* cols */
-        for (int y = 0; y < fb->height; y++) {
+        for (int y = 0; y < (int)fb->height; y++) {
                 for (int x = 0; x < 8; x++) {
                         framebuffer_putpixel(x - 8, y - 8, color);
                         framebuffer_putpixel(x - 16 + fb->width, y - 16, color);

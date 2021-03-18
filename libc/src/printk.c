@@ -24,7 +24,7 @@ int _printk(va_list args, char fmtc)
                         /* pad with zeroes for a nicer format */
                         if (len < 8) {
                                 for (size_t i = 0; i < 8 - len; i++) {
-                                        terminal_putchar('0');
+                                        putchar('0');
                                 }
                         }
                         puts(buf);
@@ -41,18 +41,35 @@ int _printk(va_list args, char fmtc)
         return 0;
 }
 
-void printk(int urgency, const char *fmt, ...)
+void printk(int loglevel, const char *fmt, ...)
 {
-        switch (urgency) {
-                case KMSG_URGENCY_LOW:
-                        terminal_setcolor(0x00ff00, 0x0);
-                        break;
-                case KMSG_URGENCY_MEDIUM:
-                        terminal_setcolor(0xfff000, 0x0);
-                        break;
-                case KMSG_URGENCY_HIGH:
-                        terminal_setcolor(0x0000ff, 0x0);
-                        break;
+        if (loglevel != KMSG_LOGLEVEL_NONE) {
+                puts("[ ");
+                switch (loglevel) {
+                        case KMSG_LOGLEVEL_INFO:
+                                /* blue */
+                                terminal_setcolor(0x0000ff, 0x0);
+                                puts("INFO");
+                                break;
+                        case KMSG_LOGLEVEL_SUCC:
+                                /* green */
+                                terminal_setcolor(0x00ff00, 0x0);
+                                puts("SUCC");
+                                break;
+                        case KMSG_LOGLEVEL_WARN:
+                                /* some yellowish color */
+                                terminal_setcolor(0xfff000, 0x0);
+                                puts("WARN");
+                                break;
+                        case KMSG_LOGLEVEL_CRIT:
+                                /* red */
+                                terminal_setcolor(0xff0000, 0x0);
+                                puts("CRIT");
+                                break;
+                }
+
+                terminal_setcolor(0xffffff, 0x0);
+                puts(" ] ");
         }
 
         va_list args;
