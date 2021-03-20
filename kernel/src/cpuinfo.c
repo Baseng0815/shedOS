@@ -28,7 +28,7 @@ bool cpuinfo_query(struct cpuinfo *info)
                      "popfq;"
                      "andq $0x00200000, %%rdx;"
                      "movq %%rdx, %0;"
-                     : "=m" (cpuid_present));
+                     : "=g" (cpuid_present));
 
         if (cpuid_present == 0) {
                 return false;

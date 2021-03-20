@@ -1,7 +1,7 @@
 #!/bin/sh
 # all those flags DO NOT apply to the bootloader!
 # TODO fix 'everything breaks'-bug when using -O>0
-export CFLAGS="-O2 -Wall -Wextra -ggdb"
+export CFLAGS="-O0 -Wall -Wextra -ggdb"
 
 # we use a generic x86_64 target using the ELF format
 export TARGET=x86_64-elf

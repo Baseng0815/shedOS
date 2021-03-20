@@ -1,5 +1,7 @@
 #include "string.h"
 
+#include <printk.h>
+
 int memcmp(const void *str1, const void *str2, size_t n)
 {
         uint8_t *str1p = (uint8_t*)str1;

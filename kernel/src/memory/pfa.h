@@ -13,5 +13,7 @@
 void pfa_initialize(struct efi_memory_map*);
 void *pfa_request_page();
 void pfa_release_page(void*);
+size_t pfa_get_mem_total();
+size_t pfa_get_mem_free();
 
 #endif

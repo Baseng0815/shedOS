@@ -195,12 +195,11 @@ EFI_STATUS efi_main(EFI_HANDLE ImageHandle,
         void (*kernel_start)() = (void(*)())(header.e_entry);
         println(L"Got kernel entry point.");
 
-        asm volatile("leaq %0, %%rdi;"
-                     : "+m" (bootinfo));
-
         eBS->ExitBootServices(ImageHandle, mm_key);
 
         println(L"Running kernel...");
+        asm volatile("leaq %0, %%rdi;"
+                     : "+m" (bootinfo));
         kernel_start();
         println(L"Kernel finished. Exiting now.");
 

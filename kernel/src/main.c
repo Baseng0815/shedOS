@@ -1,10 +1,14 @@
 #include "framebuffer.h"
 #include "font.h"
 #include "terminal.h"
-#include "memory/pfa.h"
 #include "cpuinfo.h"
 
+#include "memory/pfa.h"
+#include "memory/paging.h"
+#include "memory/efi_memory.h"
+
 #include <printk.h>
+#include <string.h>
 
 struct bootinfo {
         struct framebuffer      *framebuffer;
@@ -40,17 +44,36 @@ void _start(struct bootinfo *bootinfo)
         /* initialize page frame allocator */
         pfa_initialize(mmap);
 
-        for (size_t i = 0; i < 1000; i++) {
-                void *page = pfa_request_page();
-                printk(KMSG_LOGLEVEL_WARN, "%x\n", page);
-                pfa_release_page(page);
+        struct page_table *pml4 = (struct page_table*)pfa_request_page();
+        memset(pml4, 0, 0x1000);
+
+        printk(KMSG_LOGLEVEL_INFO, "Setting up identity paging.\n");
+
+        for (uintptr_t addr = 0; addr < pfa_get_mem_total(); addr += 0x1000) {
+                paging_map(pml4, (void*)addr, (void*)addr);
         }
+
+        printk(KMSG_LOGLEVEL_INFO, "Identity paged system memory.\n");
+
+        for (uintptr_t addr = fb->addr;
+             addr < fb->addr + fb->size + 0x1000;
+             addr += 0x1000) {
+                paging_map(pml4, (void*)addr, (void*)addr);
+        }
+
+        printk(KMSG_LOGLEVEL_INFO, "Identity paged framebuffer memory.\n");
+
+        asm volatile("mov %0, %%cr3"
+                     :
+                     : "r" (pml4));
+
+        printk(KMSG_LOGLEVEL_INFO, "I hope this still works...new page map!\n");
+
+        while (true) {}
 
         printk(KMSG_LOGLEVEL_WARN,
                "Kernel finished. You are now hanging in an infinite loop. "
-               "Congratulations :)");
-
-        while (true) {}
+               "Congratulations :)\n");
 }
 
 void dump_bootinfo(struct bootinfo *bootinfo)
@@ -112,13 +135,13 @@ void dump_memory(struct efi_memory_map *mmap)
                "Dumping memory map entries with 16 or more pages...\n");
 
         size_t mm_count = mmap->size / mmap->desc_size;
-        for (size_t i = 0; i < mm_count; i++) {
+        for (size_t i = 0; i < /*mm_count*/30; i++) {
                 struct efi_memory_descriptor *md =
                         (struct efi_memory_descriptor*)
                         (mmap->paddr + (i * mmap->desc_size));
 
-                if (md->page_count < 16)
-                        continue;
+                /* if (md->page_count < 16) */
+                /*         continue; */
 
                 printk(KMSG_LOGLEVEL_NONE,
                        "|-> type=%s(%d), size=%dKiB, paddr=%x, pc=%d\n",

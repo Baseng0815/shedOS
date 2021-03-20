@@ -3,6 +3,7 @@ ENTRY(_start)
 
 SECTIONS
 {
+    __KERNELSTART__ = ALIGN(0x1000);
     .text : ALIGN(0x1000)
     {
         *(.text)
@@ -20,4 +21,5 @@ SECTIONS
         *(COMMON)
         *(.bss)
     }
+    __KERNELEND__ = ALIGN(0x1000);
 }

@@ -5,19 +5,20 @@ LD?=ld
 AR?=ar
 LDS=kernel.ld
 
-override CFLAGS+=-ffreestanding -fno-stack-protector \
+override CFLAGS+=-ffreestanding -fno-stack-protector -fshort-wchar \
     -I/home/bastian/shedOS/sysroot/include \
-	-mno-red-zone
+    -mno-red-zone
 
 LDFLAGS=-T$(LDS) \
 	-static \
+	-Bsymbolic \
 	-nostdlib \
 	-L$(SYSROOT)/lib \
 	-lk
 
 OBJS:=src/main.o src/terminal.o src/framebuffer.o src/font.o \
-    src/memory/efi_memory.o src/memory/pfa.o src/memory/bitmap.o \
-    src/cpuinfo.o
+    src/cpuinfo.o src/memory/efi_memory.o src/memory/pfa.o \
+    src/memory/bitmap.o src/memory/paging.o
 
 .PHONY: all clean install install-headers
 
