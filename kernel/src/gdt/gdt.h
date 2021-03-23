@@ -18,9 +18,9 @@ struct gdt_entry {
 } __attribute__((packed));
 
 struct gdt {
-        struct gdt_entry kernel_null;   /* 0x00 */
-        struct gdt_entry kernel_code;   /* 0x08 */
-        struct gdt_entry kernel_data;   /* 0x10 */
+        struct gdt_entry kernel_null;   /* @ 0x00 */
+        struct gdt_entry kernel_code;   /* @ 0x08 */
+        struct gdt_entry kernel_data;   /* @ 0x10 */
         struct gdt_entry user_null;
         struct gdt_entry user_code;
         struct gdt_entry user_data;

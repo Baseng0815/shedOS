@@ -8,6 +8,7 @@
 #include "memory/efi_memory.h"
 
 #include "gdt/gdt.h"
+#include "int/idt.h"
 
 #include <printk.h>
 #include <string.h>
@@ -55,6 +56,9 @@ void _start(struct bootinfo *bootinfo)
         printk(KMSG_LOGLEVEL_SUCC, "Finished target identity paging.\n");
 
         gdt_initialize();
+        idt_initialize();
+
+        asm volatile("int $0x0e;");
 
         printk(KMSG_LOGLEVEL_WARN,
                "Kernel finished. You are now hanging in an infinite loop. "
