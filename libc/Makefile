@@ -30,7 +30,7 @@ libk.a: $(OBJS)
 
 # TODO add .libk.o suffix to distinguish libc and libk (can be done later on)
 %.o: %.c
-	$(CC) $(LIBK_CFLAGS) -std=gnu11 -c $< -o $@
+	$(CC) $(LIBK_CFLAGS)  -c $< -o $@
 
 clean:
 	rm -rf $(OBJS) libk.a

@@ -7,6 +7,8 @@
 #include "memory/paging.h"
 #include "memory/efi_memory.h"
 
+#include "gdt/gdt.h"
+
 #include <printk.h>
 #include <string.h>
 
@@ -51,6 +53,8 @@ void _start(struct bootinfo *bootinfo)
         struct page_table *pml4 = paging_identity(fb);
         printk(KMSG_LOGLEVEL_INFO, "Kernel page map @ %x\n", pml4);
         printk(KMSG_LOGLEVEL_SUCC, "Finished target identity paging.\n");
+
+        gdt_initialize();
 
         printk(KMSG_LOGLEVEL_WARN,
                "Kernel finished. You are now hanging in an infinite loop. "

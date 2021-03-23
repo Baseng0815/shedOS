@@ -16,9 +16,11 @@ LDFLAGS=-T$(LDS) \
 	-L$(SYSROOT)/lib \
 	-lk
 
+ASFLAGS=
+
 OBJS:=src/main.o src/terminal.o src/framebuffer.o src/font.o \
     src/cpuinfo.o src/memory/efi_memory.o src/memory/pfa.o \
-    src/memory/bitmap.o src/memory/paging.o
+    src/memory/bitmap.o src/memory/paging.o src/gdt/gdt.o \
 
 .PHONY: all clean install install-headers
 
@@ -36,7 +38,10 @@ kernel.elf: $(OBJS)
 	$(LD) $(OBJS) $(LDFLAGS) -o kernel.elf
 
 %.o: %.c
-	$(CC) $(CFLAGS) -std=gnu11 -c -o $@ $<
+	$(CC) $(CFLAGS) -c -o $@ $<
+
+%.o: %.S
+	$(AS) $(ASFLAGS) -o $@ $<
 
 clean:
 	rm -rf $(OBJS) kernel.elf
