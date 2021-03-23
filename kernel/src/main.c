@@ -16,13 +16,14 @@ struct bootinfo {
         struct efi_memory_map    *memory_map;
 };
 
+void welcome_message();
 void dump_bootinfo(struct bootinfo*);
 void dump_cpu();
 void dump_memory(struct efi_memory_map*);
 
 void _start(struct bootinfo *bootinfo)
 {
-        /* initialize framebuffer and terminal */
+        /* initialize framebuffer, font and terminal */
         struct framebuffer *fb = bootinfo->framebuffer;
 
         framebuffer_initialize(fb);
@@ -37,6 +38,7 @@ void _start(struct bootinfo *bootinfo)
                term_width, term_height);
 
         struct efi_memory_map *mmap = bootinfo->memory_map;
+        welcome_message();
         dump_bootinfo(bootinfo);
         dump_memory(bootinfo->memory_map);
         dump_cpu();
@@ -44,37 +46,29 @@ void _start(struct bootinfo *bootinfo)
         /* initialize page frame allocator */
         pfa_initialize(mmap, fb);
 
-        struct page_table *pml4 = (struct page_table*)pfa_request_page();
-        printk(KMSG_LOGLEVEL_SUCC, "%x\n", pml4);
-        memset(pml4, 0, 0x1000);
-
-        printk(KMSG_LOGLEVEL_INFO, "Setting up identity paging.\n");
-
-        for (uintptr_t addr = 0; addr < pfa_get_mem_total(); addr += 0x1000) {
-                paging_map(pml4, (void*)addr, (void*)addr);
-        }
-
-        printk(KMSG_LOGLEVEL_INFO, "Identity paged system memory.\n");
-
-        for (uintptr_t addr = fb->addr;
-             addr < fb->addr + fb->size + 0x1000;
-             addr += 0x1000) {
-                paging_map(pml4, (void*)addr, (void*)addr);
-        }
-
-        printk(KMSG_LOGLEVEL_INFO, "Identity paged framebuffer memory.\n");
-
-        asm volatile("mov %0, %%cr3"
-                     :
-                     : "r" (pml4));
-
-        printk(KMSG_LOGLEVEL_INFO, "I hope this still works...new page map!\n");
+        /* initialize identity paging */
+        printk(KMSG_LOGLEVEL_INFO, "Reached target identity paging.\n");
+        struct page_table *pml4 = paging_identity(fb);
+        printk(KMSG_LOGLEVEL_INFO, "Kernel page map @ %x\n", pml4);
+        printk(KMSG_LOGLEVEL_SUCC, "Finished target identity paging.\n");
 
         printk(KMSG_LOGLEVEL_WARN,
                "Kernel finished. You are now hanging in an infinite loop. "
                "Congratulations :)\n");
 
         while (true) {}
+}
+
+void welcome_message()
+{
+        const char *ascii =
+                "\n     _              _  ___  ____\n"
+                " ___| |__   ___  __| |/ _ \\/ ___|\n"
+                "/ __| '_ \\ / _ \\/ _` | | | \\___ \\\n"
+                "\\__ \\ | | |  __/ (_| | |_| |___) |\n"
+                "|___/_| |_|\\___|\\__,_|\\___/|____/\n\n";
+
+        printk(KMSG_LOGLEVEL_NONE, ascii);
 }
 
 void dump_bootinfo(struct bootinfo *bootinfo)
@@ -85,12 +79,12 @@ void dump_bootinfo(struct bootinfo *bootinfo)
         printk(KMSG_LOGLEVEL_INFO,
                "bootinfo @ %x\n"
                "|-> framebuffer @ %x\n"
-               "|---> paddr @ %x, size=%dKiB, %dx%dpx, pitch=%d bytes\n"
+               "|---> paddr=%x, size=%dKiB, %dx%dpx, pitch=%d bytes\n"
                "|-> font @ %x\n"
                "|---> header @ %x\n"
                "|-----> mode=%d, charsize=%d\n"
                "|---> glyphs @ %x\n"
-               "|-> mmap @ %x"
+               "|-> mmap @ %x\n"
                "|---> paddr=%x, size=%d bytes, desc_size=%d bytes\n",
                bootinfo,
                fb,
@@ -133,16 +127,16 @@ void dump_cpu()
 void dump_memory(struct efi_memory_map *mmap)
 {
         printk(KMSG_LOGLEVEL_INFO,
-               "Dumping memory map entries with 16 or more pages...\n");
+               "Dumping memory map entries of type EfiConventionalMemory...\n");
 
         size_t mm_count = mmap->size / mmap->desc_size;
-        for (size_t i = 0; i < /*mm_count*/30; i++) {
+        for (size_t i = 0; i < mm_count; i++) {
                 struct efi_memory_descriptor *md =
                         (struct efi_memory_descriptor*)
                         (mmap->paddr + (i * mmap->desc_size));
 
-                /* if (md->page_count < 16) */
-                /*         continue; */
+                if (md->type != 7)
+                        continue;
 
                 printk(KMSG_LOGLEVEL_NONE,
                        "|-> type=%s(%d), size=%dKiB, paddr=%x, pc=%d\n",

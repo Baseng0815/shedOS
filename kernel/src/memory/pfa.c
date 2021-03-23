@@ -24,7 +24,7 @@ void pfa_initialize(struct efi_memory_map *mmap,
                     struct framebuffer *fb)
 {
         printk(KMSG_LOGLEVEL_INFO,
-               "Reached target pfa\n");
+               "Reached target pfa.\n");
 
         /* find largest (conventional) descriptor to put the bitmap into.
            also get total amount of memory */
@@ -57,7 +57,6 @@ void pfa_initialize(struct efi_memory_map *mmap,
         size_t bitmap_len = total_memory / (0x1000 * 8) + 1;
         page_bitmap.buf = (uint8_t*)desc_paddr;
         page_bitmap.len = bitmap_len;
-        printk(KMSG_LOGLEVEL_SUCC, "%x %d", page_bitmap.buf, page_bitmap.len / 4096);
 
         /* lock all pages */
         memset(page_bitmap.buf, 0xff, page_bitmap.len);
@@ -77,7 +76,7 @@ void pfa_initialize(struct efi_memory_map *mmap,
         lock_pages((uintptr_t)page_bitmap.buf, page_bitmap.len / 0x1000);
 
         /* lock kernel pages */
-        uintptr_t   kstart = &__KERNELSTART__;
+        uintptr_t   kstart = (uintptr_t)&__KERNELSTART__;
         size_t      klen = (uintptr_t)&__KERNELEND__ - kstart;
         lock_pages(kstart, klen);
 
@@ -88,7 +87,7 @@ void pfa_initialize(struct efi_memory_map *mmap,
                free_memory, free_memory / 0x1000);
 
         printk(KMSG_LOGLEVEL_SUCC,
-               "Finished target pfa\n");
+               "Finished target pfa.\n");
 }
 
 void *pfa_request_page()

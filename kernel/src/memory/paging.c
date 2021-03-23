@@ -2,7 +2,6 @@
 
 #include "pfa.h"
 #include <string.h>
-#include <printk.h>
 
 /* get pdpi, pdi, pti, pi from vaddress */
 static void map_index(uintptr_t, size_t*, size_t*, size_t*, size_t*);
@@ -32,12 +31,34 @@ void map_index(uintptr_t vaddr,
         *pml4i = vaddr & 0x1ff;
 }
 
+struct page_table *paging_identity(struct framebuffer *fb)
+{
+        struct page_table *pml4 = (struct page_table*)pfa_request_page();
+        memset(pml4, 0, 0x1000);
+
+        /* map normal memory */
+        for (uintptr_t addr = 0; addr < pfa_get_mem_total(); addr += 0x1000) {
+                paging_map(pml4, (void*)addr, (void*)addr);
+        }
+
+        /* map framebuffer memory */
+        for (uintptr_t addr = fb->addr;
+             addr < (uintptr_t)fb->addr + fb->size + 0x1000;
+             addr += 0x1000) {
+                paging_map(pml4, (void*)addr, (void*)addr);
+        }
+
+        paging_use(pml4);
+
+        return pml4;
+}
+
 void paging_map(struct page_table *pml4,
                 void *paddr,
                 void *vaddr)
 {
         size_t pml4i, pdpi, pdi, pti;
-        map_index(vaddr, &pml4i, &pdpi, &pdi, &pti);
+        map_index((uintptr_t)vaddr, &pml4i, &pdpi, &pdi, &pti);
 
         struct page_table *pdp      = get(pml4, pml4i);
         struct page_table *pd       = get(pdp, pdpi);
@@ -69,4 +90,11 @@ struct page_table *get(struct page_table *parent,
         }
 
         return child;
+}
+
+void paging_use(struct page_table *pml4)
+{
+        asm volatile("mov %0, %%cr3"
+                     :
+                     : "r" (pml4));
 }

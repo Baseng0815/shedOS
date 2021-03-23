@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "../framebuffer.h"
+
 /* we use 4-level paging (top to bottom), each containing 512 children:
    pml4 (page map level 4, top structure)
    pdp  (page directory pointer)
@@ -32,6 +34,9 @@ struct page_table {
         struct pt_entry entries[512];
 } __attribute__((aligned(0x1000)));
 
+/* create a page table and set up identity paging */
+struct page_table *paging_identity(struct framebuffer*);
 void paging_map(struct page_table*, void*, void*);
+void paging_use(struct page_table*);
 
 #endif
