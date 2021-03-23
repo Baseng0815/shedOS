@@ -42,9 +42,10 @@ void _start(struct bootinfo *bootinfo)
         dump_cpu();
 
         /* initialize page frame allocator */
-        pfa_initialize(mmap);
+        pfa_initialize(mmap, fb);
 
         struct page_table *pml4 = (struct page_table*)pfa_request_page();
+        printk(KMSG_LOGLEVEL_SUCC, "%x\n", pml4);
         memset(pml4, 0, 0x1000);
 
         printk(KMSG_LOGLEVEL_INFO, "Setting up identity paging.\n");
@@ -69,11 +70,11 @@ void _start(struct bootinfo *bootinfo)
 
         printk(KMSG_LOGLEVEL_INFO, "I hope this still works...new page map!\n");
 
-        while (true) {}
-
         printk(KMSG_LOGLEVEL_WARN,
                "Kernel finished. You are now hanging in an infinite loop. "
                "Congratulations :)\n");
+
+        while (true) {}
 }
 
 void dump_bootinfo(struct bootinfo *bootinfo)

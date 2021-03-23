@@ -6,9 +6,10 @@
 #include "bitmap.h"
 
 /* bytes */
-static size_t free_memory = 0;
-static size_t total_memory = 0;
-static struct bitmap page_bitmap;
+static size_t           free_memory = 0;
+static size_t           total_memory;
+static struct bitmap    page_bitmap;
+static uintptr_t        last_free = 0;
 
 /* return the number of pages actually locked/unlocked */
 static size_t lock_page(uintptr_t);
@@ -19,7 +20,8 @@ static size_t unlock_pages(uintptr_t, size_t);
 extern uint64_t __KERNELSTART__;
 extern uint64_t __KERNELEND__;
 
-void pfa_initialize(struct efi_memory_map *mmap)
+void pfa_initialize(struct efi_memory_map *mmap,
+                    struct framebuffer *fb)
 {
         printk(KMSG_LOGLEVEL_INFO,
                "Reached target pfa\n");
@@ -27,11 +29,13 @@ void pfa_initialize(struct efi_memory_map *mmap)
         /* find largest (conventional) descriptor to put the bitmap into.
            also get total amount of memory */
         size_t largest_size = 0;
+        total_memory = 0;
         void *desc_paddr;
 
         /* modify memory map to include bss section */
         size_t num_desc = mmap->size / mmap->desc_size;
 
+        /* TODO find block for bitmap that guarantees it doesn't contain kernel */
         for (size_t i = 0; i < num_desc; i++) {
                 struct efi_memory_descriptor *desc =
                         (struct efi_memory_descriptor*)
@@ -53,38 +57,29 @@ void pfa_initialize(struct efi_memory_map *mmap)
         size_t bitmap_len = total_memory / (0x1000 * 8) + 1;
         page_bitmap.buf = (uint8_t*)desc_paddr;
         page_bitmap.len = bitmap_len;
+        printk(KMSG_LOGLEVEL_SUCC, "%x %d", page_bitmap.buf, page_bitmap.len / 4096);
 
-        /* unlock all pages and set free mem*/
-        free_memory = total_memory;
-        for (size_t pi = 0; pi < page_bitmap.len; pi++) {
-                page_bitmap.buf[pi] = 0;
-        }
+        /* lock all pages */
+        memset(page_bitmap.buf, 0xff, page_bitmap.len);
 
-        /* lock bitmap pages */
-        lock_pages((uintptr_t)page_bitmap.buf, page_bitmap.len / 0x1000);
-
-        /* lock pages used by kernel */
-        uintptr_t kernel_start  = &__KERNELSTART__;
-        uintptr_t kernel_end    = &__KERNELEND__;
-        size_t kernel_pagecount = (kernel_end - kernel_start) / 0x1000;
-        printk(KMSG_LOGLEVEL_INFO,
-               "KERNELSTART=%x, KERNELEND=%x, size=%d pages\n",
-               &__KERNELSTART__, &__KERNELEND__, kernel_pagecount);
-        lock_pages(kernel_start, kernel_pagecount);
-
-        /* lock all pages that are not of type EfiConventionalMemory */
+        /* unlock all pages that are of type EfiConventionalMemory */
         for (size_t i = 0; i < num_desc; i++) {
                 struct efi_memory_descriptor *desc =
                         (struct efi_memory_descriptor*)
                         (mmap->paddr + (i * mmap->desc_size));
 
-                if (desc->page_count == 0)
-                        continue;
-
-                if (desc->type != 7) {
-                        lock_pages((uintptr_t)desc->paddr, desc->page_count);
+                if (desc->type == 7) {
+                        unlock_pages((uintptr_t)desc->paddr, desc->page_count);
                 }
         }
+
+        /* lock bitmap pages */
+        lock_pages((uintptr_t)page_bitmap.buf, page_bitmap.len / 0x1000);
+
+        /* lock kernel pages */
+        uintptr_t   kstart = &__KERNELSTART__;
+        size_t      klen = (uintptr_t)&__KERNELEND__ - kstart;
+        lock_pages(kstart, klen);
 
         printk(KMSG_LOGLEVEL_INFO,
                "Total memory: %dKiB (%d pages).\n"
@@ -98,10 +93,12 @@ void pfa_initialize(struct efi_memory_map *mmap)
 
 void *pfa_request_page()
 {
-        for (size_t pi = 0; pi < total_memory / 0x1000; pi++) {
+        for (size_t pi = last_free; pi < total_memory / 0x1000; pi++) {
                 if (!bitmap_isset(&page_bitmap, pi)) {
-                        lock_page(pi * 0x1000);
-                        return (void*)(pi * 0x1000);
+                        last_free = pi + 1;
+                        uintptr_t addr = pi * 0x1000;
+                        lock_page(addr);
+                        return (void*)(addr);
                 }
         }
 
@@ -110,7 +107,11 @@ void *pfa_request_page()
 
 void pfa_release_page(void *page)
 {
-        unlock_page((uintptr_t)page);
+        uintptr_t p = (uintptr_t)page;
+        if (p < last_free) {
+                last_free = p;
+        }
+        unlock_page(p);
 }
 
 size_t lock_page(uintptr_t paddr)

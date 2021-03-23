@@ -38,8 +38,6 @@ void paging_map(struct page_table *pml4,
 {
         size_t pml4i, pdpi, pdi, pti;
         map_index(vaddr, &pml4i, &pdpi, &pdi, &pti);
-        /* if (pti == 0) */
-        /*         printk(KMSG_LOGLEVEL_WARN, "%d %d %d %d\n", pml4i, pdpi, pdi, pti); */
 
         struct page_table *pdp      = get(pml4, pml4i);
         struct page_table *pd       = get(pdp, pdpi);
@@ -60,7 +58,6 @@ struct page_table *get(struct page_table *parent,
                 /* allocate and zero out */
                 child = (struct page_table*)pfa_request_page();
                 memset(child, 0, 0x1000);
-
 
                 child_entry->present = true;
                 child_entry->writable = true;

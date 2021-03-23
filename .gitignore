@@ -12,4 +12,5 @@ toolchain/*
 *.EFI
 *.img
 *.iso
+.gdb_history
 ./compile_commands.json

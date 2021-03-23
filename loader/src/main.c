@@ -308,7 +308,7 @@ struct framebuffer initialize_gop()
                 println(L"Failed to get graphics output information.");
                 return framebuffer;
         } else {
-                println(L"Successfully got grahics output information.");
+                println(L"Successfully got graphics output information.");
         }
 
         numModes = gop->Mode->MaxMode;
