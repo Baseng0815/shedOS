@@ -58,7 +58,7 @@ void _start(struct bootinfo *bootinfo)
         gdt_initialize();
         idt_initialize();
 
-        asm volatile("int $0x0e;");
+        asm volatile("int $0x13;");
 
         printk(KMSG_LOGLEVEL_WARN,
                "Kernel finished. You are now hanging in an infinite loop. "

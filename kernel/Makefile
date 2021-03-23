@@ -21,7 +21,7 @@ ASFLAGS=
 OBJS:=src/main.o src/terminal.o src/framebuffer.o src/font.o \
     src/cpuinfo.o src/memory/efi_memory.o src/memory/pfa.o \
     src/memory/bitmap.o src/memory/paging.o src/gdt/gdt.o \
-    src/int/interrupts.o src/int/idt.o
+    src/int/exceptions.o src/int/idt.o
 
 .PHONY: all clean install install-headers
 
@@ -49,7 +49,7 @@ kernel.elf: $(OBJS)
 	@ echo =====! ASSEMBLING $< =====!
 	$(AS) $(ASFLAGS) -o $@ $<
 
-src/int/interrupts.o: src/int/interrupts.c
+src/int/exceptions.o: src/int/exceptions.c
 	@ echo =====! COMPILING $< =====!
 	$(CC) $(CFLAGS) -mgeneral-regs-only -c -o $@ $<
 

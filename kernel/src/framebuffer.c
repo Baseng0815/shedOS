@@ -1,12 +1,16 @@
 #include "framebuffer.h"
 
 struct framebuffer *fb;
+int fb_width;
+int fb_height;
 
 void framebuffer_drawborder(uint32_t);
 
 void framebuffer_initialize(struct framebuffer *_fb)
 {
-        fb = _fb;
+        fb          = _fb;
+        fb_width    = fb->width     - 16;
+        fb_height   = fb->height    - 16;
 
         framebuffer_drawborder(0x1c8aa6);
 }

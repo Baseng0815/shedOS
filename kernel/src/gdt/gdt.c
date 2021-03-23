@@ -19,7 +19,7 @@ void gdt_initialize()
         gdt.size = sizeof(struct gdt) - 1;
         gdt.offset = (uintptr_t)&default_gdt;
 
-        printk(KMSG_LOGLEVEL_INFO, "gdt @ %x with size=%d,offset=%x\n",
+        printk(KMSG_LOGLEVEL_INFO, "gdt @ %x with size=%d, offset=%x\n",
                &gdt, gdt.size, gdt.offset);
 
         asm volatile("lgdt %0;"

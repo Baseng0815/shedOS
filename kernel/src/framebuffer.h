@@ -13,6 +13,8 @@ struct framebuffer {
         uint32_t pitch;
 };
 
+extern int fb_width;
+extern int fb_height;
 
 void framebuffer_initialize(struct framebuffer*);
 void framebuffer_putpixel(int, int, uint32_t);

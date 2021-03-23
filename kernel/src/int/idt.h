@@ -7,6 +7,15 @@
 #define IDT_TA_CallGate 0b10001100
 #define IDT_TA_TrapGate 0b10001111
 
+/*
+   type attribute bits:
+   0-3 gate type (task, interrupt, trap)
+   4 storage segment (set to 0 for interrupt and trap)
+   5-6 privilege level (prevent interrupt from being called out of userspace)
+   7 present (set to 0 for unused interrupts)
+   */
+
+
 struct idt_descriptor {
         uint16_t    size;
         uintptr_t   offset;
