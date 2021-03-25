@@ -76,9 +76,13 @@ void pfa_initialize(struct efi_memory_map *mmap,
         lock_pages((uintptr_t)page_bitmap.buf, page_bitmap.len / 0x1000);
 
         /* lock kernel pages */
-        uintptr_t   kstart = (uintptr_t)&__KERNELSTART__;
-        size_t      klen = (uintptr_t)&__KERNELEND__ - kstart;
+        uintptr_t   kstart  = (uintptr_t)&__KERNELSTART__   / 4096;
+        uintptr_t   kend    = (uintptr_t)&__KERNELEND__     / 4096;
+        size_t      klen = kend - kstart + 1;
         lock_pages(kstart, klen);
+        printk(KMSG_LOGLEVEL_INFO,
+               "Kernel from %x to %x (page %d to %d), takes %d pages.\n",
+               &__KERNELSTART__, &__KERNELEND__, kstart, kend, klen);
 
         printk(KMSG_LOGLEVEL_INFO,
                "Total memory: %dKiB (%d pages).\n"

@@ -17,6 +17,12 @@ int _printk(va_list args, char fmtc)
                         puts(buf);
                         return 1;
                 }
+                case 'b': {
+                        char buf[32];
+                        utos(va_arg(args, int), 2, buf);
+                        puts(buf);
+                        return 1;
+                }
                 case 'x': {
                         char buf[16];
                         size_t len = utos(va_arg(args, size_t), 16, buf);
@@ -30,7 +36,11 @@ int _printk(va_list args, char fmtc)
                         puts(buf);
                         return 1;
                 }
-
+                case 'c': {
+                        char c = va_arg(args, int);
+                        putchar(c);
+                        return 1;
+                }
                 case 's': {
                         const char *str = va_arg(args, const char*);
                         puts(str);

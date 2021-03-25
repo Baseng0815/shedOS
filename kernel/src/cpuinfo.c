@@ -6,13 +6,13 @@
 #define __cpuid(eax) \
         asm volatile("movl %[ieaxv], %%eax; cpuid;" \
                      : "=a" (a), "=b" (b), "=c" (c), "=d" (d) \
-                     : [ieaxv] "r" (eax)); \
+                     : [ieaxv] "g" (eax)); \
 
 #define __cpuid_leaf(eax,ecx) \
         asm volatile("movl %[ieaxv], %%eax;" \
                      "movl %[iecxv], %%ecx; cpuid;" \
                      : "=a" (a), "=b" (b), "=c" (c), "=d" (d) \
-                     : [ieaxv] "r" (eax), [iecxv] "r" (ecx)); \
+                     : [ieaxv] "g" (eax), [iecxv] "g" (ecx)); \
 
 bool cpuinfo_query(struct cpuinfo *info)
 {

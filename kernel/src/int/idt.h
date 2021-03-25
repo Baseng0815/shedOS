@@ -1,6 +1,12 @@
 #ifndef _GDT_H
 #define _GDT_H
 
+/*
+   the IDT (interrupt descriptor table) contains entries describing which
+   code handles a certain interrupt vector (max 256)
+   the first 32 should be reserved for exceptions as specified by intel
+   */
+
 #include <stdint.h>
 
 #define IDT_TA_InterruptGate 0b10001110
@@ -23,12 +29,12 @@ struct idt_descriptor {
 
 struct idt_entry {
         uint16_t    offset0;
-        uint16_t    selector;   /* code segment selector */
+        uint16_t    selector;   /* code segment selector                    */
         uint8_t     ist;        /* bits 0..2 = interrupt stack table offset */
-        uint8_t     type_attr;  /* type and attributes */
+        uint8_t     type_attr;  /* type and attributes                      */
         uint16_t    offset1;
         uint32_t    offset2;
-        uint32_t    ignore;     /* reserved */
+        uint32_t    ignore;     /* reserved                                 */
 };
 
 void idt_initialize();

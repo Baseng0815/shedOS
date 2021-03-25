@@ -9,6 +9,7 @@
 
 #include "gdt/gdt.h"
 #include "int/idt.h"
+#include "int/pic.h"
 
 #include <printk.h>
 #include <string.h>
@@ -57,8 +58,7 @@ void _start(struct bootinfo *bootinfo)
 
         gdt_initialize();
         idt_initialize();
-
-        asm volatile("int $0x13;");
+        pic_initialize();
 
         printk(KMSG_LOGLEVEL_WARN,
                "Kernel finished. You are now hanging in an infinite loop. "
