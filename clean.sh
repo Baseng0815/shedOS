@@ -7,4 +7,4 @@ for project in $PROJECTS; do
 done
 
 rm -rf $SYSROOT
-rm -rf $HDDDIR
+rm -rf $ISODIR

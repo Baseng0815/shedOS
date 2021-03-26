@@ -12,7 +12,7 @@ export AR=$TARGET-ar
 export PROJECTS="libc kernel loader"
 export SYSTEM_HEADER_PROJECTS="libc kernel"
 export SYSROOT=$(pwd)/sysroot
-export HDDDIR=$(pwd)/hdd
+export ISODIR=$(pwd)/iso
 export EXTERNAL=$(pwd)/external
 
 # all projects will be gradually installed into the sysroot

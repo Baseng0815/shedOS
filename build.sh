@@ -14,6 +14,3 @@ done
 
 mkdir -p $SYSROOT/res
 cp -r resources/* $SYSROOT/res
-
-mkdir -p $HDDDIR
-cp -r $SYSROOT/* $HDDDIR
