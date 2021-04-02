@@ -1,7 +1,11 @@
 sysroot/*
 iso/*
 hdd/*
+
 toolchain/*
+!toolchain/
+!toolchain/Makefile
+
 *.fd
 *.o
 *.so
