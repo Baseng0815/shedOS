@@ -6,7 +6,6 @@ toolchain/*
 !toolchain/
 !toolchain/Makefile
 
-*.fd
 *.o
 *.so
 *.a
