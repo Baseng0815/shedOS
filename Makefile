@@ -10,9 +10,7 @@ export DEPENDENCIES 		:= $(shell pwd)/deps
 export TOOLCHAIN 		:= $(shell pwd)/toolchain
 export PATH 			:= $(TOOLCHAIN)/bin:$(PATH)
 
-.PHONY: all qemu clean toolchain toolchain-clean
-
-all: iso
+.PHONY: all clean sysroot toolchain toolchain-clean
 
 qemu: iso
 	qemu-system-x86_64 \
@@ -34,10 +32,10 @@ iso: sysroot
 
 sysroot:
 	@for project in $(SYSTEM_HEADER_PROJECTS); do \
-	    make -C $$project install-headers; \
+	    make -C $$project install-headers || exit 3; \
 	    done
 	@for project in $(PROJECTS); do \
-	    make -C $$project install-exec; \
+	    make -C $$project install-exec || exit 3; \
 	    done
 	mkdir -p $(SYSROOT)/efi/boot
 	cp $(DEPENDENCIES)/limine/BOOTX64.EFI $(SYSROOT)/efi/boot

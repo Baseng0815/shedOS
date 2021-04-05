@@ -1,103 +1,113 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "stivale2.h"
+#include "libk/printf.h"
 
-// We need to tell the stivale bootloader where we want our stack to be.
-// We are going to allocate our stack as an uninitialised array in .bss.
+#include "fb/framebuffer.h"
+#include "terminal/terminal.h"
+
+#include "memory/pfa.h"
+#include "memory/paging.h"
+
+#include "gdt/gdt.h"
+
 static uint8_t stack[4096];
 
-// stivale2 uses a linked list of tags for both communicating TO the
-// bootloader, or receiving info FROM it. More information about these tags
-// is found in the stivale2 specification.
+static void welcome_message();
+static void dump_bootinfo(struct bootinfo*);
+static void dump_cpu();
+static void dump_memory(struct efi_memory_map*);
 
-// As an example header tag, we're gonna define a framebuffer header tag.
-// This tag tells the bootloader that we want a graphical framebuffer instead
-// of a CGA-compatible text mode. Omitting this tag will make the bootloader
-// default to text mode.
-struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
-    // All tags need to begin with an identifier and a pointer to the next tag.
-    .tag = {
-        // Identification constant defined in stivale2.h and the specification.
-        .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
-        // If next is 0, then this marks the end of the linked list of tags.
-        .next = 0
-    },
-    // We set all the framebuffer specifics to 0 as we want the bootloader
-    // to pick the best it can.
-    .framebuffer_width  = 0,
-    .framebuffer_height = 0,
-    .framebuffer_bpp    = 0
+/* the kernel uses a linked list of structures to communicate
+   with the bootloader and request certain features */
+/* header tags are given to the bootloader from the kernel,
+   structure tags are returned by the bootloader to the kernel */
+
+static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
+        .tag = {
+                .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
+                /* zero indicates the end of the linked list */
+                .next = 0
+        },
+        /* we set the specifics to 0 to let the bootloader pick the best */
+        .framebuffer_height = 0,
+        .framebuffer_height = 0,
+        .framebuffer_bpp    = 0
 };
 
-// The stivale2 specification says we need to define a "header structure".
-// This structure needs to reside in the .stivale2hdr ELF section in order
-// for the bootloader to find it. We use this __attribute__ directive to
-// tell the compiler to put the following structure in said section.
+/* we put the stivale header into a certain section to
+   allow the bootloader to find it */
 __attribute__((section(".stivale2hdr"), used))
-struct stivale2_header stivale_hdr = {
-    // The entry_point member is used to specify an alternative entry
-    // point that the bootloader should jump to instead of the executable's
-    // ELF entry point. We do not care about that so we leave it zeroed.
-    .entry_point = 0,
-    // Let's tell the bootloader where our stack is.
-    // We need to add the sizeof(stack) since in x86(_64) the stack grows
-    // downwards.
-    .stack = (uintptr_t)stack + sizeof(stack),
-    // No flags are currently defined as per spec and should be left to 0.
-    .flags = 0,
-    // This header structure is the root of the linked list of header tags and
-    // points to the first one (and in our case, only).
-    .tags = (uintptr_t)&framebuffer_hdr_tag
+static struct stivale2_header header = {
+        .entry_point = 0,
+        .stack = (uintptr_t)stack + sizeof(stack),
+        .flags = 0,
+        .tags = (uintptr_t)&framebuffer_hdr_tag
 };
 
-// We will now write a helper function which will allow us to scan for tags
-// that we want FROM the bootloader (structure tags).
-void *stivale2_get_tag(struct stivale2_struct *stivale2_struct, uint64_t id) {
-    struct stivale2_tag *current_tag = (void *)stivale2_struct->tags;
-    for (;;) {
-        // If the tag pointer is NULL (end of linked list), we did not find
-        // the tag. Return NULL to signal this.
-        if (current_tag == NULL) {
-           return NULL;
-        }
+/* helper function to traverse the linked list and get the struct we want */
+void *stivale2_get_tag(struct stivale2_struct*, uint64_t);
 
-        // Check whether the identifier matches. If it does, return a pointer
-        // to the matching tag.
-        if (current_tag->identifier == id) {
-            return current_tag;
-        }
+static void welcome_message();
 
-        // Get a pointer to the next tag in the linked list and repeat.
-        current_tag = (void *)current_tag->next;
-    }
+void _start(struct stivale2_struct *stivale2_struct)
+{
+        /* framebuffer and terminal */
+        struct stivale2_struct_tag_framebuffer *fb =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
+
+        framebuffer_initialize(fb);
+        int term_width = (fb->framebuffer_width - 16) / 16;
+        int term_height = (fb->framebuffer_height - 16) / 16;
+        terminal_initialize(term_width, term_height);
+
+        welcome_message();
+
+        printf(KMSG_LOGLEVEL_SUCC,
+               "Framebuffer initialized with dimension of %dx%d, "
+               "red mask/size %x/%x, green mask/size %x/%x, blue mask/size %x/%x "
+               "and %dbpp.\n",
+               fb->framebuffer_width, fb->framebuffer_height,
+               fb->red_mask_shift, fb->red_mask_size,
+               fb->green_mask_shift, fb->green_mask_size,
+               fb->blue_mask_shift, fb->blue_mask_size,
+               fb->framebuffer_bpp);
+
+        /* memory */
+        struct stivale2_struct_tag_memmap *mmap =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_MEMMAP_ID);
+        pfa_initialize(mmap);
+        gdt_initialize();
+
+        printf(KMSG_LOGLEVEL_INFO, "Hello Kernel!\n");
+
+        for (;;) {
+                asm("hlt");
+        }
 }
 
-// The following will be our kernel's entry point.
-void _start(struct stivale2_struct *stivale2_struct) {
-    // Let's get the framebuffer tag.
-    struct stivale2_struct_tag_framebuffer *fb_hdr_tag;
-    fb_hdr_tag = stivale2_get_tag(stivale2_struct, STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
-
-    // Check if the tag was actually found.
-    if (fb_hdr_tag == NULL) {
-        // It wasn't found, just hang...
-        for (;;) {
-            asm ("hlt");
+void *stivale2_get_tag(struct stivale2_struct *stivale2_struct, uint64_t id)
+{
+        for (struct stivale2_tag *current_tag = (void*)stivale2_struct->tags;
+             current_tag;
+             current_tag = (void*)current_tag->next) {
+                if (current_tag->identifier == id)
+                        return current_tag;
         }
-    }
 
-    // Let's get the address of the framebuffer.
-    uint8_t *fb_addr = (uint8_t *)fb_hdr_tag->framebuffer_addr;
+        return NULL;
+}
 
-    // Let's try to paint a few pixels white in the top left, so we know
-    // that we booted correctly.
-    for (size_t i = 0; i < 128; i++) {
-        fb_addr[i] = 0xff;
-    }
+void welcome_message()
+{
+        const char *ascii =
+                "\n     _              _  ___  ____\n"
+                " ___| |__   ___  __| |/ _ \\/ ___|\n"
+                "/ __| '_ \\ / _ \\/ _` | | | \\___ \\\n"
+                "\\__ \\ | | |  __/ (_| | |_| |___) |\n"
+                "|___/_| |_|\\___|\\__,_|\\___/|____/\n\n";
 
-    // We're done, just hang...
-    for (;;) {
-        asm ("hlt");
-    }
-} 
+        printf(KMSG_LOGLEVEL_NONE, ascii);
+}
