@@ -49,13 +49,13 @@ void terminal_putchar(char c)
         /* handle other chars */
         int ci_x = chr_index % width;
         int ci_y = chr_index / width;
-        for (int ix = 0; ix < 16; ix++) {
+        for (int ix = 0; ix < 8; ix++) {
                 for (int iy = 0; iy < 16; iy++) {
-                        /* we use an 8x8 font scaled by 2 */
-                        int x = ci_x * 16 + ix;
+                        /* we use an 8x8 font scaled by 2 on the y axis */
+                        int x = ci_x * 8 + ix;
                         int y = ci_y * 16 + iy;
                         framebuffer_putpixel(x, y,
-                                             font_is_set(c, ix / 2, iy / 2)
+                                             font_is_set(c, ix, iy / 2)
                                              ? fg
                                              : bg);
                 }

@@ -27,6 +27,8 @@ void framebuffer_putpixel(int x, int y, uint32_t px)
 
 uint32_t framebuffer_getpixel(int x, int y)
 {
+        x += 8;
+        y += 8;
         return *(uint32_t*)(fb->framebuffer_addr
                             + y * fb->framebuffer_pitch
                             + x * fb->framebuffer_bpp / 8);
