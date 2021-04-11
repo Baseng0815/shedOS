@@ -10,6 +10,8 @@ export DEPENDENCIES 		:= $(shell pwd)/deps
 export TOOLCHAIN 		:= $(shell pwd)/toolchain
 export PATH 			:= $(TOOLCHAIN)/bin:$(PATH)
 
+QEMU_MEMORY 			:=256M
+
 .PHONY: all clean sysroot toolchain toolchain-clean
 
 qemu: iso
@@ -19,7 +21,16 @@ qemu: iso
 	    -enable-kvm \
 	    -cpu host \
 	    -net none \
-	    -serial stdio -s -m 512M
+	    -serial stdio -s -m $(QEMU_MEMORY)
+
+qemu-debug: iso
+	qemu-system-x86_64 \
+	    -drive if=pflash,format=raw,file=$(DEPENDENCIES)/OVMF.fd \
+	    -cdrom $(ISO) \
+	    -enable-kvm \
+	    -cpu host \
+	    -net none \
+	    -serial stdio -s -m $(QEMU_MEMORY)
 
 iso: sysroot
 	rm -f $(ISO)
