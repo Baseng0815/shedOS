@@ -4,6 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "../stivale2.h"
+
 /* we use 4-level paging (top to bottom), each containing 512 children:
    pml4 (page map level 4, top structure)
    pdp  (page directory pointer)
@@ -32,9 +34,11 @@ struct page_table {
         struct pt_entry entries[512];
 } __attribute__((aligned(0x1000)));
 
-/* create a page table and set up identity paging */
-struct page_table *paging_identity();
+/* create an identity page table for the kernel */
+void paging_initialize(struct stivale2_struct_tag_memmap*);
+
 void paging_map(struct page_table*, void*, void*);
+/* we don't care about performance now and just reload CR3 every time */
 void paging_use(struct page_table*);
 
 #endif

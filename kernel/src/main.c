@@ -1,6 +1,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#include "cpuinfo.h"
+
 #include "libk/printf.h"
 
 #include "fb/framebuffer.h"
@@ -11,12 +13,12 @@
 
 #include "gdt/gdt.h"
 
-static uint8_t stack[4096];
+static uint8_t stack[0x4000]; /* 16 KiB stack */
 
 static void welcome_message();
 static void dump_bootinfo(struct bootinfo*);
 static void dump_cpu();
-static void dump_memory(struct efi_memory_map*);
+static void dump_memory(struct stivale2_struct_tag_memmap*);
 
 /* the kernel uses a linked list of structures to communicate
    with the bootloader and request certain features */
@@ -66,20 +68,28 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         printf(KMSG_LOGLEVEL_SUCC,
                "Framebuffer initialized with dimension of %dx%d, "
-               "red mask/size %x/%x, green mask/size %x/%x, blue mask/size %x/%x "
+               "base address of %x, "
+               "red mask/size %x/%x, "
+               "green mask/size %x/%x, "
+               "blue mask/size %x/%x "
                "and %dbpp.\n",
                fb->framebuffer_width, fb->framebuffer_height,
+               fb->framebuffer_addr,
                fb->red_mask_shift, fb->red_mask_size,
                fb->green_mask_shift, fb->green_mask_size,
                fb->blue_mask_shift, fb->blue_mask_size,
                fb->framebuffer_bpp);
 
+        dump_cpu();
+
         /* memory */
         struct stivale2_struct_tag_memmap *mmap =
                 stivale2_get_tag(stivale2_struct,
                                  STIVALE2_STRUCT_TAG_MEMMAP_ID);
+        dump_memory(mmap);
         pfa_initialize(mmap);
         gdt_initialize();
+        paging_initialize(mmap);
 
         printf(KMSG_LOGLEVEL_INFO, "Hello Kernel!\n");
 
@@ -110,4 +120,70 @@ void welcome_message()
                 "|___/_| |_|\\___|\\__,_|\\___/|____/\n\n";
 
         printf(KMSG_LOGLEVEL_NONE, ascii);
+}
+
+void dump_cpu()
+{
+        struct cpuinfo cpuinfo;
+        bool cpuid_present = cpuinfo_query(&cpuinfo);
+        if (cpuid_present) {
+                printf(KMSG_LOGLEVEL_INFO, "CPU: %s (%s)\n",
+                       cpuinfo.vendor_string, cpuinfo.brand_string);
+                printf(KMSG_LOGLEVEL_NONE,
+                       "|-> stepping=%d, model=%d, family=%d, "
+                       "processor_type=%d\n",
+                       cpuinfo.stepping, cpuinfo.model, cpuinfo.family,
+                       cpuinfo.processor_type);
+                printf(KMSG_LOGLEVEL_NONE, "|-> features: ");
+                for (int i = 0; i < 64; i++) {
+                        /* reserved bits */
+                        if (i == 10 || i == 20 || i == 47)
+                                continue;
+
+                        if ((cpuinfo.featureset & (1L << i)) > 0) {
+                                printf(KMSG_LOGLEVEL_NONE,
+                                       "%s ", cpu_featureset[i]);
+                        }
+                }
+                printf(KMSG_LOGLEVEL_NONE, "\n");
+        }
+}
+
+void dump_memory(struct stivale2_struct_tag_memmap *mmap)
+{
+        printf(KMSG_LOGLEVEL_INFO, "Dumping stivale memory map...\n");
+        for (size_t i = 0; i < mmap->entries; i++) {
+                struct stivale2_mmap_entry *entry = &mmap->memmap[i];
+
+                const char *type;
+                switch (entry->type) {
+                        case 0x1:
+                                type = "USABLE";
+                                break;
+                        case 0x2:
+                                type = "RESERVED";
+                                break;
+                        case 0x3:
+                                type = "ACPI_RECLAIMABLE";
+                                break;
+                        case 0x4:
+                                type = "ACPI_NVS";
+                                break;
+                        case 0x5:
+                                type = "BAD_MEMORY";
+                                break;
+                        case 0x1000:
+                                type = "BOOTLOADER_RECLAIMABLE";
+                                break;
+                        case 0x1001:
+                                type = "KERNEL_AND_MODULES";
+                                break;
+                        default:
+                                type = "UNKNOWN";
+                }
+
+                printf(KMSG_LOGLEVEL_NONE,
+                       "|-> %d: base=%x, length=%x, type=%s\n",
+                       i, entry->base, entry->length, type);
+        }
 }

@@ -2,6 +2,9 @@
 
 #include "pfa.h"
 #include "../libk/memutil.h"
+#include "../libk/printf.h"
+
+static struct page_table *kernel_identity_table;
 
 /* get pdpi, pdi, pti, pi from vaddress */
 static void map_index(uintptr_t, size_t*, size_t*, size_t*, size_t*);
@@ -31,35 +34,6 @@ void map_index(uintptr_t vaddr,
         *pml4i = vaddr & 0x1ff;
 }
 
-struct page_table *paging_identity()
-{
-        struct page_table *pml4 = (struct page_table*)pfa_request_page();
-        memset(pml4, 0, 0x1000);
-
-        /* TODO actually map stuff */
-
-        paging_use(pml4);
-
-        return pml4;
-}
-
-void paging_map(struct page_table *pml4,
-                void *paddr,
-                void *vaddr)
-{
-        size_t pml4i, pdpi, pdi, pti;
-        map_index((uintptr_t)vaddr, &pml4i, &pdpi, &pdi, &pti);
-
-        struct page_table *pdp      = get(pml4, pml4i);
-        struct page_table *pd       = get(pdp, pdpi);
-        struct page_table *pt       = get(pd, pdi);
-        struct pt_entry *pt_entry   = &pt->entries[pti];
-        /* set physical address */
-        pt_entry->present = true;
-        pt_entry->writable = true;
-        pt_entry->addr = (uintptr_t)paddr >> 12;
-}
-
 struct page_table *get(struct page_table *parent,
                        size_t index)
 {
@@ -80,6 +54,80 @@ struct page_table *get(struct page_table *parent,
         }
 
         return child;
+}
+
+void paging_initialize(struct stivale2_struct_tag_memmap *mmap)
+{
+        printf(KMSG_LOGLEVEL_INFO, "Reached target paging.\n");
+
+        kernel_identity_table = (struct page_table*)pfa_request_page();
+        memset(kernel_identity_table, 0, 0x1000);
+
+        printf(KMSG_LOGLEVEL_INFO,
+               "Kernel identity table at %x\n", kernel_identity_table);
+
+        /* identity map the first 4 GiB and also high mem */
+        printf(KMSG_LOGLEVEL_INFO,
+               "Identity mapping first 4 GiB...\n");
+
+        for (uintptr_t addr = 0x0; addr < 0x100000000; addr += 0x1000) {
+                paging_map(kernel_identity_table,
+                           (void*)addr,
+                           (void*)addr);
+                paging_map(kernel_identity_table,
+                           (void*)(0x0 +                addr),
+                           (void*)(0xffff800000000000 + addr));
+        }
+
+        /* identity map every mmap entry >= 4 GiB and also high mem */
+        for (size_t i = 0; i < mmap->entries; i++) {
+                struct stivale2_mmap_entry *entry = &mmap->memmap[i];
+                if (entry->base < 0x100000000)
+                        continue;
+
+                printf(KMSG_LOGLEVEL_INFO,
+                       "Identity mapping region %x-%x...\n",
+                       entry->base, entry->base + entry->length);
+
+                for (uintptr_t addr = entry->base;
+                     addr < entry->base + entry->length;
+                     addr += 0x1000) {
+                        paging_map(kernel_identity_table,
+                                   (void*)addr,
+                                   (void*)addr);
+                        paging_map(kernel_identity_table,
+                                   (void*)(0x0                  + addr),
+                                   (void*)(0xffff800000000000   + addr));
+                }
+        }
+
+        /* map higher half kernel addresses to lower physical region */
+        for (uintptr_t offset = 0x0; offset < 0x80000000; offset += 0x1000) {
+                paging_map(kernel_identity_table,
+                           (void*)(0x0                  + offset),
+                           (void*)(0xffffffff80000000   + offset));
+        }
+
+        paging_use(kernel_identity_table);
+
+        printf(KMSG_LOGLEVEL_SUCC, "Finished target paging.\n");
+}
+
+void paging_map(struct page_table *pml4,
+                void *paddr,
+                void *vaddr)
+{
+        size_t pml4i, pdpi, pdi, pti;
+        map_index((uintptr_t)vaddr, &pml4i, &pdpi, &pdi, &pti);
+
+        struct page_table *pdp      = get(pml4, pml4i);
+        struct page_table *pd       = get(pdp, pdpi);
+        struct page_table *pt       = get(pd, pdi);
+        struct pt_entry *pt_entry   = &pt->entries[pti];
+        /* set physical address */
+        pt_entry->present = true;
+        pt_entry->writable = true;
+        pt_entry->addr = (uintptr_t)paddr >> 12;
 }
 
 void paging_use(struct page_table *pml4)

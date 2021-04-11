@@ -10,10 +10,11 @@
    by the vmm (virtual memory manager)
    */
 
+extern size_t free_memory;
+extern size_t total_memory;
+
 void pfa_initialize(struct stivale2_struct_tag_memmap*);
 void *pfa_request_page();
 void pfa_release_page(void*);
-size_t pfa_get_mem_total();
-size_t pfa_get_mem_free();
 
 #endif

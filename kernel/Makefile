@@ -21,7 +21,7 @@ CPPFLAGS 	:=
 LDFLAGS 	:= \
     -Tlinker.ld \
     -nostdlib \
-    -shared \
+    -static \
     -pie -fno-pic -fpie \
     -z max-page-size=0x1000
 
