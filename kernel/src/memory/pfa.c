@@ -18,9 +18,6 @@ static size_t lock_pages(uintptr_t, size_t);
 static size_t unlock_page(uintptr_t);
 static size_t unlock_pages(uintptr_t, size_t);
 
-extern uint64_t __KERNELSTART__;
-extern uint64_t __KERNELEND__;
-
 void pfa_initialize(struct stivale2_struct_tag_memmap *mmap)
 {
         printf(KMSG_LOGLEVEL_INFO,
@@ -40,8 +37,7 @@ void pfa_initialize(struct stivale2_struct_tag_memmap *mmap)
                 if (entry->type != STIVALE2_MMAP_USABLE)
                         continue;
 
-                if (entry->length > largest_entry->length ||
-                    largest_entry == NULL) {
+                if (!largest_entry || entry->length > largest_entry->length) {
                         largest_entry = entry;
                 }
         }
