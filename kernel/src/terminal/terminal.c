@@ -2,6 +2,8 @@
 
 #include "font.h"
 #include "../fb/framebuffer.h"
+#include "../libk/printf.h"
+
 
 /* number of characters in x/y direction */
 int width, height;
@@ -24,6 +26,10 @@ void terminal_initialize(int _width, int _height)
         bg = 0x0;
 
         terminal_clear();
+
+        printf(KMSG_LOGLEVEL_INFO, "Term dimensions: %dx%d\n",
+               width, height);
+        printf(KMSG_LOGLEVEL_SUCC, "Finished target terminal.\n");
 }
 
 void terminal_setcolor(uint32_t _fg, uint32_t _bg)

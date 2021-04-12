@@ -31,10 +31,9 @@ static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
                 /* zero indicates the end of the linked list */
                 .next = 0
         },
-        /* we set the specifics to 0 to let the bootloader pick the best */
-        .framebuffer_height = 0,
-        .framebuffer_height = 0,
-        .framebuffer_bpp    = 0
+        .framebuffer_width  = 1920,
+        .framebuffer_height = 1080,
+        .framebuffer_bpp    = 32
 };
 
 /* we put the stivale header into a certain section to
@@ -60,7 +59,7 @@ void _start(struct stivale2_struct *stivale2_struct)
                                  STIVALE2_STRUCT_TAG_FRAMEBUFFER_ID);
 
         framebuffer_initialize(fb);
-        int term_width = (fb->framebuffer_width - 16) / 16;
+        int term_width = (fb->framebuffer_width - 16) / 8;
         int term_height = (fb->framebuffer_height - 16) / 16;
         terminal_initialize(term_width, term_height);
 
@@ -91,7 +90,8 @@ void _start(struct stivale2_struct *stivale2_struct)
         gdt_initialize();
         paging_initialize(mmap);
 
-        printf(KMSG_LOGLEVEL_INFO, "Hello Kernel!\n");
+        printf(KMSG_LOGLEVEL_SUCC,
+               "Kernel initialization completed.\n");
 
         for (;;) {
                 asm("hlt");
