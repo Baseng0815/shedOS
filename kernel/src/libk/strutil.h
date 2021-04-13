@@ -9,4 +9,7 @@ size_t strlen(const char*);
 /* unsigned integer to string conversion */
 size_t utos(uint64_t, uint64_t, char*);
 
+int strcmp(const char*, const char*);
+int strncmp(const char*, const char*, size_t);
+
 #endif

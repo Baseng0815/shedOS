@@ -13,6 +13,8 @@
 
 #include "gdt/gdt.h"
 
+#include "sdt/sdt.h"
+
 static uint8_t stack[0x4000]; /* 16 KiB stack */
 
 static void welcome_message();
@@ -89,6 +91,13 @@ void _start(struct stivale2_struct *stivale2_struct)
         pfa_initialize(mmap);
         gdt_initialize();
         paging_initialize(mmap);
+
+        /* system descriptor tables */
+        struct stivale2_struct_tag_rsdp *rsdp =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_RSDP_ID);
+
+        sdt_initialize(rsdp);
 
         printf(KMSG_LOGLEVEL_SUCC,
                "Kernel initialization completed.\n");

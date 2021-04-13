@@ -1,4 +1,4 @@
-export USER_CFLAGS 		:= -O2 -Wall -Wextra -ggdb -pipe
+export USER_CFLAGS 		:= -O0 -Wall -Wextra -ggdb -pipe
 export MAKEOPTS 		:= -j12
 
 export TARGET 			:= x86_64-elf
@@ -32,7 +32,7 @@ qemu-debug: $(HDD)
 	    -cpu host \
 	    -net none \
 	    -M q35 \
-	    -serial stdio -s -m $(QEMU_MEMORY)
+	    -serial stdio -s -m $(QEMU_MEMORY) -S
 
 $(HDD): sysroot
 	rm -f $(HDD)
