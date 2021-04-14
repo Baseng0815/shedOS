@@ -31,26 +31,78 @@ struct rsdp {
 
 struct rsdt {
         struct sdt_header hdr;
-        uint32_t first_sdt;
+
+        /* 32 bit addresses follow */
 } __attribute__((packed));
 
 /* extended rsdt which can hold addresses up to 64 bit
  * this needs to be used instead of the rsdt if possible */
 struct xsdt {
         struct sdt_header hdr;
-        uint64_t first_sdt;
+
+        /* 64 bit addresses follow */
 } __attribute__((packed));
 
-struct madt_entry {
+/* ---------- MADT ---------- */
+
+struct madt_entry_header {
         uint8_t entry_type;
         uint8_t record_length;
 } __attribute__((packed));
 
+/* processor LAPIC */
+struct madt_entry_lapic {
+        struct madt_entry_header hdr;
+
+        uint8_t acpi_processor_id;
+        uint8_t apic_id;
+        uint32_t flags; /* bit 0 = processor enabled, bit 1 = online capable */
+} __attribute__((packed));
+
+/* I/O APIC */
+struct madt_entry_io_apic {
+        struct madt_entry_header hdr;
+
+        uint8_t io_apic_id;
+        uint8_t reserved;
+        uint32_t io_apic_addr;
+        uint32_t gsib; /* global system interrupt base */
+} __attribute__((packed));
+
+/* interrupt source override */
+struct madt_entry_iso {
+        struct madt_entry_header hdr;
+
+        uint8_t bus_source;
+        uint8_t irq_source;
+        uint32_t gsi;
+        uint16_t flags;
+} __attribute__((packed));
+
+/* non-maskable interrupts */
+struct madt_entry_nmi {
+        struct madt_entry_header hdr;
+
+        uint8_t acpi_processor_id;
+        uint16_t flags;
+        uint8_t lint;   /* LINT#(0 or 1) */
+} __attribute__((packed));
+
+/* local APIC addres override */
+struct madt_entry_laao {
+        struct madt_entry_header hdr;
+
+        uint16_t reserved;
+        uint64_t lapic_addr;
+} __attribute__((packed));
+
 struct madt {
         struct sdt_header hdr;
+
         uint32_t local_apic;
         uint32_t flags;
-        struct madt_entry *entries;
+
+        /* variable length records follow */
 } __attribute__((packed));
 
 #endif

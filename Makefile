@@ -20,6 +20,7 @@ qemu: $(HDD)
 	    -enable-kvm \
 	    -vga std \
 	    -cpu host \
+	    -smp $$(nproc) \
 	    -net none \
 	    -M q35 \
 	    -serial stdio -s -m $(QEMU_MEMORY)

@@ -6,7 +6,9 @@
 #include "../assert.h"
 #include "../libk/strutil.h"
 
-bool use_xsdt;
+struct madt *madt;
+
+static bool use_xsdt;
 static struct rsdt *rsdt;
 static struct xsdt *xsdt;
 
@@ -14,6 +16,7 @@ static bool do_checksum_rsdp(struct rsdp*);
 static bool do_checksum_sdt(struct sdt_header*);
 
 static void *find_sdt(const char*);
+static void dump_madt(struct madt*);
 
 void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
 {
@@ -29,22 +32,19 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
 
         use_xsdt = rsdp->revision > 0;
         if (use_xsdt) {
-                xsdt = (struct xsdt*)rsdp->xsdt_addr;
+                xsdt = (struct xsdt*)(uintptr_t)rsdp->xsdt_addr;
                 assert(do_checksum_sdt(&xsdt->hdr));
                 printf(KMSG_LOGLEVEL_INFO, "Using xsdt at %x\n", xsdt);
         } else {
-                rsdt = (struct rsdt*)rsdp->rsdt_addr;
+                rsdt = (struct rsdt*)(uintptr_t)rsdp->rsdt_addr;
                 assert(do_checksum_sdt(&rsdt->hdr));
                 printf(KMSG_LOGLEVEL_INFO, "Using rsdt at %x\n", rsdt);
         }
 
-        struct madt *madt = (struct madt*)find_sdt("APIC");
+        madt = (struct madt*)find_sdt("APIC");
+        assert(do_checksum_sdt(&madt->hdr));
 
-        printf(KMSG_LOGLEVEL_INFO,
-               "madt at %x, local apic addr=%x, flags=%x\n",
-               madt, madt->local_apic, madt->flags);
-
-        printf(KMSG_LOGLEVEL_SUCC, "Reached target sdt.\n");
+        printf(KMSG_LOGLEVEL_SUCC, "Finished target sdt.\n");
 }
 
 static bool do_checksum_rsdp(struct rsdp *rsdp)
@@ -81,10 +81,12 @@ void *find_sdt(const char *signature)
         for (size_t i = 0; i < num_sdts; i++) {
                 struct sdt_header *hdr;
                 if (use_xsdt) {
-                        uint64_t *sdt_base = &xsdt->first_sdt;
+                        uint64_t *sdt_base = (uint64_t*)
+                                ((uintptr_t)xsdt + sizeof(struct xsdt));
                         hdr = (struct sdt_header*)sdt_base[i];
                 } else {
-                        uint32_t *sdt_base = &rsdt->first_sdt;
+                        uint32_t *sdt_base = (uint32_t*)
+                                ((uintptr_t)rsdt + sizeof(struct rsdt));
                         hdr = (struct sdt_header*)sdt_base[i];
                 }
 

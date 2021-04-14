@@ -12,8 +12,8 @@
 #include "memory/paging.h"
 
 #include "gdt/gdt.h"
-
 #include "sdt/sdt.h"
+#include "interrupts/apic.h"
 
 static uint8_t stack[0x4000]; /* 16 KiB stack */
 
@@ -98,6 +98,7 @@ void _start(struct stivale2_struct *stivale2_struct)
                                  STIVALE2_STRUCT_TAG_RSDP_ID);
 
         sdt_initialize(rsdp);
+        apic_initialize(madt);
 
         printf(KMSG_LOGLEVEL_SUCC,
                "Kernel initialization completed.\n");
