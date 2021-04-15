@@ -7,6 +7,7 @@
 #include "../libk/strutil.h"
 
 struct madt *madt;
+struct hpet *hpet;
 
 static bool use_xsdt;
 static struct rsdt *rsdt;
@@ -24,7 +25,8 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
 
         struct rsdp *rsdp = (struct rsdp*)stivale_rsdp->rsdp;
         rsdp->signature[7] = '\0';
-        assert(do_checksum_rsdp(rsdp));
+        assert(do_checksum_rsdp(rsdp),
+               "RSDP checksum invalid.");
 
         printf(KMSG_LOGLEVEL_INFO,
                "rsdp signature=%s, oemid=%s, revision=%d\n",
@@ -33,18 +35,28 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
         use_xsdt = rsdp->revision > 0;
         if (use_xsdt) {
                 xsdt = (struct xsdt*)(uintptr_t)rsdp->xsdt_addr;
-                assert(do_checksum_sdt(&xsdt->hdr));
+                assert(do_checksum_sdt(&xsdt->hdr),
+                       "XSDT checksum invalid.");
                 printf(KMSG_LOGLEVEL_INFO, "Using xsdt at %x\n", xsdt);
         } else {
                 rsdt = (struct rsdt*)(uintptr_t)rsdp->rsdt_addr;
-                assert(do_checksum_sdt(&rsdt->hdr));
+                assert(do_checksum_sdt(&rsdt->hdr),
+                       "RSDT checksum invalid.");
                 printf(KMSG_LOGLEVEL_INFO, "Using rsdt at %x\n", rsdt);
         }
 
         madt = (struct madt*)find_sdt("APIC");
-        assert(do_checksum_sdt(&madt->hdr));
+        assert(madt && do_checksum_sdt(&madt->hdr),
+               "MADT not present or checksum invalid.");
 
-        printf(KMSG_LOGLEVEL_SUCC, "Finished target sdt.\n");
+        /* HPET could be absent */
+        hpet = (struct hpet*)find_sdt("HPET");
+        if (hpet) {
+                assert(do_checksum_sdt(&hpet->hdr),
+                       "HPET checksum invalid.");
+        }
+
+        printf(KMSG_LOGLEVEL_OKAY, "Finished target sdt.\n");
 }
 
 static bool do_checksum_rsdp(struct rsdp *rsdp)

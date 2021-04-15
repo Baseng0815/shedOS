@@ -73,7 +73,7 @@ void pfa_initialize(struct stivale2_struct_tag_memmap *mmap)
                total_memory / 0x400, total_memory / 0x1000,
                free_memory / 0x400, free_memory / 0x1000);
 
-        printf(KMSG_LOGLEVEL_SUCC,
+        printf(KMSG_LOGLEVEL_OKAY,
                "Finished target pfa.\n");
 }
 

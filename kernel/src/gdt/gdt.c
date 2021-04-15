@@ -26,5 +26,5 @@ void gdt_initialize()
 
         gdt_load(&gdt);
 
-        printf(KMSG_LOGLEVEL_SUCC, "Finished target gdt.\n");
+        printf(KMSG_LOGLEVEL_OKAY, "Finished target gdt.\n");
 }

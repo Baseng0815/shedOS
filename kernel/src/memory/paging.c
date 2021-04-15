@@ -110,7 +110,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap)
 
         paging_use(kernel_identity_table);
 
-        printf(KMSG_LOGLEVEL_SUCC, "Finished target paging.\n");
+        printf(KMSG_LOGLEVEL_OKAY, "Finished target paging.\n");
 }
 
 void paging_map(struct page_table *pml4,

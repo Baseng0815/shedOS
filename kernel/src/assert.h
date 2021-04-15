@@ -3,12 +3,11 @@
 
 #include "libk/printf.h"
 
-/* TODO panic screen with reg/mem dump*/
-#define assert(x) \
+#define assert(x,s) \
         if (!(x)) { \
                 printf(KMSG_LOGLEVEL_CRIT, \
-                       "assert failed at %s:%d\n", \
-                       __FILE__, __LINE__); \
+                       "assert failed at %s:%d: %s\n", \
+                       __FILE__, __LINE__, s); \
                 for (;;) asm("hlt"); \
         }
 

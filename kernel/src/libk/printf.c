@@ -55,10 +55,10 @@ void printf(int loglevel, const char *fmt, ...)
                                 terminal_setcolor(0x0000ff, 0x0);
                                 puts("INFO");
                                 break;
-                        case KMSG_LOGLEVEL_SUCC:
+                        case KMSG_LOGLEVEL_OKAY:
                                 /* green */
                                 terminal_setcolor(0x00ff00, 0x0);
-                                puts("SUCC");
+                                puts("OKAY");
                                 break;
                         case KMSG_LOGLEVEL_WARN:
                                 /* some yellowish color */

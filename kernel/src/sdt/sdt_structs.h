@@ -3,6 +3,14 @@
 
 #include <stdint.h>
 
+struct acpi_addr {
+        uint8_t addr_space_id; /* 0 = system memory, 1 = system I/O */
+        uint8_t register_bit_width;
+        uint8_t register_bit_offset;
+        uint8_t reserved;
+        uint64_t addr;
+} __attribute__((packed));
+
 /* all ACPI system descriptor tables start with this header */
 struct sdt_header {
         char signature[4];
@@ -36,11 +44,26 @@ struct rsdt {
 } __attribute__((packed));
 
 /* extended rsdt which can hold addresses up to 64 bit
- * this needs to be used instead of the rsdt if possible */
+   this needs to be used instead of the rsdt if possible */
 struct xsdt {
         struct sdt_header hdr;
 
         /* 64 bit addresses follow */
+} __attribute__((packed));
+
+/* high precision event timer */
+struct hpet {
+        struct sdt_header hdr;
+
+        uint8_t hardware_rev_id;
+        uint8_t comparator_count    : 5;
+        uint8_t count_size_cap      : 1;
+        uint8_t reserved            : 1;
+        uint8_t legacy_replacement  : 1;
+        uint16_t pci_vendor_id;
+        struct acpi_addr addr;
+        uint8_t hpet_number;
+        uint16_t min_clock_ticks; /* minimum clock_tick in period mode */
 } __attribute__((packed));
 
 /* ---------- MADT ---------- */

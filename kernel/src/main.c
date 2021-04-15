@@ -13,7 +13,9 @@
 
 #include "gdt/gdt.h"
 #include "sdt/sdt.h"
+
 #include "interrupts/apic.h"
+#include "interrupts/timer.h"
 
 static uint8_t stack[0x4000]; /* 16 KiB stack */
 
@@ -67,7 +69,7 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         welcome_message();
 
-        printf(KMSG_LOGLEVEL_SUCC,
+        printf(KMSG_LOGLEVEL_OKAY,
                "Framebuffer initialized with dimension of %dx%d, "
                "base address of %x, "
                "red mask/size %x/%x, "
@@ -81,6 +83,8 @@ void _start(struct stivale2_struct *stivale2_struct)
                fb->blue_mask_shift, fb->blue_mask_size,
                fb->framebuffer_bpp);
 
+        /* processor information */
+        cpuinfo_initialize();
         dump_cpu();
 
         /* memory */
@@ -98,9 +102,12 @@ void _start(struct stivale2_struct *stivale2_struct)
                                  STIVALE2_STRUCT_TAG_RSDP_ID);
 
         sdt_initialize(rsdp);
-        apic_initialize(madt);
 
-        printf(KMSG_LOGLEVEL_SUCC,
+        /* interrupts */
+        apic_initialize(madt);
+        timer_initialize();
+
+        printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");
 
         for (;;) {
@@ -134,29 +141,32 @@ void welcome_message()
 
 void dump_cpu()
 {
-        struct cpuinfo cpuinfo;
-        bool cpuid_present = cpuinfo_query(&cpuinfo);
-        if (cpuid_present) {
-                printf(KMSG_LOGLEVEL_INFO, "CPU: %s (%s)\n",
-                       cpuinfo.vendor_string, cpuinfo.brand_string);
-                printf(KMSG_LOGLEVEL_NONE,
-                       "|-> stepping=%d, model=%d, family=%d, "
-                       "processor_type=%d\n",
-                       cpuinfo.stepping, cpuinfo.model, cpuinfo.family,
-                       cpuinfo.processor_type);
-                printf(KMSG_LOGLEVEL_NONE, "|-> features: ");
-                for (int i = 0; i < 64; i++) {
-                        /* reserved bits */
-                        if (i == 10 || i == 20 || i == 47)
-                                continue;
+        printf(KMSG_LOGLEVEL_NONE,
+               "CPU: %s (%s)\n"
+               "|-> stepping=%d, model=%d, family=%d, " "processor_type=%d\n"
+               "|-> base freq=%d, max freq=%d, bus freq=%d\n"
+               "|-> tsc=%d/%d, core crystal freq=%d\n",
+               cpuinfo.vendor_string, cpuinfo.brand_string,
+               cpuinfo.stepping, cpuinfo.model, cpuinfo.family,
+               cpuinfo.processor_type,
+               cpuinfo.base_frequency, cpuinfo.max_frequency,
+               cpuinfo.bus_frequency,
+               cpuinfo.tsc_ratio_numer, cpuinfo.tsc_ratio_denom,
+               cpuinfo.core_crystal_freq);
 
-                        if ((cpuinfo.featureset & (1L << i)) > 0) {
-                                printf(KMSG_LOGLEVEL_NONE,
-                                       "%s ", cpu_featureset[i]);
-                        }
+        printf(KMSG_LOGLEVEL_NONE, "|-> features: ");
+
+        for (int i = 0; i < 64; i++) {
+                /* reserved bits */
+                if (i == 10 || i == 20 || i == 47)
+                        continue;
+
+                if ((cpuinfo.featureset & (1L << i)) > 0) {
+                        printf(KMSG_LOGLEVEL_NONE,
+                               "%s ", cpu_featureset[i]);
                 }
-                printf(KMSG_LOGLEVEL_NONE, "\n");
         }
+        printf(KMSG_LOGLEVEL_NONE, "\n");
 }
 
 void dump_memory(struct stivale2_struct_tag_memmap *mmap)

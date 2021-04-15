@@ -29,7 +29,7 @@ void terminal_initialize(int _width, int _height)
 
         printf(KMSG_LOGLEVEL_INFO, "Term dimensions: %dx%d\n",
                width, height);
-        printf(KMSG_LOGLEVEL_SUCC, "Finished target terminal.\n");
+        printf(KMSG_LOGLEVEL_OKAY, "Finished target terminal.\n");
 }
 
 void terminal_setcolor(uint32_t _fg, uint32_t _bg)
