@@ -10,10 +10,6 @@ int width, height;
 int chr_index;
 uint32_t fg, bg;
 
-int width, height;
-int chr_index;
-uint32_t fg, bg;
-
 void terminal_scroll(void);
 
 void terminal_initialize(int _width, int _height)

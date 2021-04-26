@@ -139,5 +139,5 @@ bool font_is_set(char c, int x, int y)
                 return false;
 
         uint8_t row = font8x8_basic[c][y];
-        return (row & (1 << x)) > 0;
+        return (row >> x) & 0x1;
 }

@@ -3,6 +3,6 @@
 
 #include "../sdt/sdt_structs.h"
 
-void apic_initialize(struct madt*);
+void apic_initialize(const struct madt*);
 
 #endif

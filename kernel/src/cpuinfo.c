@@ -64,12 +64,12 @@ void cpuinfo_initialize()
 
         /* version information and feature bits*/
         __cpuid(0x1);
-        cpuinfo.stepping        = (a & 0x0000000f);
-        cpuinfo.model           = (a & 0x000000f0) >> 4;
-        cpuinfo.family          = (a & 0x00000f00) >> 8;
-        cpuinfo.processor_type  = (a & 0x00003000) >> 12;
-        short emodel_id         = (a & 0x000f0000) >> 16;
-        short efamily_id        = (a & 0x0ff00000) >> 20;
+        cpuinfo.stepping        = (a >> 0)  & 0xf;
+        cpuinfo.model           = (a >> 4)  & 0xf;
+        cpuinfo.family          = (a >> 8)  & 0xf;
+        cpuinfo.processor_type  = (a >> 12) & 0x3;
+        short emodel_id         = (a >> 16) & 0xf;
+        short efamily_id        = (a >> 20) & 0xff;
 
         if (cpuinfo.family == 6 || cpuinfo.family == 15) {
                 cpuinfo.model += emodel_id << 4;

@@ -7,24 +7,26 @@
 
 size_t utos(uint64_t, uint64_t, char*);
 
+static char buf[64];
+
 /* returns number of characters of the format string (%d = 1, %lu = 2...)*/
 int _printf(va_list args, char fmtc)
 {
         switch (fmtc) {
                 case 'd': {
-                        char buf[16];
+                        char buf[64];
                         utos(va_arg(args, int), 10, buf);
                         puts(buf);
                         return 1;
                 }
                 case 'b': {
-                        char buf[32];
+                        char buf[128];
                         utos(va_arg(args, int), 2, buf);
                         puts(buf);
                         return 1;
                 }
                 case 'x': {
-                        char buf[16];
+                        char buf[64];
                         size_t len = utos(va_arg(args, size_t), 16, buf);
                         puts("0x");
                         puts(buf);

@@ -24,17 +24,22 @@ struct sdt_header {
         uint32_t creator_revision;
 } __attribute__((packed));
 
+struct rsdp_rev1 {
+        /* those fields are only valid if revision > 0 (i.e. ACPI >= 2.0) */
+        uint32_t length;
+        uint64_t xsdt_addr;
+        uint8_t xchecksum;
+        uint8_t reserved[3];
+};
+
 struct rsdp {
         char signature[8]; /* "RSD PTR " */
         uint8_t checksum;
         char oem_id[6];
         uint8_t revision;
         uint32_t rsdt_addr;
-        /* those fields are only valid if revision > 0 (i.e. ACPI >= 2.0) */
-        uint32_t length;
-        uint64_t xsdt_addr;
-        uint8_t xchecksum;
-        uint8_t reserved[3];
+
+        struct rsdp_rev1 rev1;
 } __attribute__((packed));
 
 struct rsdt {
@@ -68,6 +73,14 @@ struct hpet {
 
 /* ---------- MADT ---------- */
 
+enum madt_entry_type {
+        ENTRY_LAPIC       = 0x0,
+        ENTRY_IOAPIC     = 0x1,
+        ENTRY_ISO         = 0x2,
+        ENTRY_NMI         = 0x4,
+        ENTRY_LAAO        = 0x5
+};
+
 struct madt_entry_header {
         uint8_t entry_type;
         uint8_t record_length;
@@ -83,12 +96,12 @@ struct madt_entry_lapic {
 } __attribute__((packed));
 
 /* I/O APIC */
-struct madt_entry_io_apic {
+struct madt_entry_ioapic {
         struct madt_entry_header hdr;
 
-        uint8_t io_apic_id;
+        uint8_t ioapic_id;
         uint8_t reserved;
-        uint32_t io_apic_addr;
+        uint32_t ioapic_addr;
         uint32_t gsib; /* global system interrupt base */
 } __attribute__((packed));
 

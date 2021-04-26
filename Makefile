@@ -6,6 +6,7 @@ export PROJECTS 		:= kernel
 export SYSTEM_HEADER_PROJECTS 	:= kernel
 export SYSROOT 			:= $(shell pwd)/sysroot
 export HDD 			:= kernel.hdd
+export USB 			:= kernel_usb.hdd
 export DEPENDENCIES 		:= $(shell pwd)/deps
 export TOOLCHAIN 		:= $(shell pwd)/toolchain
 export PATH 			:= $(TOOLCHAIN)/bin:$(PATH)
@@ -14,7 +15,7 @@ QEMU_MEMORY 			:= 2G
 
 .PHONY: all clean sysroot toolchain toolchain-clean
 
-qemu: $(HDD)
+qemu: hdd
 	qemu-system-x86_64 \
 	    -hda $(HDD) \
 	    -enable-kvm \
@@ -25,7 +26,7 @@ qemu: $(HDD)
 	    -M q35 \
 	    -serial stdio -s -m $(QEMU_MEMORY)
 
-qemu-debug: $(HDD)
+qemu-debug: hdd
 	qemu-system-x86_64 \
 	    -hda $(HDD) \
 	    -enable-kvm \
@@ -35,7 +36,8 @@ qemu-debug: $(HDD)
 	    -M q35 \
 	    -serial stdio -s -m $(QEMU_MEMORY) -S
 
-$(HDD): sysroot
+hdd: sysroot
+	@echo "=====! CREATING HDD FOR QEMU !====="
 	rm -f $(HDD)
 	dd if=/dev/zero bs=1M count=0 seek=64 of=$(HDD)
 	parted -s $(HDD) mklabel gpt
@@ -47,7 +49,20 @@ $(HDD): sysroot
 	    done
 	$(DEPENDENCIES)/limine/limine-install-linux-x86_64 $(HDD)
 
+# mounting it is easier than using mmd for the time being
+usb: sysroot
+	@echo "=====! CREATING HDD FOR USB BOOTING !====="
+	rm -f $(USB)
+	dd if=/dev/zero bs=1M count=512 of=$(USB)
+	mkfs.fat -F32 $(USB)
+	mkdir -p $(USB)_mnt
+	mount $(USB) $(USB)_mnt
+	cp -r $(SYSROOT)/* $(USB)_mnt
+	umount $(USB)
+	rmdir $(USB)_mnt
+
 sysroot:
+	@echo "=====! CREATING SYSROOT !====="
 	@for project in $(SYSTEM_HEADER_PROJECTS); do \
 	    make -C $$project install-headers || exit 3; \
 	    done
@@ -57,12 +72,13 @@ sysroot:
 	mkdir -p $(SYSROOT)/EFI/BOOT
 	cp limine.cfg $(SYSROOT)/boot
 	cp $(DEPENDENCIES)/limine/limine.sys $(SYSROOT)/boot
+	cp $(DEPENDENCIES)/limine/BOOTX64.EFI $(SYSROOT)/EFI/BOOT
 
 clean:
 	@for project in $(PROJECTS); do \
 	    make -C $$project clean; \
 	    done
-	rm -rf $(SYSROOT) $(ISO)
+	rm -rf $(SYSROOT) $(HDD) $(USB)
 
 # build a generic x86_64-elf gcc cross toolchain with -mno-red-zone libgcc
 toolchain:

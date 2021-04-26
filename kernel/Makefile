@@ -56,12 +56,12 @@ kernel.elf: $(OBJS)
 	@ echo =====! ASSEMBLING $< =====!
 	$(AS) $(ASFLAGS) -o $@ $<
 
-src/int/exceptions.o: src/int/exceptions.c
+src/interrupts/exceptions.o: src/interrupts/exceptions.c
 	@echo "=====! COMPILING $< INTO $@ !====="
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
 	    -mgeneral-regs-only -c -o $@ $<
 
-src/int/irqs.o: src/int/irqs.c
+src/interrupts/irqs.o: src/interrupts/irqs.c
 	@echo "=====! COMPILING $< INTO $@ !====="
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
 	    -mgeneral-regs-only -c -o $@ $<

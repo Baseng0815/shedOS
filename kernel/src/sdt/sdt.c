@@ -3,7 +3,7 @@
 #include <stdbool.h>
 
 #include "sdt_structs.h"
-#include "../assert.h"
+#include "../debug.h"
 #include "../libk/strutil.h"
 
 struct madt *madt;
@@ -24,7 +24,8 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
         printf(KMSG_LOGLEVEL_INFO, "Reached target sdt.\n");
 
         struct rsdp *rsdp = (struct rsdp*)stivale_rsdp->rsdp;
-        rsdp->signature[7] = '\0';
+        use_xsdt = rsdp->revision > 0;
+
         assert(do_checksum_rsdp(rsdp),
                "RSDP checksum invalid.");
 
@@ -32,9 +33,8 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
                "rsdp signature=%s, oemid=%s, revision=%d\n",
                rsdp->signature, rsdp->oem_id, rsdp->revision);
 
-        use_xsdt = rsdp->revision > 0;
         if (use_xsdt) {
-                xsdt = (struct xsdt*)(uintptr_t)rsdp->xsdt_addr;
+                xsdt = (struct xsdt*)(uintptr_t)rsdp->rev1.xsdt_addr;
                 assert(do_checksum_sdt(&xsdt->hdr),
                        "XSDT checksum invalid.");
                 printf(KMSG_LOGLEVEL_INFO, "Using xsdt at %x\n", xsdt);
@@ -62,8 +62,15 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
 static bool do_checksum_rsdp(struct rsdp *rsdp)
 {
         uint8_t sum = 0;
+        size_t len;
 
-        for (size_t i = 0; i < rsdp->length; i++) {
+        if (use_xsdt) {
+                len = rsdp->rev1.length;
+        } else {
+                len = sizeof(struct rsdp) - sizeof(struct rsdp_rev1);
+        }
+
+        for (size_t i = 0; i < len; i++) {
                 sum += ((uint8_t*)rsdp)[i];
         }
 

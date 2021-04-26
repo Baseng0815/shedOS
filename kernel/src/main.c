@@ -14,8 +14,9 @@
 #include "gdt/gdt.h"
 #include "sdt/sdt.h"
 
-#include "interrupts/apic.h"
 #include "interrupts/timer.h"
+#include "interrupts/apic.h"
+#include "interrupts/idt.h"
 
 static uint8_t stack[0x4000]; /* 16 KiB stack */
 
@@ -104,8 +105,11 @@ void _start(struct stivale2_struct *stivale2_struct)
         sdt_initialize(rsdp);
 
         /* interrupts */
-        apic_initialize(madt);
         timer_initialize();
+        apic_initialize(madt);
+        idt_initialize();
+
+        volatile int a = 3 / 0;
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");
@@ -161,7 +165,7 @@ void dump_cpu()
                 if (i == 10 || i == 20 || i == 47)
                         continue;
 
-                if ((cpuinfo.featureset & (1L << i)) > 0) {
+                if ((cpuinfo.featureset >> i) & 0x1) {
                         printf(KMSG_LOGLEVEL_NONE,
                                "%s ", cpu_featureset[i]);
                 }
