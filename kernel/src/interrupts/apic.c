@@ -120,12 +120,22 @@ void apic_initialize(const struct madt *madt)
                         (iso.flags & 0x8 > 8) ? level : edge;
                 tbl.mask = 0;
                 tbl.destination = bsp_lapic_id;
-                tbl.vector = 40;
+
+                /* system timer */
+                switch (iso.irq_source) {
+                        case 0:
+                                tbl.vector = 0x22;
+                                break;
+
+                        default:
+                                tbl.vector = 0x20;
+                                break;
+                }
 
                 printf(KMSG_LOGLEVEL_INFO,
                        "Setting up redirection entry in IOAPIC %d with IRQ "
-                       "source %d and GSI %d\n",
-                       bsp_lapic_id, iso.irq_source, iso.gsi);
+                       "source %d and GSI %d (flags %x)\n",
+                       bsp_lapic_id, iso.irq_source, iso.gsi, iso.flags);
 
                 ioapic_ioredtbl_write(bsp_lapic_id, iso.gsi, &tbl);
         }
@@ -198,11 +208,11 @@ void ioapic_ioredtbl_write(uint32_t ioapic_id,
         uint64_t table = *((uint64_t*)tbl);
         ioapic_register_write(ioapic_id,
                               IOREDTBL_OFFSET(index) + 0,
-                              (uint32_t)(table >> 0));
+                              (uint32_t)(table & 0x00000000ffffffff));
 
         ioapic_register_write(ioapic_id,
                               IOREDTBL_OFFSET(index) + 1,
-                              (uint32_t)(table >> 32));
+                              (uint32_t)(table & 0xffffffff00000000));
 }
 
 uint32_t ioapic_register_read(uint32_t ioapic_id,

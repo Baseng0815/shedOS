@@ -109,8 +109,6 @@ void _start(struct stivale2_struct *stivale2_struct)
         apic_initialize(madt);
         idt_initialize();
 
-        volatile int a = 3 / 0;
-
         printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");
 

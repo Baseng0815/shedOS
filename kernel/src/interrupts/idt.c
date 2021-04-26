@@ -5,6 +5,7 @@
 #include "../memory/pfa.h"
 
 #include "exceptions.h"
+#include "irqs.h"
 
 static struct idt idt;
 
@@ -25,6 +26,8 @@ void idt_initialize()
         for (uint8_t i = 0; i < 21; i++) {
                 load_interrupt(i, (uintptr_t)exception_interrupts[i]);
         }
+
+        /* load_interrupt(0x22, (uintptr_t)hpet_handle); */
 
         asm volatile("lidt %0;"
                      : : "m" (idt));

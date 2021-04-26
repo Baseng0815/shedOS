@@ -13,5 +13,7 @@ void timer_initialize()
                 hpet_initialize(hpet);
         }
 
+        /* set up interrupts */
+
         printf(KMSG_LOGLEVEL_OKAY, "Finished target timer.\n");
 }
