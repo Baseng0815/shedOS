@@ -15,9 +15,9 @@ void idt_initialize()
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target idt.\n");
 
-        /* we use all entries */
-        idt.size = 0x1000 - 1;
+        idt.size = 0x1000 - 1;;
         idt.offset = (uintptr_t)pfa_request_page();
+        memset(idt.offset, 0, 0x1000);
 
         printf(KMSG_LOGLEVEL_INFO, "idt at %x with size=%d\n",
                idt.offset, idt.size);
@@ -27,7 +27,8 @@ void idt_initialize()
                 load_interrupt(i, (uintptr_t)exception_interrupts[i]);
         }
 
-        /* load_interrupt(0x22, (uintptr_t)hpet_handle); */
+        /* hpet interrupt */
+        load_interrupt(0x22, (uintptr_t)hpet_handle);
 
         asm volatile("lidt %0;"
                      : : "m" (idt));
@@ -44,9 +45,6 @@ void load_interrupt(uint8_t vector,
         struct idt_desc *desc = (struct idt_desc*)
                 (idt.offset + vector * sizeof(struct idt_desc));
 
-        /* desc->offset0 = (callback >> 0)     & 0x000000000000ffff; */
-        /* desc->offset1 = (callback >> 16)    & 0x00000000ffff0000; */
-        /* desc->offset2 = (callback >> 32)    & 0xffffffff00000000; */
         desc->offset0 = (callback & 0x000000000000ffff);
         desc->offset1 = (callback & 0x00000000ffff0000) >> 16;
         desc->offset2 = (callback & 0xffffffff00000000) >> 32;

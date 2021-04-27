@@ -9,6 +9,7 @@
 enum register_offset {
         HPET_REG_GENERAL_CAPABILITIES   = 0x00,
         HPET_REG_GENERAL_CONFIGURATION  = 0x10,
+        HPET_REG_GENERAL_INT_STATUS     = 0x20,
         HPET_REG_MAIN_COUNTER_VALUE     = 0xf0
 };
 
@@ -44,7 +45,7 @@ struct hpet_timer_conf_cap {
         uint64_t periodic_mode          : 1;    /* r/w  */
         uint64_t periodic_available     : 1;    /* r    */
         uint64_t size_is_64             : 1;    /* r    */
-        uint64_t val_set_cnf            : 1;
+        uint64_t allow_direct_accum_set : 1;    /* r/w  */
         uint64_t reserved1              : 1;
         uint64_t force_32               : 1;    /* r/w  */
         uint64_t io_apic_routing        : 5;    /* r/w  */
@@ -91,7 +92,7 @@ void hpet_initialize(struct hpet *hpet)
                "HPET not legacy capable.");
 
         uint64_t main_frequency =
-                (uint64_t)1e15 / (uint64_t)main_capabilities.tick_period;
+                1000000000000000 / (uint64_t)main_capabilities.tick_period;
 
         printf(KMSG_LOGLEVEL_NONE,
                "|-> revision_id=%d, timer_count=%d, 64 bit/legacy rt capable "
@@ -119,9 +120,20 @@ void hpet_initialize(struct hpet *hpet)
         /* we use legacy replacement mapping so the first two timers are
            used to replace the PIT (first timer is using IRQ 0) */
 
-        /* reset timer and set timer 0 frequency to once per second */
+        /* configure timer 0 */
+        struct hpet_timer_conf_cap timer0 = timer_conf_read(0);
+        assert(timer0.periodic_available > 0,
+               "Timer0 does not support periodic mode.");
+
+        timer0.IRQ_enable               = 1;
+        timer0.periodic_mode            = 1;
+        timer0.allow_direct_accum_set   = 1;
+
+        timer_conf_write(0, timer0);
+        timer_comparator_write(0, main_frequency);
+
+        /* reset timer */
         *(uint64_t*)(hpet_addr + HPET_REG_MAIN_COUNTER_VALUE) = 0;
-        timer_comparator_write(0, 1);
 
         /* enable main timer */
         struct hpet_main_configuration main_configuration = {

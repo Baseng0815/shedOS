@@ -15,7 +15,8 @@
 #include "sdt/sdt.h"
 
 #include "interrupts/timer.h"
-#include "interrupts/apic.h"
+/* #include "interrupts/apic.h" */
+#include "interrupts/pic.h"
 #include "interrupts/idt.h"
 
 static uint8_t stack[0x4000]; /* 16 KiB stack */
@@ -105,15 +106,16 @@ void _start(struct stivale2_struct *stivale2_struct)
         sdt_initialize(rsdp);
 
         /* interrupts */
-        timer_initialize();
-        apic_initialize(madt);
         idt_initialize();
+        /* pic_initialize(); */
+        apic_initialize(madt);
+        timer_initialize();
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");
 
         for (;;) {
-                asm("hlt");
+
         }
 }
 

@@ -37,8 +37,9 @@ struct page_table {
 /* create an identity page table for the kernel */
 void paging_initialize(struct stivale2_struct_tag_memmap*);
 
-void paging_map(struct page_table*, void*, void*);
+void paging_map(void*, void*);
+
 /* we don't care about performance now and just reload CR3 every time */
-void paging_use(struct page_table*);
+void paging_update();
 
 #endif

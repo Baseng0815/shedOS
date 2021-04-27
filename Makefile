@@ -12,6 +12,7 @@ export TOOLCHAIN 		:= $(shell pwd)/toolchain
 export PATH 			:= $(TOOLCHAIN)/bin:$(PATH)
 
 QEMU_MEMORY 			:= 2G
+QEMU_FLAGS  			?=
 
 .PHONY: all clean sysroot toolchain toolchain-clean
 
@@ -24,17 +25,8 @@ qemu: hdd
 	    -smp $$(nproc) \
 	    -net none \
 	    -M q35 \
-	    -serial stdio -s -m $(QEMU_MEMORY)
-
-qemu-debug: hdd
-	qemu-system-x86_64 \
-	    -hda $(HDD) \
-	    -enable-kvm \
-	    -vga std \
-	    -cpu host \
-	    -net none \
-	    -M q35 \
-	    -serial stdio -s -m $(QEMU_MEMORY) -S
+	    -no-shutdown -no-reboot \
+	    -serial stdio -s -m $(QEMU_MEMORY) $(QEMU_FLAGS)
 
 hdd: sysroot
 	@echo "=====! CREATING HDD FOR QEMU !====="
