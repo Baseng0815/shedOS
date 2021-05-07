@@ -55,8 +55,6 @@ static struct stivale2_header header = {
 /* helper function to traverse the linked list and get the struct we want */
 void *stivale2_get_tag(struct stivale2_struct*, uint64_t);
 
-static void welcome_message();
-
 void _start(struct stivale2_struct *stivale2_struct)
 {
         /* framebuffer and terminal */

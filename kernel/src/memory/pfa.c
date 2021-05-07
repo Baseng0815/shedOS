@@ -77,13 +77,21 @@ void pfa_initialize(struct stivale2_struct_tag_memmap *mmap)
                "Finished target pfa.\n");
 }
 
-void *pfa_request_page()
+void *pfa_request_pages(size_t count)
 {
         for (size_t pi = last_free; pi < total_memory / 0x1000; pi++) {
-                if (!bitmap_isset(&page_bitmap, pi)) {
-                        last_free = pi + 1;
+                bool is_free = true;
+                for (size_t i = 0; i < count; i++) {
+                        if (bitmap_isset(&page_bitmap, pi)) {
+                                is_free = false;
+                                break;
+                        }
+                }
+
+                if (is_free) {
+                        last_free = pi + count;
                         uintptr_t addr = pi * 0x1000;
-                        lock_page(addr);
+                        lock_pages(addr, count);
                         return (void*)(addr);
                 }
         }
@@ -91,13 +99,13 @@ void *pfa_request_page()
         return NULL;
 }
 
-void pfa_release_page(void *page)
+void pfa_release_pages(void *page, size_t count)
 {
         uintptr_t p = (uintptr_t)page;
+        unlock_pages(p, count);
         if (p < last_free) {
                 last_free = p;
         }
-        unlock_page(p);
 }
 
 size_t lock_page(uintptr_t paddr)

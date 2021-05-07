@@ -74,11 +74,11 @@ struct hpet {
 /* ---------- MADT ---------- */
 
 enum madt_entry_type {
-        ENTRY_LAPIC       = 0x0,
-        ENTRY_IOAPIC     = 0x1,
-        ENTRY_ISO         = 0x2,
-        ENTRY_NMI         = 0x4,
-        ENTRY_LAAO        = 0x5
+        ENTRY_LAPIC     = 0x0,
+        ENTRY_IOAPIC    = 0x1,
+        ENTRY_ISO       = 0x2,
+        ENTRY_NMI       = 0x4,
+        ENTRY_LAAO      = 0x5
 };
 
 struct madt_entry_header {

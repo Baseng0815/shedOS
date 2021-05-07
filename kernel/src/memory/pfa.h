@@ -14,7 +14,7 @@ extern size_t free_memory;
 extern size_t total_memory;
 
 void pfa_initialize(struct stivale2_struct_tag_memmap*);
-void *pfa_request_page();
-void pfa_release_page(void*);
+void *pfa_request_pages(size_t);
+void pfa_release_pages(void*, size_t);
 
 #endif

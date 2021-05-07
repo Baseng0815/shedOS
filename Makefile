@@ -21,6 +21,7 @@ qemu: hdd
 	    -hda $(HDD) \
 	    -enable-kvm \
 	    -vga std \
+	    -soundhw pcspk \
 	    -cpu host \
 	    -smp $$(nproc) \
 	    -net none \

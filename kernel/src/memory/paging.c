@@ -41,7 +41,7 @@ struct page_table *get(struct page_table *parent,
         struct page_table *child;
         if (!child_entry->present) {
                 /* allocate and zero out */
-                child = (struct page_table*)pfa_request_page();
+                child = (struct page_table*)pfa_request_pages(1);
                 memset(child, 0, 0x1000);
 
                 child_entry->present = true;
@@ -60,7 +60,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap)
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target paging.\n");
 
-        kernel_table = (struct page_table*)pfa_request_page();
+        kernel_table = (struct page_table*)pfa_request_pages(1);
         memset(kernel_table, 0, 0x1000);
 
         printf(KMSG_LOGLEVEL_INFO,
