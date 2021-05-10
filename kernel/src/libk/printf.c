@@ -2,6 +2,7 @@
 
 #include "strutil.h"
 #include "../terminal/terminal.h"
+#include "../interrupts/timer.h"
 
 #include <stdarg.h>
 
@@ -50,7 +51,8 @@ int _printf(va_list args, char fmtc)
 void printf(int loglevel, const char *fmt, ...)
 {
         if (loglevel != KMSG_LOGLEVEL_NONE) {
-                puts("[ ");
+                printf(KMSG_LOGLEVEL_NONE, "(%s) ", timer_format(buf));
+                puts("[");
                 switch (loglevel) {
                         case KMSG_LOGLEVEL_INFO:
                                 /* blue */

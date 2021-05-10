@@ -130,7 +130,8 @@ void hpet_initialize(struct hpet *hpet)
         timer0.allow_direct_accum_set   = 1;
 
         timer_conf_write(0, timer0);
-        timer_comparator_write(0, main_frequency);
+        /* 100000 kernel ticks per second */
+        timer_comparator_write(0, main_frequency / 100000);
 
         /* reset timer */
         *(uint64_t*)(hpet_addr + HPET_REG_MAIN_COUNTER_VALUE) = 0;

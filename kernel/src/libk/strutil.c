@@ -9,7 +9,6 @@ size_t strlen(const char *str)
                 len++;
         }
 
-
         return len;
 }
 
@@ -55,4 +54,20 @@ int strncmp(const char *s1, const char *s2, size_t n)
         }
 
         return 0;
+}
+
+int strcpy(const char *src, char *tgt)
+{
+        return strncpy(src, strlen(src), tgt);
+}
+
+int strncpy(const char *src, size_t len, char *tgt)
+{
+        size_t i = 0;
+        while (i < len && src[i] != '\0') {
+                tgt[i] = src[i];
+                i++;
+        }
+
+        return i;
 }

@@ -113,7 +113,7 @@ void _start(struct stivale2_struct *stivale2_struct)
                "Kernel initialization completed.\n");
 
         for (;;) {
-
+                printf(KMSG_LOGLEVEL_WARN, "we are finished XDDDD\n");
         }
 }
 

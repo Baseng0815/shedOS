@@ -12,4 +12,7 @@ size_t utos(uint64_t, uint64_t, char*);
 int strcmp(const char*, const char*);
 int strncmp(const char*, const char*, size_t);
 
+int strcpy(const char*, char*);
+int strncpy(const char*, size_t, char*);
+
 #endif

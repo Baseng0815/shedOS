@@ -64,6 +64,8 @@ struct madt_entry_ioapic    ioapics[8];
 size_t                      iso_count = 0;
 struct madt_entry_iso       isos[24];
 
+static uintptr_t            lapic_addr;
+
 static size_t parse_madt_entry(const struct madt_entry_header*);
 
 /* IOAPIC registers are mmio. the IOREGSEL register contains the reg offset
@@ -76,9 +78,11 @@ void apic_initialize(const struct madt *madt)
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target apic.\n");
 
+        lapic_addr = madt->local_apic;
+
         printf(KMSG_LOGLEVEL_INFO,
                "madt at %x, lapic addr=%x, flags=%x\n",
-               madt, madt->local_apic, madt->flags);
+               madt, lapic_addr, madt->flags);
 
         /* no need to change paging because we already mapped
            everything below 4GiB */
@@ -101,7 +105,7 @@ void apic_initialize(const struct madt *madt)
         assert(ioapic_count > 0, "No I/O APICs were detected");
 
         /* get BSP (bootstrap processor) lapic id */
-        uint32_t bsp_lapic_id = *(uint32_t*)(madt->local_apic + LAPIC_ID);
+        uint32_t bsp_lapic_id = *(uint32_t*)(lapic_addr + LAPIC_ID);
         printf(KMSG_LOGLEVEL_INFO,
                "%d cores detected. BSP lapic id=%d\n",
                cpuinfo.core_count, bsp_lapic_id);
@@ -131,12 +135,17 @@ void apic_initialize(const struct madt *madt)
         }
 
         /* set spurious interrupt vector to 255 */
-        *(uint32_t*)(madt->local_apic + SIVR) |= 0xff;
+        *(uint32_t*)(lapic_addr + SIVR) |= 0xff;
 
         /* enable APIC */
-        *(uint32_t*)(madt->local_apic + SIVR) |= 0x100;
+        *(uint32_t*)(lapic_addr + SIVR) |= 0x100;
 
         printf(KMSG_LOGLEVEL_OKAY, "Finished target apic.\n");
+}
+
+void apic_send_eoi()
+{
+        *(uint32_t*)(lapic_addr + EOI) = 0;
 }
 
 size_t parse_madt_entry(const struct madt_entry_header *hdr)
