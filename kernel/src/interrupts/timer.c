@@ -31,7 +31,11 @@ char *timer_format(char *buf)
         int seconds         = ticks / 100000;
         int milliseconds    = (ticks % 100000) / 10;
 
-        for (size_t i = 0; i < 9; i++) {
+        for (size_t i = 0; i < 4; i++) {
+                buf[i] = ' ';
+        }
+
+        for (size_t i = 5; i < 9; i++) {
                 buf[i] = '0';
         }
 

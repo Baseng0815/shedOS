@@ -77,7 +77,7 @@ void printf(int loglevel, const char *fmt, ...)
                 }
 
                 terminal_setcolor(0xffffff, 0x0);
-                puts(" ] ");
+                puts("] ");
         }
 
         va_list args;
