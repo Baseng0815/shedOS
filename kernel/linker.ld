@@ -3,7 +3,7 @@ ENTRY(_start)
 SECTIONS
 {
     /* higher half */
-    . = 0xffffffff80200000;
+    . = 0xffffffff80000000 + 2M;
 
     .stivale2hdr : {
         KEEP(*(.stivale2hdr))

@@ -1,4 +1,4 @@
-#include "pfa.h"
+#include "pmm.h"
 
 #include "../libk/printf.h"
 #include "../libk/memutil.h"
@@ -18,10 +18,10 @@ static size_t lock_pages(uintptr_t, size_t);
 static size_t unlock_page(uintptr_t);
 static size_t unlock_pages(uintptr_t, size_t);
 
-void pfa_initialize(struct stivale2_struct_tag_memmap *mmap)
+void pmm_initialize(struct stivale2_struct_tag_memmap *mmap)
 {
         printf(KMSG_LOGLEVEL_INFO,
-               "Reached target pfa.\n");
+               "Reached target pmm.\n");
 
         /* find largest (conventional) memory map entry to put the bitmap into.
            also get total amount of memory */
@@ -48,7 +48,7 @@ void pfa_initialize(struct stivale2_struct_tag_memmap *mmap)
         page_bitmap.buf = (uint8_t*)largest_entry->base;
         page_bitmap.len = bitmap_len;
         printf(KMSG_LOGLEVEL_INFO,
-               "Bitmap starting at %x with length of %d bytes\n",
+               "Bitmap starting at %a with length of %d bytes\n",
                page_bitmap.buf, page_bitmap.len);
 
         /* lock all pages */
@@ -74,10 +74,10 @@ void pfa_initialize(struct stivale2_struct_tag_memmap *mmap)
                free_memory / 0x400, free_memory / 0x1000);
 
         printf(KMSG_LOGLEVEL_OKAY,
-               "Finished target pfa.\n");
+               "Finished target pmm.\n");
 }
 
-void *pfa_request_pages(size_t count)
+void *pmm_request_pages(size_t count)
 {
         for (size_t pi = last_free; pi < total_memory / 0x1000; pi++) {
                 bool is_free = true;
@@ -99,7 +99,7 @@ void *pfa_request_pages(size_t count)
         return NULL;
 }
 
-void pfa_release_pages(void *page, size_t count)
+void pmm_release_pages(void *page, size_t count)
 {
         uintptr_t p = (uintptr_t)page;
         unlock_pages(p, count);

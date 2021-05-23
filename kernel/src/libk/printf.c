@@ -6,52 +6,51 @@
 
 #include <stdarg.h>
 
-size_t utos(uint64_t, uint64_t, char*);
-
 static char buf[64];
+static char timestamp_buf[16];
+
+void _printf(va_list, char);
 
 /* returns number of characters of the format string (%d = 1, %lu = 2...)*/
-int _printf(va_list args, char fmtc)
+void _printf(va_list args, char fmtc)
 {
         switch (fmtc) {
+                case 'a': {
+                        utos(va_arg(args, size_t), 16, buf, 16);
+                        break;
+                }
                 case 'd': {
-                        char buf[64];
-                        utos(va_arg(args, int), 10, buf);
-                        puts(buf);
-                        return 1;
+                        utos(va_arg(args, int), 10, buf, 0);
+                        break;
                 }
                 case 'b': {
-                        char buf[128];
-                        utos(va_arg(args, int), 2, buf);
-                        puts(buf);
-                        return 1;
+                        utos(va_arg(args, int), 2, buf, 0);
+                        break;
                 }
                 case 'x': {
-                        char buf[64];
-                        size_t len = utos(va_arg(args, size_t), 16, buf);
-                        puts("0x");
-                        puts(buf);
-                        return 1;
+                        utos(va_arg(args, size_t), 16, buf, 0);
+                        break;
                 }
                 case 'c': {
-                        char c = va_arg(args, int);
-                        terminal_putchar(c);
-                        return 1;
+                        buf[0] = va_arg(args, int);
+                        buf[1] = '\0';
+                        break;
                 }
                 case 's': {
                         const char *str = va_arg(args, const char*);
-                        puts(str);
-                        return 1;
+                        strcpy(str, buf);
+                        break;
                 }
         }
 
-        return 0;
+        puts(buf);
 }
 
 void printf(int loglevel, const char *fmt, ...)
 {
         if (loglevel != KMSG_LOGLEVEL_NONE) {
-                printf(KMSG_LOGLEVEL_NONE, "(%s) ", timer_format(buf));
+                printf(KMSG_LOGLEVEL_NONE,
+                       "(%s) ", timer_format(timestamp_buf));
                 puts("[");
                 switch (loglevel) {
                         case KMSG_LOGLEVEL_INFO:
@@ -85,10 +84,10 @@ void printf(int loglevel, const char *fmt, ...)
 
         while (*fmt != '\0') {
                 if (*fmt == '%') {
-                        char fmtc = *(fmt + 1);
-                        fmt += _printf(args, fmtc);
+                        char fmtc = *(++fmt);
+                        _printf(args, fmtc);
                 } else {
-                        terminal_putchar(*fmt);
+                        putchar(*fmt);
                 }
 
                 if (*fmt != '\0') { fmt++; }
@@ -107,7 +106,7 @@ void putchar(char c)
 void puts(const char *str)
 {
         while (*str != '\0') {
-                terminal_putchar(*str);
+                putchar(*str);
                 str++;
         }
 }

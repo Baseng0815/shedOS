@@ -8,7 +8,7 @@
 #include "fb/framebuffer.h"
 #include "terminal/terminal.h"
 
-#include "memory/pfa.h"
+#include "memory/pmm.h"
 #include "memory/paging.h"
 
 #include "gdt/gdt.h"
@@ -48,7 +48,7 @@ __attribute__((section(".stivale2hdr"), used))
 static struct stivale2_header header = {
         .entry_point = 0,
         .stack = (uintptr_t)stack + sizeof(stack),
-        .flags = 0,
+        .flags = 2,
         .tags = (uintptr_t)&framebuffer_hdr_tag
 };
 
@@ -71,7 +71,7 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Framebuffer initialized with dimension of %dx%d, "
-               "base address of %x, "
+               "base address of %a, "
                "red mask/size %x/%x, "
                "green mask/size %x/%x, "
                "blue mask/size %x/%x "
@@ -91,10 +91,11 @@ void _start(struct stivale2_struct *stivale2_struct)
         struct stivale2_struct_tag_memmap *mmap =
                 stivale2_get_tag(stivale2_struct,
                                  STIVALE2_STRUCT_TAG_MEMMAP_ID);
+
         dump_memory(mmap);
-        pfa_initialize(mmap);
+        pmm_initialize(mmap);
         gdt_initialize();
-        paging_initialize(mmap);
+        paging_initialize(mmap, fb);
 
         /* system descriptor tables */
         struct stivale2_struct_tag_rsdp *rsdp =
@@ -105,7 +106,6 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         /* interrupts */
         idt_initialize();
-        /* pic_initialize(); */
         apic_initialize(madt);
         timer_initialize();
 
@@ -113,7 +113,8 @@ void _start(struct stivale2_struct *stivale2_struct)
                "Kernel initialization completed.\n");
 
         for (;;) {
-                printf(KMSG_LOGLEVEL_WARN, "we are finished XDDDD\n");
+                asm volatile("hlt");
+                /* printf(KMSG_LOGLEVEL_WARN, "we are finished XDDDD\n"); */
         }
 }
 
@@ -205,7 +206,7 @@ void dump_memory(struct stivale2_struct_tag_memmap *mmap)
                 }
 
                 printf(KMSG_LOGLEVEL_NONE,
-                       "|-> %d: base=%x, length=%x, type=%s\n",
-                       i, entry->base, entry->length, type);
+                       "|-> base=%a, length=%a, type=%s\n",
+                       entry->base, entry->length, type);
         }
 }

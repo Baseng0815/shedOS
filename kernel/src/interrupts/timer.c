@@ -41,11 +41,11 @@ char *timer_format(char *buf)
 
         /* seconds */
         char tmp[16];
-        utos(seconds, 10, tmp);
+        utos(seconds, 10, tmp, 0);
         strcpy(tmp, buf + 4 - strlen(tmp));
 
         /* milliseconds */
-        utos(milliseconds, 10, tmp);
+        utos(milliseconds, 10, tmp, 0);
         buf[4] = '.';
         strcpy(tmp, buf + 9 - strlen(tmp));
 

@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 #include "sdt_structs.h"
+#include "../memory/paging.h"
 #include "../debug.h"
 #include "../libk/strutil.h"
 
@@ -23,6 +24,7 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target sdt.\n");
 
+        printf(KMSG_LOGLEVEL_INFO, "rsdp is at %a\n", stivale_rsdp->rsdp);
         struct rsdp *rsdp = (struct rsdp*)stivale_rsdp->rsdp;
         use_xsdt = rsdp->revision > 0;
 
@@ -34,15 +36,17 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
                rsdp->signature, rsdp->oem_id, rsdp->revision);
 
         if (use_xsdt) {
-                xsdt = (struct xsdt*)(uintptr_t)rsdp->rev1.xsdt_addr;
+                xsdt = (struct xsdt*)
+                        VADDR_ENSURE_HIGHER((uintptr_t)rsdp->rev1.xsdt_addr);
                 assert(do_checksum_sdt(&xsdt->hdr),
                        "XSDT checksum invalid.");
-                printf(KMSG_LOGLEVEL_INFO, "Using xsdt at %x\n", xsdt);
+                printf(KMSG_LOGLEVEL_INFO, "Using xsdt at %a\n", xsdt);
         } else {
-                rsdt = (struct rsdt*)(uintptr_t)rsdp->rsdt_addr;
+                rsdt = (struct rsdt*)
+                        VADDR_ENSURE_HIGHER((uintptr_t)rsdp->rsdt_addr);
                 assert(do_checksum_sdt(&rsdt->hdr),
                        "RSDT checksum invalid.");
-                printf(KMSG_LOGLEVEL_INFO, "Using rsdt at %x\n", rsdt);
+                printf(KMSG_LOGLEVEL_INFO, "Using rsdt at %a\n", rsdt);
         }
 
         madt = (struct madt*)find_sdt("APIC");
@@ -101,12 +105,15 @@ void *find_sdt(const char *signature)
                 struct sdt_header *hdr;
                 if (use_xsdt) {
                         uint64_t *sdt_base = (uint64_t*)
-                                ((uintptr_t)xsdt + sizeof(struct xsdt));
+                                VADDR_ENSURE_HIGHER(((uintptr_t)xsdt +
+                                                     sizeof(struct xsdt)));
                         hdr = (struct sdt_header*)sdt_base[i];
                 } else {
                         uint32_t *sdt_base = (uint32_t*)
-                                ((uintptr_t)rsdt + sizeof(struct rsdt));
-                        hdr = (struct sdt_header*)sdt_base[i];
+                                VADDR_ENSURE_HIGHER(((uintptr_t)rsdt +
+                                                     sizeof(struct rsdt)));
+                        hdr = (struct sdt_header*)
+                                VADDR_ENSURE_HIGHER(sdt_base[i]);
                 }
 
                 if (strcmp(signature, hdr->signature) == 0) {

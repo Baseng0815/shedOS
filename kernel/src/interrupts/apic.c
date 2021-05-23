@@ -12,7 +12,7 @@
 /* to set the core count */
 #include "../cpuinfo.h"
 
-enum LAPIC_REGISTER {
+enum lapic_register {
         LAPIC_ID        = 0x20,
         LAPIC_VERSION   = 0x30,
         TPR             = 0x80,
@@ -20,7 +20,7 @@ enum LAPIC_REGISTER {
         SIVR            = 0xf0
 };
 
-enum DELIVERY_MODE {
+enum delivery_mode {
         FIXED           = 0x000,
         LOWEST_PRIORITY = 0x001,
         SMI             = 0x010,
@@ -29,22 +29,22 @@ enum DELIVERY_MODE {
         EXTINT          = 0x111
 };
 
-enum DESTINATION_MODE {
+enum destination_mode {
         PHYSICAL    = 0x0,
         LOGICAL     = 0x1
 };
 
-enum PIN_POLARITY {
+enum pin_polarity {
         ACTIVE_HIGH = 0x0,
         ACTIVE_LOW  = 0x1
 };
 
-enum TRIGGER_MODE {
+enum trigger_mode {
         EDGE    = 0x0,
         LEVEL   = 0x1,
 };
 
-/* there are 24 IOREDTBL (I/O redirection tables), one for each interrupt */
+/* there are 24 IOREDTBL (I/O redirection tables), one for each IRQ */
 struct ioredtbl {
         uint64_t vector             : 8;
         uint64_t delivery_mode      : 3;
@@ -70,9 +70,18 @@ static size_t parse_madt_entry(const struct madt_entry_header*);
 
 /* IOAPIC registers are mmio. the IOREGSEL register contains the reg offset
    to read/write to and the IOWIN register contains the actual data */
-void        ioapic_register_write(uint32_t, uint8_t, uint32_t);
-void        ioapic_ioredtbl_write(uint32_t, uint8_t, struct ioredtbl);
-uint32_t    ioapic_register_read(uint32_t, uint8_t);
+void        ioapic_register_write(uint32_t ioapic_id,
+                                  uint8_t offset,
+                                  uint32_t val);
+
+uint32_t    ioapic_register_read(uint32_t ioapic_id, uint8_t offset);
+
+void        ioapic_ioredtbl_write(uint32_t ioapic_id,
+                                  uint8_t index,
+                                  struct ioredtbl tbl);
+
+void        lapic_register_write(enum lapic_register reg, uint32_t val);
+uint32_t    lapic_register_read(enum lapic_register reg);
 
 void apic_initialize(const struct madt *madt)
 {
@@ -81,7 +90,7 @@ void apic_initialize(const struct madt *madt)
         lapic_addr = madt->local_apic;
 
         printf(KMSG_LOGLEVEL_INFO,
-               "madt at %x, lapic addr=%x, flags=%x\n",
+               "madt at %a, lapic addr=%a, flags=%x\n",
                madt, lapic_addr, madt->flags);
 
         /* no need to change paging because we already mapped
@@ -105,7 +114,7 @@ void apic_initialize(const struct madt *madt)
         assert(ioapic_count > 0, "No I/O APICs were detected");
 
         /* get BSP (bootstrap processor) lapic id */
-        uint32_t bsp_lapic_id = *(uint32_t*)(lapic_addr + LAPIC_ID);
+        uint32_t bsp_lapic_id = lapic_register_read(LAPIC_ID);
         printf(KMSG_LOGLEVEL_INFO,
                "%d cores detected. BSP lapic id=%d\n",
                cpuinfo.core_count, bsp_lapic_id);
@@ -135,17 +144,17 @@ void apic_initialize(const struct madt *madt)
         }
 
         /* set spurious interrupt vector to 255 */
-        *(uint32_t*)(lapic_addr + SIVR) |= 0xff;
+        lapic_register_write(SIVR, lapic_register_read(SIVR) | 0xff);
 
         /* enable APIC */
-        *(uint32_t*)(lapic_addr + SIVR) |= 0x100;
+        lapic_register_write(SIVR, lapic_register_read(SIVR) | 0x100);
 
         printf(KMSG_LOGLEVEL_OKAY, "Finished target apic.\n");
 }
 
 void apic_send_eoi()
 {
-        *(uint32_t*)(lapic_addr + EOI) = 0;
+        lapic_register_write(EOI, 0);
 }
 
 size_t parse_madt_entry(const struct madt_entry_header *hdr)
@@ -154,10 +163,6 @@ size_t parse_madt_entry(const struct madt_entry_header *hdr)
                 case ENTRY_LAPIC: {
                         struct madt_entry_lapic *entry =
                                 (struct madt_entry_lapic*)hdr;
-
-                        /* printf(KMSG_LOGLEVEL_INFO, */
-                        /*        "Found local APIC with id %d and pr_id %d\n", */
-                        /*        entry->apic_id, entry->acpi_processor_id); */
 
                         cpuinfo.core_count++;
                         break;
@@ -191,9 +196,26 @@ void ioapic_register_write(uint32_t ioapic_id,
         for (size_t i = 0; i < ioapic_count; i++) {
                 if (ioapics[i].ioapic_id == ioapic_id) {
                         /* IOREGSEL */
-                        *(uint32_t*)(ioapics[i].ioapic_addr + 0x00) = offset;
+                        *(uint32_t*)VADDR_ENSURE_HIGHER(
+                                ioapics[i].ioapic_addr + 0x00) = offset;
                         /* 32-bit IOWIN */
-                        *(uint32_t*)(ioapics[i].ioapic_addr + 0x10) = val;
+                        *(uint32_t*)VADDR_ENSURE_HIGHER(
+                                ioapics[i].ioapic_addr + 0x10) = val;
+                }
+        }
+}
+
+uint32_t ioapic_register_read(uint32_t ioapic_id,
+                              uint8_t offset)
+{
+        for (size_t i = 0; i < ioapic_count; i++) {
+                if (ioapics[i].ioapic_id == ioapic_id) {
+                        /* IOREGSEL */
+                        *(uint32_t*)VADDR_ENSURE_HIGHER(
+                                ioapics[i].ioapic_addr + 0x00) = offset;
+                        /* 32-bit IOWIN */
+                        return *(uint32_t*)VADDR_ENSURE_HIGHER(
+                                ioapics[i].ioapic_addr + 0x10);
                 }
         }
 }
@@ -205,23 +227,20 @@ void ioapic_ioredtbl_write(uint32_t ioapic_id,
         uint64_t table = *((uint64_t*)&tbl);
 
         ioapic_register_write(ioapic_id,
-                              IOREDTBL_OFFSET(index) + 0,
+                              VADDR_ENSURE_HIGHER(IOREDTBL_OFFSET(index) + 0),
                               (uint32_t)(table >> 0));
 
         ioapic_register_write(ioapic_id,
-                              IOREDTBL_OFFSET(index) + 1,
+                              VADDR_ENSURE_HIGHER(IOREDTBL_OFFSET(index) + 1),
                               (uint32_t)(table >> 32));
 }
 
-uint32_t ioapic_register_read(uint32_t ioapic_id,
-                              uint8_t offset)
+void lapic_register_write(enum lapic_register reg, uint32_t val)
 {
-        for (size_t i = 0; i < ioapic_count; i++) {
-                if (ioapics[i].ioapic_id == ioapic_id) {
-                        /* IOREGSEL */
-                        *(uint32_t*)(ioapics[i].ioapic_addr + 0x00) = offset;
-                        /* 32-bit IOWIN */
-                        return *(uint32_t*)(ioapics[i].ioapic_addr + 0x10);
-                }
-        }
+        *(uint32_t*)VADDR_ENSURE_HIGHER(lapic_addr + reg) = val;
+}
+
+uint32_t lapic_register_read(enum lapic_register reg)
+{
+        return *(uint32_t*)VADDR_ENSURE_HIGHER(lapic_addr + reg);
 }

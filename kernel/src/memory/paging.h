@@ -6,6 +6,11 @@
 
 #include "../stivale2.h"
 
+#define VADDR_HIGHER 0xffff800000000000
+#define VADDR_KERNEL 0xffffffff80000000
+#define VADDR_OFFSET(p) ((uintptr_t)(p + VADDR_HIGHER))
+#define VADDR_ENSURE_HIGHER(p) (p < VADDR_HIGHER ? p + VADDR_HIGHER : p)
+
 /* we use 4-level paging (top to bottom), each containing 512 children:
    pml4 (page map level 4, top structure)
    pdp  (page directory pointer)
@@ -25,7 +30,8 @@ struct pt_entry {
         uint64_t large_pages    : 1; /* 0 => 4KiB page size */
         uint64_t ignore1        : 1; /* can't use, is reserved */
         uint64_t available      : 3; /* here we can store anything we want */
-        uint64_t addr           : 52; /* either physical memory or other pd_entry */
+        uint64_t addr           : 52; /* either physical memory or other
+                                         pd_entry */
 };
 
 /* a page table is exactly 4096 bytes large so it fits into a single frame */
@@ -34,12 +40,15 @@ struct page_table {
         struct pt_entry entries[512];
 } __attribute__((aligned(0x1000)));
 
-/* create an identity page table for the kernel */
-void paging_initialize(struct stivale2_struct_tag_memmap*);
+extern struct page_table *kernel_table;
 
-void paging_map(void*, void*);
+/* create a page table for the kernel */
+void paging_initialize(struct stivale2_struct_tag_memmap*,
+                       struct stivale2_struct_tag_framebuffer*);
+
+void paging_map(struct page_table*, void*, void*);
 
 /* we don't care about performance now and just reload CR3 every time */
-void paging_update();
+void paging_update(const struct page_table*);
 
 #endif
