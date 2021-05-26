@@ -13,11 +13,11 @@
 #include "../cpuinfo.h"
 
 enum lapic_register {
-        LAPIC_ID        = 0x20,
-        LAPIC_VERSION   = 0x30,
-        TPR             = 0x80,
-        EOI             = 0xb0,
-        SIVR            = 0xf0
+        LAPIC_REG_ID        = 0x08,
+        LAPIC_REG_VERSION   = 0x0c,
+        LAPIC_REG_TPR       = 0x20,
+        LAPIC_REG_EOI       = 0x2c,
+        LAPIC_REG_SIVR      = 0x3c
 };
 
 enum delivery_mode {
@@ -64,7 +64,7 @@ struct madt_entry_ioapic    ioapics[8];
 size_t                      iso_count = 0;
 struct madt_entry_iso       isos[24];
 
-static uintptr_t            lapic_addr;
+static uint32_t             *lapic_mmio_regs;
 
 static size_t parse_madt_entry(const struct madt_entry_header*);
 
@@ -80,21 +80,15 @@ void        ioapic_ioredtbl_write(uint32_t ioapic_id,
                                   uint8_t index,
                                   struct ioredtbl tbl);
 
-void        lapic_register_write(enum lapic_register reg, uint32_t val);
-uint32_t    lapic_register_read(enum lapic_register reg);
-
 void apic_initialize(const struct madt *madt)
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target apic.\n");
 
-        lapic_addr = madt->local_apic;
+        lapic_mmio_regs = VADDR_ENSURE_HIGHER(madt->local_apic);
 
         printf(KMSG_LOGLEVEL_INFO,
                "madt at %a, lapic addr=%a, flags=%x\n",
-               madt, lapic_addr, madt->flags);
-
-        /* no need to change paging because we already mapped
-           everything below 4GiB */
+               madt, lapic_mmio_regs, madt->flags);
 
         /* initialize and disable PIC, we won't need it */
         pic_initialize();
@@ -114,13 +108,12 @@ void apic_initialize(const struct madt *madt)
         assert(ioapic_count > 0, "No I/O APICs were detected");
 
         /* get BSP (bootstrap processor) lapic id */
-        uint32_t bsp_lapic_id = lapic_register_read(LAPIC_ID);
+        uint32_t bsp_lapic_id = lapic_mmio_regs[LAPIC_REG_ID];
         printf(KMSG_LOGLEVEL_INFO,
                "%d cores detected. BSP lapic id=%d\n",
                cpuinfo.core_count, bsp_lapic_id);
 
         /* set up redirection entries (only for one ioapic right now) */
-        struct madt_entry_ioapic ioapic = ioapics[0];
         for (size_t i = 0; i < iso_count; i++) {
                 struct madt_entry_iso iso = isos[i];
 
@@ -144,17 +137,17 @@ void apic_initialize(const struct madt *madt)
         }
 
         /* set spurious interrupt vector to 255 */
-        lapic_register_write(SIVR, lapic_register_read(SIVR) | 0xff);
+        lapic_mmio_regs[LAPIC_REG_SIVR] |= 0xff;
 
         /* enable APIC */
-        lapic_register_write(SIVR, lapic_register_read(SIVR) | 0x100);
+        lapic_mmio_regs[LAPIC_REG_SIVR] |= 0x100;
 
         printf(KMSG_LOGLEVEL_OKAY, "Finished target apic.\n");
 }
 
 void apic_send_eoi()
 {
-        lapic_register_write(EOI, 0);
+        lapic_mmio_regs[LAPIC_REG_EOI] = 0;
 }
 
 size_t parse_madt_entry(const struct madt_entry_header *hdr)
@@ -233,14 +226,4 @@ void ioapic_ioredtbl_write(uint32_t ioapic_id,
         ioapic_register_write(ioapic_id,
                               VADDR_ENSURE_HIGHER(IOREDTBL_OFFSET(index) + 1),
                               (uint32_t)(table >> 32));
-}
-
-void lapic_register_write(enum lapic_register reg, uint32_t val)
-{
-        *(uint32_t*)VADDR_ENSURE_HIGHER(lapic_addr + reg) = val;
-}
-
-uint32_t lapic_register_read(enum lapic_register reg)
-{
-        return *(uint32_t*)VADDR_ENSURE_HIGHER(lapic_addr + reg);
 }

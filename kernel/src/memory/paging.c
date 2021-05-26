@@ -38,9 +38,25 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
         printf(KMSG_LOGLEVEL_OKAY, "Finished target paging.\n");
 }
 
-void paging_map(struct page_table *table,
+bool paging_map(struct page_table *table,
                 void *vaddr,
                 void *paddr)
+{
+        struct pt_entry *pt_entry = paging_entry_get(table, vaddr);
+
+        /* already in use */
+        if (pt_entry->present)
+                return false;
+
+        /* set physical address */
+        pt_entry->present = true;
+        pt_entry->writable = true;
+        pt_entry->addr = (uintptr_t)paddr >> 12;
+
+        return true;
+}
+
+struct pt_entry *paging_entry_get(struct page_table *table, void *vaddr)
 {
         size_t pml4i, pdpi, pdi, pti;
         map_index((uintptr_t)vaddr, &pml4i, &pdpi, &pdi, &pti);
@@ -49,10 +65,8 @@ void paging_map(struct page_table *table,
         struct page_table *pd       = get(pdp, pdpi);
         struct page_table *pt       = get(pd, pdi);
         struct pt_entry *pt_entry   = &pt->entries[pti];
-        /* set physical address */
-        pt_entry->present = true;
-        pt_entry->writable = true;
-        pt_entry->addr = (uintptr_t)paddr >> 12;
+
+        return pt_entry;
 }
 
 void paging_update(const struct page_table *table)

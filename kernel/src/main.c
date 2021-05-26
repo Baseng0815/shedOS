@@ -4,6 +4,7 @@
 #include "cpuinfo.h"
 
 #include "libk/printf.h"
+#include "libk/kmalloc.h"
 
 #include "fb/framebuffer.h"
 #include "terminal/terminal.h"
@@ -85,7 +86,7 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         /* processor information */
         cpuinfo_initialize();
-        dump_cpu();
+        /* dump_cpu(); */
 
         /* memory */
         struct stivale2_struct_tag_memmap *mmap =
@@ -94,8 +95,9 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         dump_memory(mmap);
         pmm_initialize(mmap);
-        gdt_initialize();
         paging_initialize(mmap, fb);
+        malloc_initialize();
+        gdt_initialize();
 
         /* system descriptor tables */
         struct stivale2_struct_tag_rsdp *rsdp =
