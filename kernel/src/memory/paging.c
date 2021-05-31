@@ -48,7 +48,6 @@ bool paging_map(struct page_table *table,
                 void *vaddr,
                 void *paddr)
 {
-        static int i = 0;
         struct pt_entry *pt_entry = paging_entry_get(table, vaddr);
 
         /* already in use */
@@ -63,6 +62,13 @@ bool paging_map(struct page_table *table,
         paging_flush_tlb(vaddr);
 
         return true;
+}
+
+void paging_unmap(struct page_table *table, void *vaddr)
+{
+        struct pt_entry *pt_entry = paging_entry_get(table, vaddr);
+
+        pt_entry->present = false;
 }
 
 struct pt_entry *paging_entry_get(struct page_table *table, void *vaddr)

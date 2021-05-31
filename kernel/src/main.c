@@ -20,10 +20,12 @@
 #include "interrupts/pic.h"
 #include "interrupts/idt.h"
 
+#include "libk/kmalloc.h"
+
 static uint8_t stack[0x4000]; /* 16 KiB stack */
 
 static void welcome_message();
-static void dump_bootinfo(struct bootinfo*);
+static void dump_stivale_info(struct stivale2_struct*);
 static void dump_cpu();
 static void dump_memory(struct stivale2_struct_tag_memmap*);
 
@@ -69,6 +71,7 @@ void _start(struct stivale2_struct *stivale2_struct)
         terminal_initialize(term_width, term_height);
 
         welcome_message();
+        dump_stivale_info(stivale2_struct);
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Framebuffer initialized with dimension of %dx%d, "
@@ -86,7 +89,7 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         /* processor information */
         cpuinfo_initialize();
-        /* dump_cpu(); */
+        dump_cpu();
 
         /* memory */
         struct stivale2_struct_tag_memmap *mmap =
@@ -96,7 +99,6 @@ void _start(struct stivale2_struct *stivale2_struct)
         dump_memory(mmap);
         pmm_initialize(mmap);
         paging_initialize(mmap, fb);
-        malloc_initialize();
         gdt_initialize();
 
         /* system descriptor tables */
@@ -116,14 +118,13 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         for (;;) {
                 asm volatile("hlt");
-                /* printf(KMSG_LOGLEVEL_WARN, "we are finished XDDDD\n"); */
         }
 }
 
 void *stivale2_get_tag(struct stivale2_struct *stivale2_struct, uint64_t id)
 {
         for (struct stivale2_tag *current_tag = (void*)stivale2_struct->tags;
-             current_tag;
+             current_tag != NULL;
              current_tag = (void*)current_tag->next) {
                 if (current_tag->identifier == id)
                         return current_tag;
@@ -142,6 +143,86 @@ void welcome_message()
                 "|___/_| |_|\\___|\\__,_|\\___/|____/\n\n";
 
         printf(KMSG_LOGLEVEL_NONE, ascii);
+}
+
+void dump_stivale_info(struct stivale2_struct *stivale2_struct)
+{
+        struct stivale2_struct_tag_epoch *epoch =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_EPOCH_ID);
+        if (epoch)
+                printf(KMSG_LOGLEVEL_INFO, "UNIX epoch at boot: %d\n",
+                       epoch->epoch);
+
+        struct stivale2_struct_tag_firmware *firmware =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_FIRMWARE_ID);
+        if (firmware) {
+                printf(KMSG_LOGLEVEL_INFO, "Firmware: %s\n",
+                       firmware->flags & 0x1 ? "UEFI" : "BIOS");
+
+                if (firmware->flags & 0x1) {
+                        uint64_t tag = STIVALE2_STRUCT_TAG_EFI_SYSTEM_TABLE_ID;
+                        struct stivale2_struct_tag_efi_system_table *efi_table =
+                                stivale2_get_tag(stivale2_struct, tag);
+                        if (efi_table) {
+                                printf(KMSG_LOGLEVEL_INFO, "EFI system table at %a\n",
+                                       efi_table->system_table);
+                        }
+                }
+        }
+
+        struct stivale2_struct_tag_cmdline *cmdline =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_CMDLINE_ID);
+        if (cmdline) {
+                printf(KMSG_LOGLEVEL_INFO, "Kernel cmdline: %s\n",
+                       (const char*)cmdline->cmdline);
+        }
+
+        struct stivale2_struct_tag_modules *modules =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_MODULES_ID);
+        if (modules) {
+                printf(KMSG_LOGLEVEL_INFO, "%d modules loaded\n",
+                       modules->module_count);
+                for (size_t i = 0; i < modules->module_count; i++) {
+                        printf(KMSG_LOGLEVEL_NONE, "|-> begin=%a, end=%a, desc=%s\n",
+                               modules->modules[i].begin, modules->modules[i].end,
+                               modules->modules[i].string);
+                }
+        }
+
+        struct stivale2_struct_tag_kernel_file *kernel_file =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_KERNEL_FILE_ID);
+        if (kernel_file) {
+                printf(KMSG_LOGLEVEL_INFO, "Kernel file at %a\n",
+                       kernel_file->kernel_file);
+        }
+
+        struct stivale2_struct_tag_kernel_slide *kernel_slide =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_KERNEL_SLIDE_ID);
+        if (kernel_slide) {
+                printf(KMSG_LOGLEVEL_INFO, "Kernel slide of %x\n",
+                       kernel_slide->kernel_slide);
+        }
+
+        struct stivale2_struct_tag_mmio32_uart *mmio_uart =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_MMIO32_UART);
+        if (mmio_uart) {
+                printf(KMSG_LOGLEVEL_INFO, "MMIO UART at %a\n",
+                       mmio_uart->addr);
+        }
+
+        struct stivale2_struct_vmap *vmap =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_VMAP);
+        if (vmap) {
+                printf(KMSG_LOGLEVEL_INFO, "VMAP_HIGH=%a\n", vmap->addr);
+        }
 }
 
 void dump_cpu()
@@ -176,7 +257,7 @@ void dump_cpu()
 
 void dump_memory(struct stivale2_struct_tag_memmap *mmap)
 {
-        printf(KMSG_LOGLEVEL_INFO, "Dumping stivale memory map...\n");
+        printf(KMSG_LOGLEVEL_INFO, "Memory map:\n");
         for (size_t i = 0; i < mmap->entries; i++) {
                 struct stivale2_mmap_entry *entry = &mmap->memmap[i];
 

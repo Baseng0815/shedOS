@@ -3,12 +3,14 @@
 
 #include <stddef.h>
 
-void malloc_initialize();
+void kmalloc_initialize();
 
 /* allocate a page */
-void *kpmalloc(size_t count);
+void *kpmalloc();
 
 /* allocate a zero page */
-void *kpzmalloc(size_t count);
+void *kpzmalloc();
+
+void kpfree(void *memory);
 
 #endif

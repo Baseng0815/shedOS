@@ -46,6 +46,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap*,
                        struct stivale2_struct_tag_framebuffer*);
 
 bool paging_map(struct page_table*, void *vaddr, void *paddr);
+void paging_unmap(struct page_table*, void *vaddr);
 struct pt_entry *paging_entry_get(struct page_table*, void *vaddr);
 
 void paging_write_cr3(const struct page_table*);
