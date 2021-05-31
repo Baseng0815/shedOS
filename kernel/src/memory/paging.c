@@ -4,6 +4,9 @@
 #include "../libk/memutil.h"
 #include "../libk/printf.h"
 
+const uintptr_t VADDR_HIGHER = 0xffff800000000000;
+const uintptr_t VADDR_KERNEL = 0xffffffff80000000;
+
 struct page_table *kernel_table;
 
 /* get pdpi, pdi, pti, pi from vaddress */
@@ -19,9 +22,12 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target paging.\n");
 
-        kernel_table = (struct page_table*)pmm_request_pages(1);
+        kernel_table = (struct page_table*)
+                vaddr_ensure_higher(pmm_request_pages(1));
         memset(kernel_table, 0, 0x1000);
-        paging_map(kernel_table, (void*)kernel_table, (void*)kernel_table);
+        paging_map(kernel_table,
+                   (void*)kernel_table,
+                   (void*)vaddr_ensure_lower(kernel_table));
 
         printf(KMSG_LOGLEVEL_INFO,
                "Kernel table at %a\n", kernel_table);
@@ -33,7 +39,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
 
         printf(KMSG_LOGLEVEL_INFO, "Using new page table...\n");
 
-        paging_update(kernel_table);
+        paging_write_cr3(vaddr_ensure_lower(kernel_table));
 
         printf(KMSG_LOGLEVEL_OKAY, "Finished target paging.\n");
 }
@@ -42,6 +48,7 @@ bool paging_map(struct page_table *table,
                 void *vaddr,
                 void *paddr)
 {
+        static int i = 0;
         struct pt_entry *pt_entry = paging_entry_get(table, vaddr);
 
         /* already in use */
@@ -52,6 +59,8 @@ bool paging_map(struct page_table *table,
         pt_entry->present = true;
         pt_entry->writable = true;
         pt_entry->addr = (uintptr_t)paddr >> 12;
+
+        paging_flush_tlb(vaddr);
 
         return true;
 }
@@ -69,11 +78,14 @@ struct pt_entry *paging_entry_get(struct page_table *table, void *vaddr)
         return pt_entry;
 }
 
-void paging_update(const struct page_table *table)
+void paging_write_cr3(const struct page_table *table)
 {
-        asm volatile("mov %0, %%cr3"
-                     :
-                     : "r" (table));
+        asm volatile("mov %0, %%cr3" : : "r" (table));
+}
+
+void paging_flush_tlb(void *addr)
+{
+        asm volatile("invlpg (%0)" : : "r" (addr));
 }
 
 void map_index(uintptr_t vaddr,
@@ -105,18 +117,21 @@ struct page_table *get(struct page_table *parent,
         struct page_table *child;
         if (!child_entry->present) {
                 /* allocate and zero out */
-                child = (struct page_table*)pmm_request_pages(1);
+                child = (struct page_table*)
+                        vaddr_ensure_higher(pmm_request_pages(1));
                 memset(child, 0, 0x1000);
 
                 child_entry->present = true;
                 child_entry->writable = true;
-                child_entry->addr = (uintptr_t)child >> 12;
+                child_entry->addr = vaddr_ensure_lower(child) >> 12;
 
-                paging_map(kernel_table, (void*)child, (void*)child);
+                paging_map(kernel_table,
+                           (void*)child,
+                           (void*)vaddr_ensure_lower(child));
         } else {
                 /* child is present, all good */
                 child = (struct page_table*)
-                        ((uintptr_t)child_entry->addr << 12);
+                        vaddr_ensure_higher((uintptr_t)child_entry->addr << 12);
         }
 
         return child;
@@ -131,4 +146,26 @@ static void map_kernel_region(uintptr_t voffset,
              addr += 0x1000) {
                 paging_map(kernel_table, (void*)(voffset + addr), (void*)addr);
         }
+}
+
+uintptr_t vaddr_offset_higher(uintptr_t p)
+{
+        return p + VADDR_HIGHER;
+}
+
+uintptr_t vaddr_offset_lower(uintptr_t p)
+{
+        return p - VADDR_HIGHER;
+}
+
+uintptr_t vaddr_ensure_higher(uintptr_t p)
+{
+        if (p < VADDR_HIGHER)   return p + VADDR_HIGHER;
+        else                    return p;
+}
+
+uintptr_t vaddr_ensure_lower(uintptr_t p)
+{
+        if (p >= VADDR_HIGHER)  return p - VADDR_HIGHER;
+        else                    return p;
 }

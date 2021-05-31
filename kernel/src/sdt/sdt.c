@@ -37,13 +37,13 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
 
         if (use_xsdt) {
                 xsdt = (struct xsdt*)
-                        VADDR_ENSURE_HIGHER((uintptr_t)rsdp->rev1.xsdt_addr);
+                        vaddr_ensure_higher((uintptr_t)rsdp->rev1.xsdt_addr);
                 assert(do_checksum_sdt(&xsdt->hdr),
                        "XSDT checksum invalid.");
                 printf(KMSG_LOGLEVEL_INFO, "Using xsdt at %a\n", xsdt);
         } else {
                 rsdt = (struct rsdt*)
-                        VADDR_ENSURE_HIGHER((uintptr_t)rsdp->rsdt_addr);
+                        vaddr_ensure_higher((uintptr_t)rsdp->rsdt_addr);
                 assert(do_checksum_sdt(&rsdt->hdr),
                        "RSDT checksum invalid.");
                 printf(KMSG_LOGLEVEL_INFO, "Using rsdt at %a\n", rsdt);
@@ -105,15 +105,15 @@ void *find_sdt(const char *signature)
                 struct sdt_header *hdr;
                 if (use_xsdt) {
                         uint64_t *sdt_base = (uint64_t*)
-                                VADDR_ENSURE_HIGHER(((uintptr_t)xsdt +
+                                vaddr_ensure_higher(((uintptr_t)xsdt +
                                                      sizeof(struct xsdt)));
                         hdr = (struct sdt_header*)sdt_base[i];
                 } else {
                         uint32_t *sdt_base = (uint32_t*)
-                                VADDR_ENSURE_HIGHER(((uintptr_t)rsdt +
+                                vaddr_ensure_higher(((uintptr_t)rsdt +
                                                      sizeof(struct rsdt)));
                         hdr = (struct sdt_header*)
-                                VADDR_ENSURE_HIGHER(sdt_base[i]);
+                                vaddr_ensure_higher(sdt_base[i]);
                 }
 
                 if (strcmp(signature, hdr->signature) == 0) {

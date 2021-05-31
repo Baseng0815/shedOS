@@ -57,7 +57,7 @@ void hpet_initialize(struct hpet *hpet)
 {
         printf(KMSG_LOGLEVEL_INFO, "Initializing hpet...\n");
 
-        hpet_mmio_regs = VADDR_ENSURE_HIGHER(hpet->addr.addr);
+        hpet_mmio_regs = vaddr_ensure_higher(hpet->addr.addr);
 
         printf(KMSG_LOGLEVEL_INFO,
                "HPET present with pci vendor id %d, addr %x, "
@@ -78,14 +78,6 @@ void hpet_initialize(struct hpet *hpet)
         uint32_t clock_period   = main_cap >> CLOCK_PERIOD & 0xffffffff;
         uint8_t timer_count     = (main_cap >> TIMER_COUNT & 0x1f) + 1;
         uint64_t main_frequency = 1000000000000000 / clock_period;
-
-        printf(KMSG_LOGLEVEL_NONE,
-               "|-> revision_id=%d, timer_count=%d, 64 bit/legacy rt capable "
-               "%d/%d, vendor_id=%d, tick_period=%d, frequency=%d\n",
-               main_cap >> REVISION_ID & 0xff, timer_count,
-               (main_cap | QWORD_CAPABLE) > 0, (main_cap | LEGACY_CAPABLE) > 0,
-               main_cap >> VENDOR_ID & 0xffff,
-               clock_period, main_frequency);
 
         /* configure timers (not necessary for now) */
         for (size_t i = 0; i < timer_count; i++) {

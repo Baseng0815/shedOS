@@ -3,6 +3,8 @@
 #include "../libk/printf.h"
 #include "../libk/memutil.h"
 
+#include "vmm.h"
+
 #include "bitmap.h"
 
 /* bytes */
@@ -49,7 +51,7 @@ void pmm_initialize(struct stivale2_struct_tag_memmap *mmap)
         page_bitmap.len = bitmap_len;
         printf(KMSG_LOGLEVEL_INFO,
                "Bitmap starting at %a with length of %d bytes\n",
-               page_bitmap.buf, page_bitmap.len);
+               vaddr_ensure_higher(page_bitmap.buf), page_bitmap.len);
 
         /* lock all pages */
         memset(page_bitmap.buf, 0xff, page_bitmap.len);
@@ -72,6 +74,9 @@ void pmm_initialize(struct stivale2_struct_tag_memmap *mmap)
                "Total usable amount of memory: %dKiB (%d pages).\n",
                total_memory / 0x400, total_memory / 0x1000,
                free_memory / 0x400, free_memory / 0x1000);
+
+        /* we want the bitmap mapped high */
+        page_bitmap.buf = vaddr_ensure_higher(page_bitmap.buf);
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Finished target pmm.\n");

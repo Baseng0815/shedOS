@@ -3,16 +3,12 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #include "../stivale2.h"
 
-#define VADDR_HIGHER 0xffff800000000000
-#define VADDR_KERNEL 0xffffffff80000000
-#define VADDR_OFFSET(p) ((uintptr_t)p + VADDR_HIGHER)
-#define VADDR_ENSURE_HIGHER(p)  ((uintptr_t)p < VADDR_HIGHER ? (uintptr_t)p\
-                                 + VADDR_HIGHER : (uintptr_t)p)
-#define VADDR_ENSURE_LOWER(p)   ((uintptr_t)p >= VADDR_HIGHER ? (uintptr_t)p\
-                                 - VADDR_HIGHER : (uintptr_t)p)
+extern const uintptr_t VADDR_HIGHER;
+extern const uintptr_t VADDR_KERNEL;
 
 /* we use 4-level paging (top to bottom), each containing 512 children:
    pml4 (page map level 4, top structure)
@@ -52,7 +48,12 @@ void paging_initialize(struct stivale2_struct_tag_memmap*,
 bool paging_map(struct page_table*, void *vaddr, void *paddr);
 struct pt_entry *paging_entry_get(struct page_table*, void *vaddr);
 
-/* we don't care about performance now and just reload CR3 every time */
-void paging_update(const struct page_table*);
+void paging_write_cr3(const struct page_table*);
+void paging_flush_tlb(void *addr);
+
+inline uintptr_t vaddr_offset_higher(uintptr_t p);
+inline uintptr_t vaddr_offset_lower(uintptr_t p);
+inline uintptr_t vaddr_ensure_higher(uintptr_t p);
+inline uintptr_t vaddr_ensure_lower(uintptr_t p);
 
 #endif

@@ -17,7 +17,7 @@ void idt_initialize()
         printf(KMSG_LOGLEVEL_INFO, "Reached target idt.\n");
 
         idt.size = 0x1000 - 1;;
-        idt.offset = VADDR_ENSURE_HIGHER(pmm_request_pages(1));
+        idt.offset = vaddr_ensure_higher(pmm_request_pages(1));
         memset(idt.offset, 0, 0x1000);
 
         printf(KMSG_LOGLEVEL_INFO, "idt at %a with size=%d\n",

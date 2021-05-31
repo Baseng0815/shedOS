@@ -84,7 +84,7 @@ void apic_initialize(const struct madt *madt)
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target apic.\n");
 
-        lapic_mmio_regs = VADDR_ENSURE_HIGHER(madt->local_apic);
+        lapic_mmio_regs = vaddr_ensure_higher(madt->local_apic);
 
         printf(KMSG_LOGLEVEL_INFO,
                "madt at %a, lapic addr=%a, flags=%x\n",
@@ -189,10 +189,10 @@ void ioapic_register_write(uint32_t ioapic_id,
         for (size_t i = 0; i < ioapic_count; i++) {
                 if (ioapics[i].ioapic_id == ioapic_id) {
                         /* IOREGSEL */
-                        *(uint32_t*)VADDR_ENSURE_HIGHER(
+                        *(uint32_t*)vaddr_ensure_higher(
                                 ioapics[i].ioapic_addr + 0x00) = offset;
                         /* 32-bit IOWIN */
-                        *(uint32_t*)VADDR_ENSURE_HIGHER(
+                        *(uint32_t*)vaddr_ensure_higher(
                                 ioapics[i].ioapic_addr + 0x10) = val;
                 }
         }
@@ -204,10 +204,10 @@ uint32_t ioapic_register_read(uint32_t ioapic_id,
         for (size_t i = 0; i < ioapic_count; i++) {
                 if (ioapics[i].ioapic_id == ioapic_id) {
                         /* IOREGSEL */
-                        *(uint32_t*)VADDR_ENSURE_HIGHER(
+                        *(uint32_t*)vaddr_ensure_higher(
                                 ioapics[i].ioapic_addr + 0x00) = offset;
                         /* 32-bit IOWIN */
-                        return *(uint32_t*)VADDR_ENSURE_HIGHER(
+                        return *(uint32_t*)vaddr_ensure_higher(
                                 ioapics[i].ioapic_addr + 0x10);
                 }
         }
@@ -220,10 +220,10 @@ void ioapic_ioredtbl_write(uint32_t ioapic_id,
         uint64_t table = *((uint64_t*)&tbl);
 
         ioapic_register_write(ioapic_id,
-                              VADDR_ENSURE_HIGHER(IOREDTBL_OFFSET(index) + 0),
+                              vaddr_ensure_higher(IOREDTBL_OFFSET(index) + 0),
                               (uint32_t)(table >> 0));
 
         ioapic_register_write(ioapic_id,
-                              VADDR_ENSURE_HIGHER(IOREDTBL_OFFSET(index) + 1),
+                              vaddr_ensure_higher(IOREDTBL_OFFSET(index) + 1),
                               (uint32_t)(table >> 32));
 }
