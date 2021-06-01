@@ -25,5 +25,25 @@ register_dump_make:
     movw %fs, 144(%rdi)
     movw %gs, 146(%rdi)
     sidt 148(%rdi)
-    movq $1, 156(%rdi)
+    sgdt 158(%rdi)
+    movq %cr0, %rax
+    movq %rax, 168(%rdi)
+    movq %cr2, %rax
+    movq %rax, 176(%rdi)
+    movq %cr3, %rax
+    movq %rax, 184(%rdi)
+    movq %cr4, %rax
+    movq %rax, 192(%rdi)
+    movq %dr0, %rax
+    movq %rax, 200(%rdi)
+    movq %dr1, %rax
+    movq %rax, 208(%rdi)
+    movq %dr2, %rax
+    movq %rax, 216(%rdi)
+    movq %dr3, %rax
+    movq %rax, 224(%rdi)
+    movq %dr6, %rax
+    movq %rax, 232(%rdi)
+    movq %dr7, %rax
+    movq %rax, 240(%rdi)
     ret

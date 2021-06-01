@@ -86,7 +86,7 @@ struct pt_entry *paging_entry_get(struct page_table *table, void *vaddr)
 
 void paging_write_cr3(const struct page_table *table)
 {
-        asm volatile("mov %0, %%cr3" : : "r" (table));
+        asm volatile("movq %0, %%cr3" : : "r" (table));
 }
 
 void paging_flush_tlb(void *addr)

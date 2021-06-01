@@ -46,7 +46,7 @@ hdd: sysroot
 usb: sysroot
 	@echo "=====! CREATING HDD FOR USB BOOTING !====="
 	rm -f $(USB)
-	dd if=/dev/zero bs=1M count=512 of=$(USB)
+	dd if=/dev/zero bs=1M count=256 of=$(USB)
 	mkfs.fat -F32 $(USB)
 	mkdir -p $(USB)_mnt
 	mount $(USB) $(USB)_mnt
