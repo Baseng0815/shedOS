@@ -5,6 +5,8 @@
 #include "sdt_structs.h"
 #include "../memory/paging.h"
 #include "../debug.h"
+
+#include "../libk/printf.h"
 #include "../libk/strutil.h"
 
 struct madt *madt;

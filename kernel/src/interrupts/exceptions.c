@@ -1,5 +1,7 @@
 #include "exceptions.h"
 
+#include <stddef.h>
+
 #include "../debug.h"
 
 void(*exception_interrupts[])(struct interrupt_frame*) = {
@@ -12,73 +14,91 @@ void(*exception_interrupts[])(struct interrupt_frame*) = {
 };
 
 __attribute__((interrupt)) void de_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Divide by zero exception (0x00)");
+        kernel_panic("Divide by zero exception (0x00)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void db_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Debug exception (0x01)");
+        kernel_panic("Debug exception (0x01)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void bp_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Breakpoint exception (0x03)");
+        kernel_panic("Breakpoint exception (0x03)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void of_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Overflow exception (0x04)");
+        kernel_panic("Overflow exception (0x04)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void br_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Bound range exceeded (0x05)");
+        kernel_panic("Bound range exceeded (0x05)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void ud_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Invalid opcode (0x06)");
+        kernel_panic("Invalid opcode (0x06)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void nm_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Device not available (0x07)");
+        kernel_panic("Device not available (0x07)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void df_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Double fault (0x08)");
+        kernel_panic("Double fault (0x08)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void ts_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Invalid TSS (0x0a)");
+        kernel_panic("Invalid TSS (0x0a)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void np_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Segment not present (0x0b)");
+        kernel_panic("Segment not present (0x0b)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void ss_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Stack segment fault (0x0c)");
+        kernel_panic("Stack segment fault (0x0c)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void gp_handle(struct interrupt_frame *iframe) {
-        kernel_panic("General protection fault (0x0d)");
+        kernel_panic("General protection fault (0x0d)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void pf_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Page fault (0x0e)");
+        kernel_panic("Page fault (0x0e)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void mf_handle(struct interrupt_frame *iframe) {
-        kernel_panic("x87 floating point exception (0x10)");
+        kernel_panic("x87 floating point exception (0x10)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void ac_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Alignment check exception (0x11)");
+        kernel_panic("Alignment check exception (0x11)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void mc_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Machine check exception (0x12)");
+        kernel_panic("Machine check exception (0x12)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void xm_handle(struct interrupt_frame *iframe) {
-        kernel_panic("SIMD floating point exception (0x13)");
+        kernel_panic("SIMD floating point exception (0x13)",
+                     __FILE__, __LINE__);
 }
 
 __attribute__((interrupt)) void ve_handle(struct interrupt_frame *iframe) {
-        kernel_panic("Virtualization exception (0x14)");
+        kernel_panic("Virtualization exception (0x14)",
+                     __FILE__, __LINE__);
 }

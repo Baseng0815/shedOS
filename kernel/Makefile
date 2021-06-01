@@ -25,10 +25,12 @@ LDFLAGS 	:= \
     -pie -fno-pic -fpie \
     -z max-page-size=0x1000
 
+ASFLAGS 	:=
+
 SOURCES 	:= $(shell find ./src -type f -name "*.c")
 ASM_SOURCES 	:= $(shell find ./src -type f -name "*.S")
 HEADERS 	:= $(shell find ./src -type f -name "*.h")
-OBJS 		:= $(SOURCES:.c=.o) $(ASM_SOURCES:.S=.o)
+OBJS 		:= $(SOURCES:.c=_c.o) $(ASM_SOURCES:.S=_S.o)
 
 .PHONY: all clean install-header install-exec
 
@@ -48,20 +50,20 @@ kernel.elf: $(OBJS)
 	@echo "=====! LINKING $< INTO $@ !====="
 	$(CC) $(OBJS) $(LDFLAGS) -o $@
 
-%.o: %.c
+%_c.o: %.c
 	@echo "=====! COMPILING $< INTO $@ !====="
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
-%.o: %.S
+%_S.o: %.S
 	@ echo =====! ASSEMBLING $< =====!
 	$(AS) $(ASFLAGS) -o $@ $<
 
-src/interrupts/exceptions.o: src/interrupts/exceptions.c
+src/interrupts/exceptions_c.o: src/interrupts/exceptions.c
 	@echo "=====! COMPILING $< INTO $@ !====="
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
 	    -mgeneral-regs-only -c -o $@ $<
 
-src/interrupts/irqs.o: src/interrupts/irqs.c
+src/interrupts/irqs_c.o: src/interrupts/irqs.c
 	@echo "=====! COMPILING $< INTO $@ !====="
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
 	    -mgeneral-regs-only -c -o $@ $<
