@@ -11,6 +11,7 @@ void *kpmalloc();
 /* allocate a zero page */
 void *kpzmalloc();
 
+/* free a page */
 void kpfree(void *memory);
 
 #endif

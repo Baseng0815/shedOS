@@ -3,7 +3,8 @@
 #include "../libk/printf.h"
 #include "../debug.h"
 #include "../io.h"
-#include "../memory/paging.h"
+
+#include "../memory/addrutil.h"
 
 #include "pic.h"
 
@@ -220,10 +221,10 @@ void ioapic_ioredtbl_write(uint32_t ioapic_id,
         uint64_t table = *((uint64_t*)&tbl);
 
         ioapic_register_write(ioapic_id,
-                              vaddr_ensure_higher(IOREDTBL_OFFSET(index) + 0),
+                              IOREDTBL_OFFSET(index) + 0,
                               (uint32_t)(table >> 0));
 
         ioapic_register_write(ioapic_id,
-                              vaddr_ensure_higher(IOREDTBL_OFFSET(index) + 1),
+                              IOREDTBL_OFFSET(index) + 1,
                               (uint32_t)(table >> 32));
 }

@@ -4,8 +4,7 @@
 #include "../libk/memutil.h"
 #include "../libk/printf.h"
 
-const uintptr_t VADDR_HIGHER = 0xffff800000000000;
-const uintptr_t VADDR_KERNEL = 0xffffffff80000000;
+#include "addrutil.h"
 
 struct page_table *kernel_table;
 
@@ -152,26 +151,4 @@ static void map_kernel_region(uintptr_t voffset,
              addr += 0x1000) {
                 paging_map(kernel_table, (void*)(voffset + addr), (void*)addr);
         }
-}
-
-uintptr_t vaddr_offset_higher(uintptr_t p)
-{
-        return p + VADDR_HIGHER;
-}
-
-uintptr_t vaddr_offset_lower(uintptr_t p)
-{
-        return p - VADDR_HIGHER;
-}
-
-uintptr_t vaddr_ensure_higher(uintptr_t p)
-{
-        if (p < VADDR_HIGHER)   return p + VADDR_HIGHER;
-        else                    return p;
-}
-
-uintptr_t vaddr_ensure_lower(uintptr_t p)
-{
-        if (p >= VADDR_HIGHER)  return p - VADDR_HIGHER;
-        else                    return p;
 }

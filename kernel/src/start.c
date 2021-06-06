@@ -116,8 +116,6 @@ void _start(struct stivale2_struct *stivale2_struct)
         printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");
 
-        asm volatile("ud2");
-
         for (;;) {
                 asm volatile("hlt");
         }

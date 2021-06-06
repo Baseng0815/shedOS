@@ -29,7 +29,7 @@ struct idt_desc {
 
 struct idt {
         uint16_t size;
-        uintptr_t offset;
+        uint64_t offset;
 } __attribute__((packed));
 
 void idt_initialize();

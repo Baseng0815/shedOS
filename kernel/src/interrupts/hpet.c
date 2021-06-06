@@ -5,7 +5,7 @@
 #include "../debug.h"
 
 #include "../libk/printf.h"
-#include "../memory/paging.h"
+#include "../memory/addrutil.h"
 
 enum hpet_register {
         HPET_REG_GENERAL_CAPABILITIES   = 0x00,

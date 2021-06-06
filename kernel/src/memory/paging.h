@@ -7,9 +7,6 @@
 
 #include "../stivale2.h"
 
-extern const uintptr_t VADDR_HIGHER;
-extern const uintptr_t VADDR_KERNEL;
-
 /* we use 4-level paging (top to bottom), each containing 512 children:
    pml4 (page map level 4, top structure)
    pdp  (page directory pointer)
@@ -51,10 +48,5 @@ struct pt_entry *paging_entry_get(struct page_table*, void *vaddr);
 
 void paging_write_cr3(const struct page_table*);
 void paging_flush_tlb(void *addr);
-
-inline uintptr_t vaddr_offset_higher(uintptr_t p);
-inline uintptr_t vaddr_offset_lower(uintptr_t p);
-inline uintptr_t vaddr_ensure_higher(uintptr_t p);
-inline uintptr_t vaddr_ensure_lower(uintptr_t p);
 
 #endif
