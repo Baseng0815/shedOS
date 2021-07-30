@@ -46,7 +46,6 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
         } else {
                 rsdt = (struct rsdt*)
                         vaddr_ensure_higher((uintptr_t)rsdp->rsdt_addr);
-                printf(KMSG_LOGLEVEL_CRIT, "%a\n", rsdt);
                 assert(do_checksum_sdt(&rsdt->hdr),
                        "RSDT checksum invalid.");
                 printf(KMSG_LOGLEVEL_INFO, "Using rsdt at %a\n", rsdt);
