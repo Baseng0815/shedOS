@@ -113,6 +113,8 @@ void _start(struct stivale2_struct *stivale2_struct)
         apic_initialize(madt);
         timer_initialize();
 
+        kmalloc_initialize();
+
         printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");
 

@@ -28,13 +28,12 @@ uintptr_t vaddr_ensure_lower(uintptr_t p)
 uintptr_t addr_align_up(uintptr_t p, size_t a)
 {
         if (p % a == 0) return p;
-        else            return (p / a) * a;
+        else            return (p / a + 1) * a;
 }
 
 uintptr_t addr_align_down(uintptr_t p, size_t a)
 {
-        if (p % a == 0) return p;
-        else            return (p / a + 1) * a;
+        return (p / a) * a;
 }
 
 uintptr_t addr_page_align_up(uintptr_t p)

@@ -14,4 +14,9 @@ void *kpzmalloc();
 /* free a page */
 void kpfree(void *memory);
 
+/* allocate 16-byte aligned */
+void *kmalloc(size_t size);
+
+void print();
+
 #endif
