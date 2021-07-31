@@ -21,6 +21,7 @@
 #include "interrupts/idt.h"
 
 #include "libk/kmalloc.h"
+#include "pci/pci.h"
 
 static uint8_t stack[0x4000]; /* 16 KiB stack */
 
@@ -32,7 +33,7 @@ static void dump_memory(struct stivale2_struct_tag_memmap*);
 /* the kernel uses a linked list of structures to communicate
    with the bootloader and request certain features */
 /* header tags are given to the bootloader from the kernel,
-   structure tags are returned by the bootloader to the kernel */
+   structure tags are returned from the bootloader to the kernel */
 
 static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
         .tag = {
@@ -40,8 +41,13 @@ static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
                 /* zero indicates the end of the linked list */
                 .next = 0
         },
+#ifdef FB_FHD
         .framebuffer_width  = 1920,
         .framebuffer_height = 1080,
+#elif defined(FB_QHD)
+        .framebuffer_width  = 2560,
+        .framebuffer_height = 1440,
+#endif
         .framebuffer_bpp    = 32
 };
 
@@ -114,6 +120,7 @@ void _start(struct stivale2_struct *stivale2_struct)
         timer_initialize();
 
         kmalloc_initialize();
+        pci_init();
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");

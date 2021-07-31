@@ -3,6 +3,10 @@ AS 		:= $(TARGET)-as
 LD 		:= $(TARGET)-ld
 AR 		:= $(TARGET)-ar
 
+# 1920x1080: FB_FHD
+# 2560x1440: FB_QHD
+FB_SIZE 	:= FB_QHD
+
 CFLAGS 		:= \
     $(USER_CFLAGS) \
     -I. \
@@ -14,7 +18,8 @@ CFLAGS 		:= \
     -mno-3dnow \
     -mno-sse \
     -mno-sse2 \
-    -mno-red-zone
+    -mno-red-zone \
+    -D$(FB_SIZE)
 
 CPPFLAGS 	:=
 
