@@ -271,6 +271,7 @@ void dump_memory(struct stivale2_struct_tag_memmap *mmap)
                 struct stivale2_mmap_entry *entry = &mmap->memmap[i];
 
                 const char *type;
+                /* TODO replace with array */
                 switch (entry->type) {
                         case 0x1:
                                 type = "USABLE";

@@ -11,6 +11,7 @@
 
 struct madt *madt;
 struct hpet *hpet;
+struct mcfg *mcfg;
 
 static bool use_xsdt;
 static struct rsdt *rsdt;
@@ -51,16 +52,23 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
                 printf(KMSG_LOGLEVEL_INFO, "Using rsdt at %a\n", rsdt);
         }
 
+        /* MADT */
         madt = (struct madt*)find_sdt("APIC");
-        assert(madt && do_checksum_sdt(&madt->hdr),
-               "MADT not present or checksum invalid.");
+        assert(madt != NULL, "MADT not present.");
+        assert(madt && do_checksum_sdt(&madt->hdr), "MADT checksum invalid.");
+        printf(KMSG_LOGLEVEL_INFO, "MADT at %a\n", madt);
 
-        /* HPET could be absent */
+        /* HPET */
         hpet = (struct hpet*)find_sdt("HPET");
-        if (hpet) {
-                assert(do_checksum_sdt(&hpet->hdr),
-                       "HPET checksum invalid.");
-        }
+        assert(hpet != NULL, "HPET not present.");
+        assert(do_checksum_sdt(&hpet->hdr), "HPET checksum invalid.");
+        printf(KMSG_LOGLEVEL_INFO, "HPET at %a\n", hpet);
+
+        /* MCFG */
+        mcfg = (struct mcfg*)find_sdt("MCFG");
+        assert(mcfg != NULL, "MCFG not present.");
+        assert(do_checksum_sdt(&mcfg->hdr), "MCFG checksum invalid.");
+        printf(KMSG_LOGLEVEL_INFO, "MCFG at %a\n", mcfg);
 
         printf(KMSG_LOGLEVEL_OKAY, "Finished target sdt.\n");
 }

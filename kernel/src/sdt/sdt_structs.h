@@ -56,21 +56,6 @@ struct xsdt {
         /* 64 bit addresses follow */
 } __attribute__((packed));
 
-/* high precision event timer */
-struct hpet {
-        struct sdt_header hdr;
-
-        uint8_t hardware_rev_id;
-        uint8_t comparator_count    : 5;
-        uint8_t count_size_cap      : 1;
-        uint8_t reserved            : 1;
-        uint8_t legacy_replacement  : 1;
-        uint16_t pci_vendor_id;
-        struct acpi_addr addr;
-        uint8_t hpet_number;
-        uint16_t min_clock_ticks; /* minimum clock_tick in period mode */
-} __attribute__((packed));
-
 /* ---------- MADT ---------- */
 
 enum madt_entry_type {
@@ -139,6 +124,42 @@ struct madt {
         uint32_t flags;
 
         /* variable length records follow */
+} __attribute__((packed));
+
+/* ---------- HPET ---------- */
+
+/* high precision event timer */
+struct hpet {
+        struct sdt_header hdr;
+
+        uint8_t hardware_rev_id;
+        uint8_t comparator_count    : 5;
+        uint8_t count_size_cap      : 1;
+        uint8_t reserved            : 1;
+        uint8_t legacy_replacement  : 1;
+        uint16_t pci_vendor_id;
+        struct acpi_addr addr;
+        uint8_t hpet_number;
+        uint16_t min_clock_ticks; /* minimum clock_tick in period mode */
+} __attribute__((packed));
+
+/* ---------- MCFG ---------- */
+
+/* configuration space base address allocation structure */
+struct mcfg_csbaas {
+        uint64_t base_address;
+        uint16_t seg_group_number;
+        uint8_t start_bus_number;
+        uint8_t end_bus_number;
+        uint32_t reserved;
+} __attribute__((packed));
+
+/* memory mapped configuration space access used for PCIe */
+struct mcfg {
+        struct sdt_header hdr;
+
+        uint64_t reserved0;
+        struct mcfg_csbaas csbaas[];
 } __attribute__((packed));
 
 #endif
