@@ -5,7 +5,7 @@ AR 		:= $(TARGET)-ar
 
 # 1920x1080: FB_FHD
 # 2560x1440: FB_QHD
-FB_SIZE 	:= FB_QHD
+FB_SIZE 	:= FB_FHD
 
 CFLAGS 		:= \
     $(USER_CFLAGS) \
