@@ -69,7 +69,7 @@ uint64_t stou(const char *str, uint64_t base)
         return value;
 }
 
-int strcmp(const char *s1, const char *s2)
+size_t strcmp(const char *s1, const char *s2)
 {
         while (*s1 != '\0' && *s2 != '\0') {
                 if (*s1 < *s2) return -1;
@@ -82,7 +82,7 @@ int strcmp(const char *s1, const char *s2)
         return 0;
 }
 
-int strncmp(const char *s1, const char *s2, size_t n)
+size_t strncmp(const char *s1, const char *s2, size_t n)
 {
         for (size_t i = 0; i < n; i++) {
                 if (s1[i] < s2[i]) return -1;
@@ -93,12 +93,12 @@ int strncmp(const char *s1, const char *s2, size_t n)
         return 0;
 }
 
-int strcpy(const char *src, char *dst)
+size_t strcpy(const char *src, char *dst)
 {
         return strncpy(src, dst, strlen(src));
 }
 
-int strncpy(const char *src, char *dst, size_t len)
+size_t strncpy(const char *src, char *dst, size_t len)
 {
         size_t i = 0;
         while (i < len && src[i] != '\0') {
@@ -109,6 +109,16 @@ int strncpy(const char *src, char *dst, size_t len)
         dst[i] = '\0';
 
         return i;
+}
+
+size_t trim_and_terminate(char *src, size_t max_n)
+{
+        for (size_t i = 0; i < max_n; i++) {
+                if (i == max_n - 1 || (src[i] == ' ' && src[i + 1] == ' ')) {
+                        src[i] = '\0';
+                        return i;
+                }
+        }
 }
 
 bool isdigit(char c)

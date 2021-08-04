@@ -120,6 +120,7 @@ void _start(struct stivale2_struct *stivale2_struct)
         timer_initialize();
 
         kmalloc_initialize();
+
         pci_init();
 
         printf(KMSG_LOGLEVEL_OKAY,

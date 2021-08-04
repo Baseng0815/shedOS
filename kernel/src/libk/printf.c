@@ -105,8 +105,14 @@ void putchar(char c)
 
 void puts(const char *str)
 {
-        while (*str != '\0') {
-                putchar(*str);
-                str++;
+        putsn(str, SIZE_MAX);
+}
+
+void putsn(const char *str, size_t n)
+{
+        size_t i = 0;
+        while (str[i] != '\0' && i < n) {
+                putchar(str[i]);
+                i++;
         }
 }

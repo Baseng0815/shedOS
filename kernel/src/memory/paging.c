@@ -26,7 +26,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
         memset(kernel_table, 0, 0x1000);
         paging_map(kernel_table,
                    (void*)kernel_table,
-                   (void*)vaddr_ensure_lower(kernel_table));
+                   (void*)vaddr_ensure_lower(kernel_table), false, true);
 
         printf(KMSG_LOGLEVEL_INFO,
                "Kernel table at %a\n", kernel_table);
@@ -34,6 +34,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
         /* map everything below 4G to higher half */
         printf(KMSG_LOGLEVEL_INFO, "Mapping first 4G...\n");
         map_kernel_region(VADDR_HIGHER, 0x0, 0x100000000);
+        printf(KMSG_LOGLEVEL_INFO, "Mapping first 2G...\n");
         map_kernel_region(VADDR_KERNEL, 0x0, 0x100000000);
 
         printf(KMSG_LOGLEVEL_INFO, "Using new page table...\n");
@@ -43,9 +44,8 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
         printf(KMSG_LOGLEVEL_OKAY, "Finished target paging.\n");
 }
 
-bool paging_map(struct page_table *table,
-                void *vaddr,
-                void *paddr)
+bool paging_map(struct page_table *table, void *vaddr, void *paddr,
+                bool disable_cache, bool writable)
 {
         struct pt_entry *pt_entry = paging_entry_get(table, vaddr);
 
@@ -55,7 +55,8 @@ bool paging_map(struct page_table *table,
 
         /* set physical address */
         pt_entry->present = true;
-        pt_entry->writable = true;
+        pt_entry->writable = writable;
+        pt_entry->cache_disabled = disable_cache;
         pt_entry->addr = (uintptr_t)paddr >> 12;
 
         paging_flush_tlb(vaddr);
@@ -132,7 +133,7 @@ struct page_table *get(struct page_table *parent,
 
                 paging_map(kernel_table,
                            (void*)child,
-                           (void*)vaddr_ensure_lower(child));
+                           (void*)vaddr_ensure_lower(child), false, true);
         } else {
                 /* child is present, all good */
                 child = (struct page_table*)
@@ -149,6 +150,7 @@ static void map_kernel_region(uintptr_t voffset,
         for (uintptr_t addr = poffset;
              addr < poffset + len;
              addr += 0x1000) {
-                paging_map(kernel_table, (void*)(voffset + addr), (void*)addr);
+                paging_map(kernel_table, (void*)(voffset + addr), (void*)addr,
+                           false, true);
         }
 }

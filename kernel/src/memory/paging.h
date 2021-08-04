@@ -15,6 +15,18 @@
    p    (page) (this is the physical frame address)
    */
 
+/* schematic of how the address space looks
+mappings:
+0x0000000000000000-0x0000000100000000 -> 0xffff800000000000-0xffff800100000000
+0x0000000000000000-0x0000000080000000 -> 0xfffffff800000000-0xffffffffffffffff
+
+regions:
+0xffff800000000000-0xffff800100000000 (first 4G)
+0xffff900000000000-0xffff900000000000 (4GB page heap)
+0xffff900200000000-0xffff900300000000 (4GB norm heap)
+0xfffffff800000000-0xffffffffffffffff (kernel mapped to last 2G)
+*/
+
 struct pt_entry {
         uint64_t present        : 1; /* 1 => page is in physical memory */
         uint64_t writable       : 1; /* 1 => read/write, 0 => read only */
@@ -42,7 +54,8 @@ extern struct page_table *kernel_table;
 void paging_initialize(struct stivale2_struct_tag_memmap*,
                        struct stivale2_struct_tag_framebuffer*);
 
-bool paging_map(struct page_table*, void *vaddr, void *paddr);
+bool paging_map(struct page_table*, void *vaddr, void *paddr,
+                bool disable_cache, bool writable);
 void paging_unmap(struct page_table*, void *vaddr);
 struct pt_entry *paging_entry_get(struct page_table*, void *vaddr);
 

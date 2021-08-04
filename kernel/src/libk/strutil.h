@@ -15,11 +15,13 @@ size_t utos(uint64_t i, uint64_t base, char *buf, size_t min_len);
 /* string to unsigned integer conversion */
 uint64_t stou(const char *str, uint64_t base);
 
-int strcmp(const char *s1, const char *s2);
-int strncmp(const char *s1, const char *s2, size_t n);
+size_t strcmp(const char *s1, const char *s2);
+size_t strncmp(const char *s1, const char *s2, size_t n);
 
-int strcpy(const char *src, char *dst);
-int strncpy(const char *src, char *dst, size_t n);
+size_t strcpy(const char *src, char *dst);
+size_t strncpy(const char *src, char *dst, size_t n);
+
+size_t trim_and_terminate(char *src, size_t max_n);
 
 bool isdigit(char c);
 

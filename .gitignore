@@ -16,5 +16,6 @@ toolchain/*
 *.img
 *.hdd
 *.iso
+*.qcow2
 .gdb_history
 ./compile_commands.json

@@ -16,5 +16,6 @@ enum KMSG_LOGLEVEL {
 void printf(int, const char*, ...);
 void putchar(char);
 void puts(const char*);
+void putsn(const char*, size_t);
 
 #endif

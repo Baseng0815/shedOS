@@ -4,14 +4,15 @@
 
 #include "../libk/printf.h"
 
-void vmm_request_at(struct page_table *table, void *vaddr, size_t n)
+void vmm_request_at(struct page_table *table, void *vaddr, size_t n,
+                    bool cache_disabled, bool writable)
 {
         for (size_t i = 0; i < n; i++) {
                 void *memory = pmm_request_pages(1);
 
                 paging_map(table,
                            (uintptr_t)vaddr + (uintptr_t)(i * 0x1000),
-                           memory);
+                           memory, cache_disabled, writable);
         }
 }
 

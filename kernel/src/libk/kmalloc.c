@@ -11,12 +11,12 @@ struct mheap_hdr {
         size_t  size;
 } __attribute__((aligned(16)));
 
-/* page heap starting 4G + 32K above the higher half */
-static const uintptr_t pheap_start  = 0xffff800100000000;
+/* page heap starting 16T above the higher half */
+static const uintptr_t pheap_start  = 0xffff900000000000;
 static uintptr_t pnext_free         = pheap_start;
 
-/* kernel heap starting at 16T above the higher half */
-static const uintptr_t mheap_start  = 0xffff900000000000;
+/* kernel heap starting 16T+4G above the higher half */
+static const uintptr_t mheap_start  = 0xffff900100000000;
 static struct mheap_hdr *mheap_head = (struct mheap_hdr*)mheap_start;
 
 static void *kmalloc_split_hdr(struct mheap_hdr*, size_t alloc_size);
@@ -28,7 +28,7 @@ void kmalloc_initialize()
                pheap_start, mheap_start);
 
         const size_t initial_heap_size = 0x1000;
-        vmm_request_at(kernel_table, mheap_head, 1);
+        vmm_request_at(kernel_table, mheap_head, 1, false, true);
         mheap_head->is_free = true;
         mheap_head->size    = initial_heap_size - 2 * sizeof(struct mheap_hdr);
 
@@ -97,7 +97,7 @@ void *kmalloc(size_t size)
         size_t additional_pages = addr_page_align_up(alloc_size) / 0x1000;
         vmm_request_at(kernel_table,
                        (uintptr_t)hdr + sizeof(struct mheap_hdr),
-                       additional_pages);
+                       additional_pages, false, true);
         hdr->is_free    = true;
         hdr->size       = additional_pages * 0x1000 - sizeof(struct mheap_hdr);
 
