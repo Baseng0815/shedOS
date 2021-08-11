@@ -8,8 +8,6 @@
 
 static void enumerate(uintptr_t base, struct pci_addr addr);
 
-static void make_busmaster();
-
 void pci_init()
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target pci.\n");
@@ -57,7 +55,7 @@ void enumerate(uintptr_t base, struct pci_addr pci_addr)
                                             pci_addr.function << 12));
 
         /* try reading the header */
-        struct device_header *hdr = (struct device_header*)conf_addr;;
+        struct pci_device_header *hdr = (struct pci_device_header*)conf_addr;
 
         uint16_t device_id  = hdr->vendor_id >> 0x10 & 0xffff;
         uint16_t vendor_id  = hdr->vendor_id >> 0x00 & 0xffff;
@@ -79,8 +77,8 @@ void enumerate(uintptr_t base, struct pci_addr pci_addr)
 
         switch (header_type) {
                 case HEADER_ENDPOINT: {
-                        struct device_table_endpoint *ep =
-                                (struct device_table_endpoint*)hdr;
+                        struct pci_device_endpoint *ep =
+                                (struct pci_device_endpoint*)hdr;
 
                         uint8_t sub_vend_id =
                                 ep->subsystem_vendor_id >> 0x00 & 0xffff;
@@ -96,10 +94,6 @@ void enumerate(uintptr_t base, struct pci_addr pci_addr)
 
                         if (class == NVME_CLASS &&
                             subclass == NVME_SUBCLASS) {
-                                /* make bus master and enable mmio */
-                                ep->hdr.command |= bus_master;
-                                ep->hdr.command |= mem_space;
-                                ep->hdr.command |= IO_space;
                                 nvme_initialize_device(ep, pci_addr);
                         }
                         break;
@@ -108,4 +102,20 @@ void enumerate(uintptr_t base, struct pci_addr pci_addr)
                 default:
                         break;
         }
+}
+
+bool pci_get_cap(uintptr_t cap_ptr, uintptr_t conf_base,
+                 uint16_t cap_id,
+                 struct pci_cap_hdr **cap_hdr)
+{
+        for (struct pci_cap_hdr *hdr =
+             (struct pci_cap_hdr*)(cap_ptr + conf_base);
+             hdr != NULL; hdr = (struct pci_cap_hdr*)(hdr->next + conf_base)) {
+                if (hdr->cap_id == cap_id) {
+                        *cap_hdr = hdr;
+                        return true;
+                }
+        }
+
+        return false;
 }

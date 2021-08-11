@@ -8,7 +8,7 @@ enum {
         NVME_SUBCLASS   = 0x8
 };
 
-void nvme_initialize_device(struct device_table_endpoint *ep,
+void nvme_initialize_device(struct pci_device_endpoint *ep,
                             struct pci_addr pci_addr);
 
 #endif
