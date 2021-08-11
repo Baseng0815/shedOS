@@ -12,15 +12,15 @@
    */
 
 enum idt_type_attributes {
-        IDT_TA_InterruptGate    = 0b10001110,
-        IDT_TA_CallGate         = 0b10001100,
-        IDT_TA_TrapGate         = 0b10001111
+        IDT_TA_InterruptGate    = 0x8e,
+        IDT_TA_CallGate         = 0x8c,
+        IDT_TA_TrapGate         = 0x8f
 };
 
 struct idt_desc {
         uint16_t    offset0;
         uint16_t    selector;
-        uint8_t     ist;        /* interrupt stack table offset */
+        uint8_t     ist; /* interrupt stack table offset */
         uint8_t     type_attr;
         uint16_t    offset1;
         uint32_t    offset2;

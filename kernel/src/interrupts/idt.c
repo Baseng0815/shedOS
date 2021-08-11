@@ -42,9 +42,9 @@ void load_interrupt(uint8_t vector,
 
         struct idt_desc *desc = &idt_descriptors[vector];
 
-        desc->offset0 = (callback & 0x000000000000ffff);
-        desc->offset1 = (callback & 0x00000000ffff0000) >> 16;
-        desc->offset2 = (callback & 0xffffffff00000000) >> 32;
+        desc->offset0 = callback >> 0   & 0xffff;
+        desc->offset1 = callback >> 16  & 0xffff;
+        desc->offset2 = callback >> 32  & 0xffffffff;
         desc->ist = 0;
         desc->type_attr = IDT_TA_InterruptGate;
         desc->selector = 0x08;

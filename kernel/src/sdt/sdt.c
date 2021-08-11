@@ -66,7 +66,7 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
 
         /* MCFG */
         mcfg = (struct mcfg*)find_sdt("MCFG");
-        assert(mcfg != NULL, "MCFG not present.");
+        assert(mcfg != NULL, "MCFG not present (PCIe not supported).");
         assert(do_checksum_sdt(&mcfg->hdr), "MCFG checksum invalid.");
         printf(KMSG_LOGLEVEL_INFO, "MCFG at %a\n", mcfg);
 

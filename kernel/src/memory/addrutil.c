@@ -15,14 +15,12 @@ uintptr_t vaddr_offset_lower(uintptr_t p)
 
 uintptr_t vaddr_ensure_higher(uintptr_t p)
 {
-        if (p < VADDR_HIGHER)   return p + VADDR_HIGHER;
-        else                    return p;
+        return p | VADDR_HIGHER;
 }
 
 uintptr_t vaddr_ensure_lower(uintptr_t p)
 {
-        if (p >= VADDR_HIGHER)  return p - VADDR_HIGHER;
-        else                    return p;
+        return p & ~VADDR_HIGHER;
 }
 
 uintptr_t addr_align_up(uintptr_t p, size_t a)
@@ -33,7 +31,7 @@ uintptr_t addr_align_up(uintptr_t p, size_t a)
 
 uintptr_t addr_align_down(uintptr_t p, size_t a)
 {
-        return (p / a) * a;
+        return p & ~a;
 }
 
 uintptr_t addr_page_align_up(uintptr_t p)
