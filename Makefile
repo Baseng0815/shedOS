@@ -26,7 +26,7 @@ qemu: hdd
 	    -smp $$(nproc) \
 	    -net none \
 	    -M q35 \
-	    -drive file=./disk_image.qcow2,if=none,id=nvme0 \
+	    -drive file=./disk_image.img,if=none,id=nvme0 \
 	    -device nvme,drive=nvme0,serial=deadbeaf1,num_queues=8 \
 	    -no-shutdown -no-reboot \
 	    -serial stdio -s -m $(QEMU_MEMORY) $(QEMU_FLAGS)

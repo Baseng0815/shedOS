@@ -29,9 +29,9 @@ struct sq_entry {
         uint32_t cdw0;
         uint32_t nsid; /* cdw 1 */
         uint32_t reserved0[2];
-        uint64_t mptr; /* cdw 5 */
-        uint64_t prp1; /* cdw 6 */
-        uint64_t prp2; /* cdw 7 */
+        uint64_t mptr; /* cdw 4/5 */
+        uint64_t prp1; /* cdw 6/7 */
+        uint64_t prp2; /* cdw 8/9 */
         uint32_t cdw10;
         uint32_t cdw11;
         uint32_t cdw12;
@@ -119,18 +119,58 @@ struct ctrl_id {
         /* I will finish this maybe some time later */
 } __attribute__((packed));
 
+struct lba_format {
+        uint16_t ms; /* metadata size */
+        uint8_t lbads; /* LBA data size */
+        uint8_t rp; /* relative performance */
+} __attribute__((packed));
+
+struct namespace_id {
+        uint64_t nsze; /* namespace size */
+        uint64_t ncap; /* namespace capacity */
+        uint64_t nuse; /* namespace utilization */
+        uint8_t nsfeat; /* namespace features */
+        uint8_t nlbaf; /* number of LBA features */
+        uint8_t flbas; /* formatted LBA size */
+        uint8_t mc; /* metadata capabilities */
+        uint8_t dpc; /* end-to-end data protection capabilities */
+        uint8_t dps; /* end-to-end data type settings */
+        uint8_t nmic; /* namespace multi-path I/O and sharing capabilities */
+        uint8_t rescap; /* reservation capabilities */
+        uint8_t fpi; /* format progress indicator */
+        uint8_t reserved0;
+        uint16_t nawun; /* namespace atomic write unit normal */
+        uint16_t nawupf; /* namespace atomic write unit power fail */
+        uint16_t nacwu; /* namespace atomic compare & write unit */
+        uint16_t nabsn; /* namespace atomic boundary size normal */
+        uint16_t nabo; /* namespace atomic boundary offset */
+        uint16_t nabspf; /* namespace atomic boundary size power fail */
+        uint16_t reserved1;
+        uint8_t nvmcap[16]; /* NVM capacity */
+        uint8_t reserved2[40];
+        uint64_t nguid[2]; /* namespace globally unique identifier */
+        uint64_t eui64; /* IEEE extended unique number */
+        struct lba_format lba_formats[16];
+        uint8_t reserved3[3904];
+} __attribute__((packed));
+
 struct regs *regs;
 struct queue admin_queue;
 struct queue io_queue;
-struct ctrl_id *ctrl_id;
+
+struct ctrl_id *ctrl_id; /* ctrl identify data structure */
+size_t nsid_count;
+uint32_t *nsid; /* namespace IDs */
+struct namespace_id *namespace_id; /* first namespace identify data structure */
 
 static void create_admin_queue(void);
 static void configure_msix(struct pci_device_endpoint *ep);
 static void create_io_queue(void);
+static void namespace_identify(void);
 static void ctrl_identify(void);
 
 static void send_cmd_sync(struct queue *queue,
-                          struct sq_entry *command,
+                          const struct sq_entry *command,
                           struct cq_entry *result);
 
 void nvme_initialize_device(struct pci_device_endpoint *ep,
@@ -203,6 +243,30 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
         printf(KMSG_LOGLEVEL_INFO, "Controller configured and reenabled.\n");
 
         ctrl_identify();
+        namespace_identify();
+
+        uint8_t *md = (uint8_t*)
+                vaddr_ensure_higher((uintptr_t)pmm_request_pages(1));
+        uint8_t *data = (uint8_t*)
+                vaddr_ensure_higher((uintptr_t)pmm_request_pages(1));
+
+        /* test read */
+        struct sq_entry cmd = {
+                .cdw0 = 0x2,
+                .nsid = nsid[0],
+                .mptr = vaddr_ensure_lower((uintptr_t)md),
+                .prp1 = vaddr_ensure_lower((uintptr_t)data),
+                .cdw10 = 0x44a000 / 512, .cdw11 = 0, /* starting LBA */
+                .cdw12 = 0 /* number of LBAs - 1 */
+        };
+        send_cmd_sync(&io_queue, &cmd, NULL);
+
+        /* dump 256 qwords */
+        for (size_t i = 0; i < 16; i++) {
+                for (size_t j = 0; j < 16; j++)
+                        printf(KMSG_LOGLEVEL_NONE, "%x ", data[i * 16 + j]);
+                printf(KMSG_LOGLEVEL_NONE, "\n");
+        }
 }
 
 void create_admin_queue(void)
@@ -224,9 +288,9 @@ void create_admin_queue(void)
 
         const uint32_t doorbell_stride = 1 << (2 + (regs->cap >> 32 & 0xf));
         admin_queue.sq_tail_dbl = (uint32_t*)
-                ((uintptr_t)regs + 0x1000 + 0 * doorbell_stride);
+                ((uintptr_t)regs + 0x1000 + (2 * 0 + 0) * doorbell_stride);
         admin_queue.cq_head_dbl = (uint32_t*)
-                ((uintptr_t)regs + 0x1000 + 1 * doorbell_stride);
+                ((uintptr_t)regs + 0x1000 + (2 * 0 + 1) * doorbell_stride);
 
         printf(KMSG_LOGLEVEL_INFO,
                "ASQ/ACQ at %x/%x, AQA=%x, doorbell stride=%x\n",
@@ -295,16 +359,16 @@ void create_io_queue(void)
         io_queue.cq_head = 0;
 
         const uint32_t doorbell_stride = 1 << (2 + (regs->cap >> 32 & 0xf));
-        admin_queue.sq_tail_dbl = (uint32_t*)
-                ((uintptr_t)regs + 0x1000 + 0 * doorbell_stride);
-        admin_queue.cq_head_dbl = (uint32_t*)
-                ((uintptr_t)regs + 0x1000 + 1 * doorbell_stride);
+        io_queue.sq_tail_dbl = (uint32_t*)
+                ((uintptr_t)regs + 0x1000 + (2 * 1 + 0) * doorbell_stride);
+        io_queue.cq_head_dbl = (uint32_t*)
+                ((uintptr_t)regs + 0x1000 + (2 * 1 + 1) * doorbell_stride);
 
         /* create completion queue on NVM device */
         struct sq_entry command = {
                 .cdw0 = 0x5,
-                .prp1 = (uintptr_t)io_queue.cq >> 0     & 0xffffffff,
-                .prp2 = (uintptr_t)io_queue.cq >> 32    & 0xffffffff,
+                .prp1 = vaddr_ensure_lower((uintptr_t)io_queue.cq) >> 0,
+                .prp2 = vaddr_ensure_lower((uintptr_t)io_queue.cq) >> 32,
                 .cdw10 = 1 << 0 |   /* queue identifier */
                         255 << 16,  /* queue size - 1 */
                 .cdw11 = 1 << 0 |   /* physically contiguous */
@@ -317,8 +381,8 @@ void create_io_queue(void)
 
         /* create submission queue on NVM device */
         command.cdw0 = 0x1;
-        command.prp1 = (uintptr_t)io_queue.sq >> 0  & 0xffffffff;
-        command.prp2 = (uintptr_t)io_queue.sq >> 32 & 0xffffffff;
+        command.prp1 = vaddr_ensure_lower((uintptr_t)io_queue.sq) >> 0;
+        command.prp2 = vaddr_ensure_lower((uintptr_t)io_queue.sq) >> 32;
         command.cdw10 = 1 << 0 |    /* queue identifier */
                 255 << 16;          /* queue size - 1 */
         command.cdw11 = 1 << 0 |    /* physically contiguous */
@@ -331,10 +395,49 @@ void create_io_queue(void)
                io_queue.sq, io_queue.cq);
 }
 
+void namespace_identify(void)
+{
+        nsid = (uint32_t*)vaddr_ensure_higher((uintptr_t)pmm_request_pages(1));
+
+        struct sq_entry command = {
+                .cdw0 = 0x06,
+                .prp1 = vaddr_ensure_lower((uintptr_t)nsid),
+                .cdw10 = 2
+        };
+        send_cmd_sync(&admin_queue, &command, NULL);
+
+        nsid_count = 0;
+        while (nsid[nsid_count]) {
+                nsid_count++;
+        }
+
+        printf(KMSG_LOGLEVEL_INFO, "%d namespace(s) found: ", nsid_count);
+        for (size_t i = 0; i < nsid_count; i++) {
+                printf(KMSG_LOGLEVEL_NONE, "%d ", nsid[i]);
+        }
+        printf(KMSG_LOGLEVEL_NONE, "\n");
+
+        namespace_id = (struct namespace_id*)
+                vaddr_ensure_higher((uintptr_t)pmm_request_pages(1));
+        command.prp1    = vaddr_ensure_lower((uintptr_t)namespace_id);
+        command.cdw10   = 0;
+        command.nsid    = nsid[0];
+        send_cmd_sync(&admin_queue, &command, NULL);
+
+        const struct lba_format *format =
+                &namespace_id->lba_formats[namespace_id->flbas & 0x3];
+
+        printf(KMSG_LOGLEVEL_INFO,
+               "Namespace size/capacity/utilization: %d/%d/%d blocks, "
+                "LBA data/metadata size=%d/%d bytes, relative perf=%d\n",
+               namespace_id->nsze, namespace_id->ncap, namespace_id->nuse,
+               1 << format->lbads, format->ms, format->rp);
+}
+
 void ctrl_identify(void)
 {
         ctrl_id = (struct ctrl_identification*)
-                vaddr_ensure_higher(pmm_request_pages(1));
+                vaddr_ensure_higher((uintptr_t)pmm_request_pages(1));
 
         struct sq_entry command = {
                 .cdw0 = 0x06,
@@ -361,7 +464,7 @@ void ctrl_identify(void)
 }
 
 void send_cmd_sync(struct queue *queue,
-                   struct sq_entry *command,
+                   const struct sq_entry *command,
                    struct cq_entry *result)
 {
         /* submit */

@@ -145,14 +145,14 @@ void *stivale2_get_tag(struct stivale2_struct *stivale2_struct, uint64_t id)
 
 void welcome_message()
 {
-        const char *ascii =
+        const char *banner =
                 "\n     _              _  ___  ____\n"
                 " ___| |__   ___  __| |/ _ \\/ ___|\n"
                 "/ __| '_ \\ / _ \\/ _` | | | \\___ \\\n"
                 "\\__ \\ | | |  __/ (_| | |_| |___) |\n"
                 "|___/_| |_|\\___|\\__,_|\\___/|____/\n\n";
 
-        printf(KMSG_LOGLEVEL_NONE, ascii);
+        printf(KMSG_LOGLEVEL_NONE, banner);
 }
 
 void dump_stivale_info(struct stivale2_struct *stivale2_struct)
