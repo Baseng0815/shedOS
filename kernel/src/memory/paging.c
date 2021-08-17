@@ -24,17 +24,14 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
         kernel_table = (struct page_table*)
                 vaddr_ensure_higher(pmm_request_pages(1));
         memset(kernel_table, 0, 0x1000);
-        paging_map(kernel_table,
-                   (void*)kernel_table,
-                   (void*)vaddr_ensure_lower(kernel_table), false, true);
 
         printf(KMSG_LOGLEVEL_INFO,
                "Kernel table at %a\n", kernel_table);
 
         /* map everything below 4G to higher half */
-        printf(KMSG_LOGLEVEL_INFO, "Mapping first 4G...\n");
+        printf(KMSG_LOGLEVEL_INFO, "Mapping first 4G to HIGHER...\n");
         map_kernel_region(VADDR_HIGHER, 0x0, 0x100000000);
-        printf(KMSG_LOGLEVEL_INFO, "Mapping first 2G...\n");
+        printf(KMSG_LOGLEVEL_INFO, "Mapping first 4G to KERNEL...\n");
         map_kernel_region(VADDR_KERNEL, 0x0, 0x100000000);
 
         printf(KMSG_LOGLEVEL_INFO, "Using new page table...\n");
