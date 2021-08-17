@@ -22,6 +22,7 @@
 
 #include "libk/kmalloc.h"
 #include "pci/pci.h"
+#include "user.h"
 
 static uint8_t stack[0x4000]; /* 16 KiB stack */
 
@@ -121,7 +122,9 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         kmalloc_initialize();
 
-        pci_init();
+        /* pci_init(); */
+
+        user_jump();
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");

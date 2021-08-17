@@ -21,9 +21,9 @@ struct gdt {
         struct gdt_entry kernel_null;   /* @ 0x00 */
         struct gdt_entry kernel_code;   /* @ 0x08 */
         struct gdt_entry kernel_data;   /* @ 0x10 */
-        struct gdt_entry user_null;
-        struct gdt_entry user_code;
-        struct gdt_entry user_data;
+        struct gdt_entry user_null;     /* @ 0x18 */
+        struct gdt_entry user_code;     /* @ 0x20 */
+        struct gdt_entry user_data;     /* @ 0x28 */
 } __attribute__((packed)) __attribute__((aligned(0x1000)));
 
 void gdt_initialize();

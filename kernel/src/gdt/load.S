@@ -2,7 +2,7 @@
 
 gdt_load:
         lgdt (%rdi)
-        movw $0x10, %ax
+        movw $0x10, %ax ; kernel code
         movw %ax, %ds
         movw %ax, %es
         movw %ax, %fs
