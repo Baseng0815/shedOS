@@ -8,11 +8,11 @@
 #include "../stivale2.h"
 
 /* we use 4-level paging (top to bottom), each containing 512 children:
-   pml4 (page map level 4, top structure)
-   pdp  (page directory pointer)
-   pd   (page directory)
-   pt   (page table)
-   p    (page) (this is the physical frame address)
+   lvl5 ("level 5" - top level)
+   lvl4 (level 4)
+   lvl3 (level 3)
+   lvl2 (level 2)
+   lvl1 (level 1) (this is the actual physical page)
    */
 
 /* schematic of how the address space looks
@@ -27,26 +27,18 @@ regions:
 0xfffffff800000000-0xffffffffffffffff (kernel mapped to last 2G)
 */
 
-struct pt_entry {
-        uint64_t present        : 1; /* 1 => page is in physical memory */
-        uint64_t writable       : 1; /* 1 => read/write, 0 => read only */
-        uint64_t user_access    : 1; /* 1 => page can be accessed by all */
-        uint64_t write_through  : 1; /* 1 => use write-through cache strategy */
-        uint64_t cache_disabled : 1; /* 1 => page will not be cached */
-        uint64_t accessed       : 1; /* set to 1 when page is accessed */
-        uint64_t ignore0        : 1; /* can't use, is reserved */
-        uint64_t large_pages    : 1; /* 0 => 4KiB page size */
-        uint64_t ignore1        : 1; /* can't use, is reserved */
-        uint64_t available      : 3; /* here we can store anything we want */
-        uint64_t addr           : 52; /* either physical memory or other
-                                         pd_entry */
-};
-
 /* a page table is exactly 4096 bytes large so it fits into a single frame */
 struct page_table {
-        /* we make no difference between pd_entries and actual pages */
-        struct pt_entry entries[512];
+        uint64_t entries[512];
 } __attribute__((aligned(0x1000)));
+
+enum {
+        PAGING_PRESENT  = 1UL << 0, /* present */
+        PAGING_WRITABLE = 1UL << 1, /* enable read/write */
+        PAGING_USER     = 1UL << 2, /* enable user access */
+        PAGING_WTHROUGH = 1UL << 3, /* enable write-through caching */
+        PAGING_CDISABLE = 1UL << 4 /* disable cache */
+};
 
 extern struct page_table *kernel_table;
 
@@ -54,10 +46,9 @@ extern struct page_table *kernel_table;
 void paging_initialize(struct stivale2_struct_tag_memmap*,
                        struct stivale2_struct_tag_framebuffer*);
 
-bool paging_map(struct page_table*, void *vaddr, void *paddr,
-                bool disable_cache, bool writable);
+bool paging_map(struct page_table*, void *vaddr, void *paddr, uint8_t flags);
 void paging_unmap(struct page_table*, void *vaddr);
-struct pt_entry *paging_entry_get(struct page_table*, void *vaddr);
+uint64_t *paging_entry_get(struct page_table*, void *vaddr);
 
 void paging_write_cr3(const struct page_table*);
 void paging_flush_tlb(void *addr);

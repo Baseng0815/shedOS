@@ -8,7 +8,7 @@
 
 struct page_table *kernel_table;
 
-/* get pdpi, pdi, pti, pi from vaddress */
+/* get level indices */
 static void map_index(uintptr_t, size_t*, size_t*, size_t*, size_t*);
 
 /* get the next lower table or create if not existing */
@@ -20,6 +20,12 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
                        struct stivale2_struct_tag_framebuffer *fb)
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target paging.\n");
+
+        /* disable kernel write access to read-only pages */
+        asm volatile("movq %%cr0, %%rax;"
+                     "orq $(1 << 16), %%rax;"
+                     "movq %%rax, %%cr0;"
+                     : : : "rax");
 
         kernel_table = (struct page_table*)
                 vaddr_ensure_higher(pmm_request_pages(1));
@@ -34,6 +40,9 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
         printf(KMSG_LOGLEVEL_INFO, "Mapping first 4G to KERNEL...\n");
         map_kernel_region(VADDR_KERNEL, 0x0, 0x100000000);
 
+        /* unmap NULL page */
+        paging_unmap(kernel_table, NULL);
+
         printf(KMSG_LOGLEVEL_INFO, "Using new page table...\n");
 
         paging_write_cr3(vaddr_ensure_lower(kernel_table));
@@ -41,20 +50,20 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
         printf(KMSG_LOGLEVEL_OKAY, "Finished target paging.\n");
 }
 
-bool paging_map(struct page_table *table, void *vaddr, void *paddr,
-                bool disable_cache, bool writable)
+bool paging_map(struct page_table *table,
+                void *vaddr,
+                void *paddr,
+                uint8_t flags)
 {
-        struct pt_entry *pt_entry = paging_entry_get(table, vaddr);
+        uint64_t *entry = paging_entry_get(table, vaddr);
 
         /* already in use */
-        if (pt_entry->present)
+        if (*entry & PAGING_PRESENT)
                 return false;
 
-        /* set physical address */
-        pt_entry->present = true;
-        pt_entry->writable = writable;
-        pt_entry->cache_disabled = disable_cache;
-        pt_entry->addr = (uintptr_t)paddr >> 12;
+        *entry = PAGING_PRESENT |
+                flags |
+                (uintptr_t)paddr;
 
         paging_flush_tlb(vaddr);
 
@@ -63,22 +72,26 @@ bool paging_map(struct page_table *table, void *vaddr, void *paddr,
 
 void paging_unmap(struct page_table *table, void *vaddr)
 {
-        struct pt_entry *pt_entry = paging_entry_get(table, vaddr);
+        uint64_t *entry = paging_entry_get(table, vaddr);
 
-        pt_entry->present = false;
+        *entry &= ~PAGING_PRESENT;
 }
 
-struct pt_entry *paging_entry_get(struct page_table *table, void *vaddr)
+uint64_t *paging_entry_get(struct page_table *table, void *vaddr)
 {
-        size_t pml4i, pdpi, pdi, pti;
-        map_index((uintptr_t)vaddr, &pml4i, &pdpi, &pdi, &pti);
+        size_t lvl4_index, lvl3_index, lvl2_index, lvl1_index;
+        map_index((uintptr_t)vaddr,
+                  &lvl4_index,
+                  &lvl3_index,
+                  &lvl2_index,
+                  &lvl1_index);
 
-        struct page_table *pdp      = get(table, pml4i);
-        struct page_table *pd       = get(pdp, pdpi);
-        struct page_table *pt       = get(pd, pdi);
-        struct pt_entry *pt_entry   = &pt->entries[pti];
+        struct page_table *lvl4 = get(table, lvl4_index);
+        struct page_table *lvl3 = get(lvl4, lvl3_index);
+        struct page_table *lvl2 = get(lvl3, lvl2_index);
+        uint64_t *lvl1  = &lvl2->entries[lvl1_index];
 
-        return pt_entry;
+        return lvl1;
 }
 
 void paging_write_cr3(const struct page_table *table)
@@ -92,10 +105,10 @@ void paging_flush_tlb(void *addr)
 }
 
 void map_index(uintptr_t vaddr,
-               size_t *pml4i,
-               size_t *pdpi,
-               size_t *pdi,
-               size_t *pti)
+               size_t *lvl4_index,
+               size_t *lvl3_index,
+               size_t *lvl2_index,
+               size_t *lvl1_index)
 {
         /* 48 bits of the virtual address are translated,
            so we have access to 256TB
@@ -104,37 +117,36 @@ void map_index(uintptr_t vaddr,
            */
 
         vaddr >>= 12;
-        *pti = vaddr & 0x1ff; /* 0x1ff = 9-bit mask */
+        *lvl1_index = vaddr & 0x1ff; /* 0x1ff = 9-bit mask */
         vaddr >>= 9;
-        *pdi = vaddr & 0x1ff;
+        *lvl2_index = vaddr & 0x1ff;
         vaddr >>= 9;
-        *pdpi = vaddr & 0x1ff;
+        *lvl3_index = vaddr & 0x1ff;
         vaddr >>= 9;
-        *pml4i = vaddr & 0x1ff;
+        *lvl4_index = vaddr & 0x1ff;
 }
 
-struct page_table *get(struct page_table *parent,
-                       size_t index)
+struct page_table *get(struct page_table *parent, size_t index)
 {
-        struct pt_entry *child_entry = &parent->entries[index];
+        uint64_t *child_entry = &parent->entries[index];
         struct page_table *child;
-        if (!child_entry->present) {
+        if (!(*child_entry & PAGING_PRESENT)) {
                 /* allocate and zero out */
                 child = (struct page_table*)
                         vaddr_ensure_higher(pmm_request_pages(1));
                 memset(child, 0, 0x1000);
 
-                child_entry->present = true;
-                child_entry->writable = true;
-                child_entry->addr = vaddr_ensure_lower(child) >> 12;
+                *child_entry = PAGING_PRESENT |
+                        PAGING_WRITABLE |
+                        vaddr_ensure_lower(child);
 
                 paging_map(kernel_table,
                            (void*)child,
-                           (void*)vaddr_ensure_lower(child), false, true);
+                           (void*)vaddr_ensure_lower(child), PAGING_WRITABLE);
         } else {
-                /* child is present, all good */
+                /* child is present, all good (mask off first 12 bits) */
                 child = (struct page_table*)
-                        vaddr_ensure_higher((uintptr_t)child_entry->addr << 12);
+                        vaddr_ensure_higher(*child_entry & ~0xfffUL);
         }
 
         return child;
@@ -148,6 +160,6 @@ static void map_kernel_region(uintptr_t voffset,
              addr < poffset + len;
              addr += 0x1000) {
                 paging_map(kernel_table, (void*)(voffset + addr), (void*)addr,
-                           false, true);
+                           PAGING_WRITABLE);
         }
 }

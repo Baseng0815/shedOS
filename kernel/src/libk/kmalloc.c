@@ -28,7 +28,7 @@ void kmalloc_initialize()
                pheap_start, mheap_start);
 
         const size_t initial_heap_size = 0x1000;
-        vmm_request_at(kernel_table, mheap_head, 1, false, true);
+        vmm_request_at(kernel_table, mheap_head, 1, PAGING_WRITABLE);
         mheap_head->is_free = true;
         mheap_head->size    = initial_heap_size - 2 * sizeof(struct mheap_hdr);
 
@@ -48,11 +48,11 @@ void *kpmalloc()
         void *memory = pnext_free;
 
         /* find next free virtual address */
-        struct pt_entry *entry;
+        uint64_t *entry;
         do {
                 pnext_free++;
                 entry = paging_entry_get(kernel_table, pnext_free);
-        } while (entry->present);
+        } while (*entry & PAGING_PRESENT);
 
         return memory;
 }
@@ -97,7 +97,7 @@ void *kmalloc(size_t size)
         size_t additional_pages = addr_page_align_up(alloc_size) / 0x1000;
         vmm_request_at(kernel_table,
                        (uintptr_t)hdr + sizeof(struct mheap_hdr),
-                       additional_pages, false, true);
+                       additional_pages, PAGING_WRITABLE);
         hdr->is_free    = true;
         hdr->size       = additional_pages * 0x1000 - sizeof(struct mheap_hdr);
 

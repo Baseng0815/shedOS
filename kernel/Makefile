@@ -68,7 +68,7 @@ src/interrupts/exceptions_c.o: src/interrupts/exceptions.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
 	    -mgeneral-regs-only -c -o $@ $<
 
-src/interrupts/irqs_c.o: src/interrupts/irqs.c
+src/interrupts/isr_c.o: src/interrupts/isr.c
 	@echo "=====! COMPILING $< INTO $@ !====="
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
 	    -mgeneral-regs-only -c -o $@ $<

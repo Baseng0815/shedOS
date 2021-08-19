@@ -42,7 +42,7 @@ hdd: sysroot
 	    echo "Importing $$f..."; \
 	    echfs-utils -g -p0 $(HDD) import $(SYSROOT)/$$f $$f; \
 	    done
-	$(DEPENDENCIES)/limine/limine-install $(HDD)
+	$(DEPENDENCIES)/limine/limine-install-linux-x86_64 $(HDD)
 
 # mounting it is easier than using mmd for the time being
 usb: sysroot
