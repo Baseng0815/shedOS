@@ -3,7 +3,7 @@
 #include "../libk/printf.h"
 
 #include "exceptions.h"
-#include "irqs.h"
+#include "isr.h"
 
 static struct idt_desc idt_descriptors[256] = { 0 };
 

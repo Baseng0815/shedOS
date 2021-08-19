@@ -1,4 +1,4 @@
-#include "irqs.h"
+#include "isr.h"
 
 #include "../libk/printf.h"
 
