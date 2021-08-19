@@ -1,3 +1,4 @@
+.section .text
 .extern exception_handle
 
 .macro push_all
@@ -19,64 +20,119 @@
 .endm
 
 .macro pop_all
-    popq %rax
-    popq %rbx
-    popq %rcx
-    popq %rdx
-    popq %rsi
-    popq %rdi
-    popq %rbp
-    popq %r8
-    popq %r9
-    popq %r10
-    popq %r11
-    popq %r12
-    popq %r13
-    popq %r14
     popq %r15
+    popq %r14
+    popq %r13
+    popq %r12
+    popq %r11
+    popq %r10
+    popq %r9
+    popq %r8
+    popq %rbp
+    popq %rdi
+    popq %rsi
+    popq %rdx
+    popq %rcx
+    popq %rbx
+    popq %rax
 .endm
 
-.macro isr_nocode int_no name
-    .global \name
-    \name:
+.macro isr_nocode int_no
+    .global __isr\int_no
+    __isr\int_no:
     pushq $0
     pushq $\int_no
+    cld
     push_all
     mov %rsp, %rdi
     call exception_handle
     pop_all
     addq $16, %rsp # pop error and int_no
+    sti
     iretq
 .endm
 
-.macro isr_code int_no name
-    .global \name
-    \name:
+.macro isr_code int_no
+    .global __isr\int_no
+    __isr\int_no:
     pushq $\int_no
+    cld
     push_all
     mov %rsp, %rdi
     call exception_handle
     pop_all
     addq $16, %rsp # pop error and int_no
+    sti
     iretq
 .endm
 
-isr_nocode 0x0 de_handle
-isr_nocode 0x1 db_handle
-isr_nocode 0x3 bp_handle
-isr_nocode 0x4 of_handle
-isr_nocode 0x5 br_handle
-isr_nocode 0x6 ud_handle
-isr_nocode 0x7 nm_handle
-isr_code 0x8 df_handle
-isr_code 0xa ts_handle
-isr_code 0xb np_handle
-isr_code 0xc ss_handle
-isr_code 0xd gp_handle
-isr_code 0xe pf_handle
-isr_nocode 0x10 mf_handle
-isr_code 0x11 ac_handle
-isr_nocode 0x12 mc_handle
-isr_nocode 0x13 xm_handle
-isr_nocode 0x14 ve_handle
-isr_code 0x1e sx_handle
+.macro isr_name int_no
+    .quad __isr\int_no
+.endm
+
+isr_nocode  0
+isr_nocode  1
+isr_nocode  2
+isr_nocode  3
+isr_nocode  4
+isr_nocode  5
+isr_nocode  6
+isr_nocode  7
+isr_code    8
+isr_nocode  9
+isr_code    10
+isr_code    11
+isr_code    12
+isr_code    13
+isr_code    14
+isr_code    15
+isr_nocode  16
+isr_code    17
+isr_nocode  18
+isr_nocode  19
+isr_nocode  20
+isr_nocode  21
+isr_nocode  22
+isr_nocode  23
+isr_nocode  24
+isr_nocode  25
+isr_nocode  26
+isr_nocode  27
+isr_nocode  28
+isr_nocode  29
+isr_code    30
+
+.section .data
+.global __exception_interrupts
+__exception_interrupts:
+    isr_name    0
+    isr_name    1
+    isr_name    2
+    isr_name    3
+    isr_name    4
+    isr_name    5
+    isr_name    6
+    isr_name    7
+    isr_name    8
+    isr_name    9
+    isr_name    10
+    isr_name    11
+    isr_name    12
+    isr_name    13
+    isr_name    14
+    isr_name    15
+    isr_name    16
+    isr_name    17
+    isr_name    18
+    isr_name    19
+    isr_name    20
+    isr_name    21
+    isr_name    22
+    isr_name    23
+    isr_name    24
+    isr_name    25
+    isr_name    26
+    isr_name    27
+    isr_name    28
+    isr_name    29
+    isr_name    30

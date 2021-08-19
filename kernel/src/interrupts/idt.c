@@ -16,8 +16,8 @@ void idt_initialize()
         printf(KMSG_LOGLEVEL_INFO, "idt at %a\n", idt_descriptors);
 
         /* set up exceptions */
-        for (uint8_t i = 0; i < 21; i++) {
-                load_interrupt(i, (uintptr_t)exception_interrupts[i]);
+        for (uint8_t i = 0; i <= 0x1e; i++) {
+                load_interrupt(i, __exception_interrupts[i]);
         }
 
         /* hpet interrupt */

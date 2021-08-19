@@ -61,7 +61,7 @@ bool paging_map(struct page_table *table,
         if (*entry & PAGING_PRESENT)
                 return false;
 
-        *entry = PAGING_PRESENT |
+        *entry = PAGING_PRESENT | PAGING_USER |
                 flags |
                 (uintptr_t)paddr;
 
@@ -136,7 +136,7 @@ struct page_table *get(struct page_table *parent, size_t index)
                         vaddr_ensure_higher(pmm_request_pages(1));
                 memset(child, 0, 0x1000);
 
-                *child_entry = PAGING_PRESENT |
+                *child_entry = PAGING_PRESENT | PAGING_USER |
                         PAGING_WRITABLE |
                         vaddr_ensure_lower(child);
 

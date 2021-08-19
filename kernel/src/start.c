@@ -36,11 +36,16 @@ static void dump_memory(struct stivale2_struct_tag_memmap*);
 /* header tags are given to the bootloader from the kernel,
    structure tags are returned from the bootloader to the kernel */
 
+static struct stivale2_tag unmap_null_header_tag = {
+        .identifier = STIVALE2_HEADER_TAG_UNMAP_NULL_ID,
+        .next = NULL
+};
+
 static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
         .tag = {
                 .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
                 /* zero indicates the end of the linked list */
-                .next = 0
+                .next = &unmap_null_header_tag
         },
 #ifdef FB_FHD
         .framebuffer_width  = 1920,
@@ -67,6 +72,8 @@ void *stivale2_get_tag(struct stivale2_struct*, uint64_t);
 
 void _start(struct stivale2_struct *stivale2_struct)
 {
+        asm volatile("cli");
+
         /* framebuffer and terminal */
         struct stivale2_struct_tag_framebuffer *fb =
                 stivale2_get_tag(stivale2_struct,
@@ -106,7 +113,7 @@ void _start(struct stivale2_struct *stivale2_struct)
         dump_memory(mmap);
         pmm_initialize(mmap);
         paging_initialize(mmap, fb);
-        gdt_initialize();
+        gdt_initialize(stack);
 
         /* system descriptor tables */
         struct stivale2_struct_tag_rsdp *rsdp =
@@ -118,13 +125,14 @@ void _start(struct stivale2_struct *stivale2_struct)
         /* interrupts */
         idt_initialize();
         apic_initialize(madt);
+        asm volatile("sti");
         timer_initialize();
 
         kmalloc_initialize();
 
         /* pci_init(); */
-
-        user_jump();
+        asm volatile("cli");
+        _user_jump();
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");
