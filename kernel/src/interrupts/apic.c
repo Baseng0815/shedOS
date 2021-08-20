@@ -78,7 +78,7 @@ void        ioapic_register_write(uint32_t ioapic_id,
 uint32_t    ioapic_register_read(uint32_t ioapic_id, uint8_t offset);
 
 void        ioapic_ioredtbl_write(uint32_t ioapic_id,
-                                  uint8_t index,
+                                  uint8_t irq,
                                   struct ioredtbl tbl);
 
 void apic_initialize(const struct madt *madt)
@@ -127,7 +127,13 @@ void apic_initialize(const struct madt *madt)
                         (iso.flags & 0x8 > 0) ? LEVEL : EDGE;
                 tbl.mask = 0;
                 tbl.destination = bsp_lapic_id;
-                tbl.vector = iso.gsi + 0x20;
+
+                /* timer (HPET) */
+                if (iso.irq_source == 0) {
+                        tbl.vector = 0x20;
+                } else {
+                        tbl.vector = iso.gsi + 0x20;
+                }
 
                 printf(KMSG_LOGLEVEL_INFO,
                        "Setting up redirection entry in IOAPIC %d with IRQ "
@@ -215,16 +221,16 @@ uint32_t ioapic_register_read(uint32_t ioapic_id,
 }
 
 void ioapic_ioredtbl_write(uint32_t ioapic_id,
-                           uint8_t index,
+                           uint8_t irq,
                            struct ioredtbl tbl)
 {
         uint64_t table = *((uint64_t*)&tbl);
 
         ioapic_register_write(ioapic_id,
-                              IOREDTBL_OFFSET(index) + 0,
+                              IOREDTBL_OFFSET(irq) + 0,
                               (uint32_t)(table >> 0));
 
         ioapic_register_write(ioapic_id,
-                              IOREDTBL_OFFSET(index) + 1,
+                              IOREDTBL_OFFSET(irq) + 1,
                               (uint32_t)(table >> 32));
 }

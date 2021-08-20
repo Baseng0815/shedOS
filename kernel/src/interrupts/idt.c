@@ -2,8 +2,7 @@
 
 #include "../libk/printf.h"
 
-#include "exceptions.h"
-#include "isr.h"
+#include "interrupts.h"
 
 static struct idt_desc idt_descriptors[256] = { 0 };
 
@@ -20,8 +19,8 @@ void idt_initialize()
                 load_interrupt(i, __exception_interrupts[i]);
         }
 
-        /* hpet interrupt */
-        load_interrupt(0x22, (uintptr_t)hpet_handle);
+        /* timer interrupt */
+        load_interrupt(0x20, (uintptr_t)__isr32);
 
         struct idt idt = {
                 .size = 0x1000 - 1,

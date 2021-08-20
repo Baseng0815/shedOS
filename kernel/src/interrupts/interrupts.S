@@ -1,5 +1,6 @@
 .section .text
 .extern exception_handle
+.extern interrupt_handle
 
 .macro push_all
     pushq %rax
@@ -37,32 +38,47 @@
     popq %rax
 .endm
 
-.macro isr_nocode int_no
+# push error code and int_no
+.macro isr_err_nocode int_no
     .global __isr\int_no
+    .align 4
     __isr\int_no:
     pushq $0
     pushq $\int_no
-    cld
     push_all
+    cld
     mov %rsp, %rdi
     call exception_handle
     pop_all
     addq $16, %rsp # pop error and int_no
-    sti
     iretq
 .endm
 
-.macro isr_code int_no
+# push int_no
+.macro isr_err_code int_no
     .global __isr\int_no
+    .align 4
     __isr\int_no:
     pushq $\int_no
-    cld
     push_all
+    cld
     mov %rsp, %rdi
     call exception_handle
     pop_all
     addq $16, %rsp # pop error and int_no
-    sti
+    iretq
+.endm
+
+# only gpr and interrupt_frame
+.macro isr_noerr int_no
+    .global __isr\int_no
+    .align 4
+    __isr\int_no:
+    push_all
+    cld
+    mov %rsp, %rdi
+    call isr\int_no
+    pop_all
     iretq
 .endm
 
@@ -70,37 +86,41 @@
     .quad __isr\int_no
 .endm
 
-isr_nocode  0
-isr_nocode  1
-isr_nocode  2
-isr_nocode  3
-isr_nocode  4
-isr_nocode  5
-isr_nocode  6
-isr_nocode  7
-isr_code    8
-isr_nocode  9
-isr_code    10
-isr_code    11
-isr_code    12
-isr_code    13
-isr_code    14
-isr_code    15
-isr_nocode  16
-isr_code    17
-isr_nocode  18
-isr_nocode  19
-isr_nocode  20
-isr_nocode  21
-isr_nocode  22
-isr_nocode  23
-isr_nocode  24
-isr_nocode  25
-isr_nocode  26
-isr_nocode  27
-isr_nocode  28
-isr_nocode  29
-isr_code    30
+# exceptions
+isr_err_nocode  0
+isr_err_nocode  1
+isr_err_nocode  2
+isr_err_nocode  3
+isr_err_nocode  4
+isr_err_nocode  5
+isr_err_nocode  6
+isr_err_nocode  7
+isr_err_code    8
+isr_err_nocode  9
+isr_err_code    10
+isr_err_code    11
+isr_err_code    12
+isr_err_code    13
+isr_err_code    14
+isr_err_code    15
+isr_err_nocode  16
+isr_err_code    17
+isr_err_nocode  18
+isr_err_nocode  19
+isr_err_nocode  20
+isr_err_nocode  21
+isr_err_nocode  22
+isr_err_nocode  23
+isr_err_nocode  24
+isr_err_nocode  25
+isr_err_nocode  26
+isr_err_nocode  27
+isr_err_nocode  28
+isr_err_nocode  29
+isr_err_code    30
+
+# timer
+isr_noerr       32
 
 .section .data
 .global __exception_interrupts

@@ -15,9 +15,9 @@ _user_jump:
     pushq $0x23 # user data
     pushq %rax
     pushfq
-    # popq %rax
-    # orq $0x200, %rax # IF enable
-    # pushq %rax
+    popq %rax
+    orq $0x200, %rax # IF enable
+    pushq %rax
     pushq $0x1b # user code
     pushq $user_jump
     iretq

@@ -1,11 +1,11 @@
-#include "exceptions.h"
+#include "interrupts.h"
 
-#include <stddef.h>
+#include "apic.h"
+#include "timer.h"
 
 #include "../libk/printf.h"
-#include "../debug.h"
 
-const char *exception_names[] = {
+static const char *exception_names[] = {
         "Divide by zero exception (0x00)",
         "Debug exception (0x01)",
         "Invalid exception ISR",
@@ -48,6 +48,7 @@ const char *exception_names[] = {
         "Security exception (0x1e)"
 };
 
+/* all interrupts are handled through this procedure */
 void exception_handle(struct exception_frame *frame)
 {
         printf(KMSG_LOGLEVEL_CRIT,
@@ -69,4 +70,11 @@ void exception_handle(struct exception_frame *frame)
         for (;;) {
                 asm volatile("hlt");
         }
+}
+
+void isr32(struct interrupt_frame *frame)
+{
+        timer_tick();
+
+        apic_send_eoi();
 }

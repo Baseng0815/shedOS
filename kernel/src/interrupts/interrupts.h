@@ -1,5 +1,5 @@
-#ifndef _EXCEPTIONS_H
-#define _EXCEPTIONS_H
+#ifndef _INTERRUPTS_H
+#define _INTERRUPTS_H
 
 #include <stdint.h>
 #include "isr.h"
@@ -22,17 +22,27 @@ struct registers {
     uint64_t rax;
 } __attribute__((packed));
 
+struct interrupt_frame_other {
+        uint64_t rip;
+        uint64_t cs;
+        uint64_t rflags;
+        uint64_t rsp;
+        uint64_t ss;
+} __attribute__((packed));
+
 struct exception_frame {
         struct registers gprs;
         uint64_t int_no;
         uint64_t error_code;
-        struct interrupt_frame frame;
+        struct interrupt_frame_other frame;
 } __attribute__((packed));
 
-extern void exception_handle(struct exception_frame*);
+struct interrupt_frame {
+        struct registers gprs;
+        struct interrupt_frame_other frame;
+} __attribute__((packed));
 
-/* exception handlers as defined in exceptions.S */
 extern uintptr_t __exception_interrupts[30];
-extern const char *exception_names[];
+extern void(*__isr32)(struct interrupt_frame*); /* timer */
 
 #endif

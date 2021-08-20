@@ -25,6 +25,7 @@
 #include "user.h"
 
 static uint8_t stack[0x4000]; /* 16 KiB stack */
+static uint8_t stack2[0x4000]; /* 16 KiB stack */
 
 static void welcome_message();
 static void dump_stivale_info(struct stivale2_struct*);
@@ -113,7 +114,7 @@ void _start(struct stivale2_struct *stivale2_struct)
         dump_memory(mmap);
         pmm_initialize(mmap);
         paging_initialize(mmap, fb);
-        gdt_initialize(stack);
+        gdt_initialize((uintptr_t)stack2 + sizeof(stack2));
 
         /* system descriptor tables */
         struct stivale2_struct_tag_rsdp *rsdp =
@@ -123,15 +124,15 @@ void _start(struct stivale2_struct *stivale2_struct)
         sdt_initialize(rsdp);
 
         /* interrupts */
+        asm volatile("cli");
         idt_initialize();
         apic_initialize(madt);
-        asm volatile("sti");
+        /* asm volatile("sti"); */
         timer_initialize();
 
         kmalloc_initialize();
 
         /* pci_init(); */
-        asm volatile("cli");
         _user_jump();
 
         printf(KMSG_LOGLEVEL_OKAY,
