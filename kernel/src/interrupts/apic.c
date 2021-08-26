@@ -130,7 +130,7 @@ void apic_initialize(const struct madt *madt)
 
                 /* timer (HPET) */
                 if (iso.irq_source == 0) {
-                        tbl.vector = 0x20;
+                        tbl.vector = 0x22;
                 } else {
                         tbl.vector = iso.gsi + 0x20;
                 }

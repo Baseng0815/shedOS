@@ -20,7 +20,7 @@ void idt_initialize()
         }
 
         /* timer interrupt */
-        load_interrupt(0x20, (uintptr_t)__isr32);
+        load_interrupt(0x22, (uintptr_t)&__isr34);
 
         struct idt idt = {
                 .size = 0x1000 - 1,

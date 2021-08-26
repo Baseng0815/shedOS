@@ -72,7 +72,7 @@ void gdt_initialize(void *kernel_stack)
 
         memset(&tss, 0, sizeof(tss));
         tss.rsp0        = (uintptr_t)kernel_stack;
-        tss.ist1        = (uintptr_t)kernel_stack;
+        tss.ist1        = 0;
         tss.iopb_offset = sizeof(tss);
         tss_load();
         printf(KMSG_LOGLEVEL_INFO,

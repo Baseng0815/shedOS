@@ -2,7 +2,6 @@
 #define _INTERRUPTS_H
 
 #include <stdint.h>
-#include "isr.h"
 
 struct registers {
     uint64_t r15;
@@ -43,6 +42,8 @@ struct interrupt_frame {
 } __attribute__((packed));
 
 extern uintptr_t __exception_interrupts[30];
-extern void(*__isr32)(struct interrupt_frame*); /* timer */
+extern void(*__isr34)(struct interrupt_frame*); /* timer */
+/* extern void(*__isr128)(struct interrupt_frame*); /1* syscall *1/ */
+/* __attribute__((interrupt)) void __isr32(struct interrupt_frame *frame); */
 
 #endif

@@ -46,7 +46,7 @@ extern struct page_table *kernel_table;
 void paging_initialize(struct stivale2_struct_tag_memmap*,
                        struct stivale2_struct_tag_framebuffer*);
 
-bool paging_map(struct page_table*, void *vaddr, void *paddr, uint8_t flags);
+void paging_map(struct page_table*, void *vaddr, void *paddr, uint8_t flags);
 void paging_unmap(struct page_table*, void *vaddr);
 uint64_t *paging_entry_get(struct page_table*, void *vaddr);
 

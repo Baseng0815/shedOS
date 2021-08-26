@@ -24,8 +24,8 @@
 #include "pci/pci.h"
 #include "user.h"
 
-static uint8_t stack[0x4000]; /* 16 KiB stack */
-static uint8_t stack2[0x4000]; /* 16 KiB stack */
+static uint8_t stack_kernel[0x4000]; /* 16 KiB stack */
+static uint8_t stack_user[0x4000]; /* 16 KiB stack */
 
 static void welcome_message();
 static void dump_stivale_info(struct stivale2_struct*);
@@ -63,7 +63,7 @@ static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
 __attribute__((section(".stivale2hdr"), used))
 static struct stivale2_header header = {
         .entry_point = 0,
-        .stack = (uintptr_t)stack + sizeof(stack),
+        .stack = (uintptr_t)stack_kernel + sizeof(stack_kernel),
         .flags = 2,
         .tags = (uintptr_t)&framebuffer_hdr_tag
 };
@@ -114,7 +114,7 @@ void _start(struct stivale2_struct *stivale2_struct)
         dump_memory(mmap);
         pmm_initialize(mmap);
         paging_initialize(mmap, fb);
-        gdt_initialize((uintptr_t)stack2 + sizeof(stack2));
+        gdt_initialize((uintptr_t)stack_kernel + sizeof(stack_kernel));
 
         /* system descriptor tables */
         struct stivale2_struct_tag_rsdp *rsdp =
@@ -124,16 +124,16 @@ void _start(struct stivale2_struct *stivale2_struct)
         sdt_initialize(rsdp);
 
         /* interrupts */
-        asm volatile("cli");
         idt_initialize();
         apic_initialize(madt);
-        /* asm volatile("sti"); */
         timer_initialize();
-
+        asm volatile("sti");
         kmalloc_initialize();
 
         /* pci_init(); */
-        _user_jump();
+
+        /* this is temporary */
+        _user_jump((uintptr_t)stack_user + sizeof(stack_user));
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");

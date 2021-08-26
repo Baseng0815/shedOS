@@ -1,6 +1,5 @@
 .section .text
 .extern exception_handle
-.extern interrupt_handle
 
 .macro push_all
     pushq %rax
@@ -120,7 +119,7 @@ isr_err_nocode  29
 isr_err_code    30
 
 # timer
-isr_noerr       32
+isr_noerr       34
 
 .section .data
 .global __exception_interrupts

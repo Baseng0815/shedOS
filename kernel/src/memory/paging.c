@@ -50,24 +50,18 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
         printf(KMSG_LOGLEVEL_OKAY, "Finished target paging.\n");
 }
 
-bool paging_map(struct page_table *table,
+void paging_map(struct page_table *table,
                 void *vaddr,
                 void *paddr,
                 uint8_t flags)
 {
         uint64_t *entry = paging_entry_get(table, vaddr);
 
-        /* already in use */
-        if (*entry & PAGING_PRESENT)
-                return false;
-
         *entry = PAGING_PRESENT | PAGING_USER |
                 flags |
                 (uintptr_t)paddr;
 
         paging_flush_tlb(vaddr);
-
-        return true;
 }
 
 void paging_unmap(struct page_table *table, void *vaddr)

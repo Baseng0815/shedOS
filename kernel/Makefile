@@ -63,12 +63,7 @@ kernel.elf: $(OBJS)
 	@ echo =====! ASSEMBLING $< =====!
 	$(AS) $(ASFLAGS) -o $@ $<
 
-src/interrupts/exceptions_c.o: src/interrupts/exceptions.c
-	@echo "=====! COMPILING $< INTO $@ !====="
-	$(CC) $(CPPFLAGS) $(CFLAGS) \
-	    -mgeneral-regs-only -c -o $@ $<
-
-src/interrupts/isr_c.o: src/interrupts/isr.c
+src/interrupts/interrupts_c.o: src/interrupts/interrupts.c
 	@echo "=====! COMPILING $< INTO $@ !====="
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
 	    -mgeneral-regs-only -c -o $@ $<

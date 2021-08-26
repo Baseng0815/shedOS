@@ -72,9 +72,16 @@ void exception_handle(struct exception_frame *frame)
         }
 }
 
-void isr32(struct interrupt_frame *frame)
+void isr34(struct interrupt_frame *frame)
 {
         timer_tick();
+
+        apic_send_eoi();
+}
+
+void isr128(struct interrupt_frame *frame)
+{
+        printf(KMSG_LOGLEVEL_CRIT, (const char*)frame->gprs.rdi);
 
         apic_send_eoi();
 }

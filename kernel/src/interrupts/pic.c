@@ -93,8 +93,5 @@ void mask_irqs()
         io_outb(PIC2_Data, 0b11111111);
         io_wait();
 
-        /* enable maskable interrupts */
-        asm volatile("sti;");
-
         printf(KMSG_LOGLEVEL_INFO, "PIC IRQs masked.\n");
 }

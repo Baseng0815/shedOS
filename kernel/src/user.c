@@ -5,17 +5,13 @@
 
 void user_jump()
 {
-        printf(KMSG_LOGLEVEL_INFO, "Reached target user.\n");
-
-        int i = 1;
+        int a = 3;
         for (;;) {
-                if (i)
-                        printf(KMSG_LOGLEVEL_CRIT, "this is ring 3\n");
-                else
-                        printf(KMSG_LOGLEVEL_WARN, "UwU\n");
-
-                i ^= 1;
+                printf(KMSG_LOGLEVEL_INFO, "asd %x\n", a);
+                a++;
         }
+
+        printf(KMSG_LOGLEVEL_INFO, "Reached target user.\n");
 
         /* uint8_t *addr = (uint8_t*)0xffff999910000000; */
         /* vmm_request_at(kernel_table, addr, 1, PAGING_WRITABLE); */
