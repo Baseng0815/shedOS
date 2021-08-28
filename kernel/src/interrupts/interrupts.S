@@ -120,6 +120,7 @@ isr_err_code    30
 
 # timer
 isr_noerr       34
+isr_noerr       128
 
 .section .data
 .global __exception_interrupts

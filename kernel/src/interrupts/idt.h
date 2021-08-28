@@ -12,7 +12,8 @@
    */
 
 enum idt_type_attributes {
-        IDT_TA_InterruptGate    = 0x8e,
+        IDT_TA_Interrupt        = 0x8e,
+        IDT_TA_SystemCall       = 0xee,
         IDT_TA_CallGate         = 0x8c,
         IDT_TA_TrapGate         = 0x8f
 };

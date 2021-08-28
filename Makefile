@@ -5,7 +5,7 @@ export TARGET 			:= x86_64-elf
 export PROJECTS 		:= kernel
 export SYSTEM_HEADER_PROJECTS 	:= kernel
 export SYSROOT 			:= $(shell pwd)/sysroot
-export HDD 			:= kernel.hdd
+export ISO 			:= kernel.iso
 export USB 			:= kernel_usb.hdd
 export DEPENDENCIES 		:= $(shell pwd)/deps
 export TOOLCHAIN 		:= $(shell pwd)/toolchain
@@ -18,7 +18,8 @@ QEMU_FLAGS  			?=
 
 qemu: hdd
 	qemu-system-x86_64 \
-	    -hda $(HDD) \
+	    -boot d \
+	    -cdrom $(ISO) \
 	    -enable-kvm \
 	    -vga std \
 	    -soundhw pcspk \
@@ -32,23 +33,23 @@ qemu: hdd
 	    -serial stdio -s -m $(QEMU_MEMORY) $(QEMU_FLAGS)
 
 hdd: sysroot
-	@echo "=====! CREATING HDD FOR QEMU !====="
-	rm -f $(HDD)
-	dd if=/dev/zero bs=1M count=0 seek=64 of=$(HDD)
-	parted -s $(HDD) mklabel gpt
-	parted -s $(HDD) mkpart primary 2048s 100%
-	echfs-utils -g -p0 $(HDD) quick-format 512
-	@for f in $(shell cd $(SYSROOT) && find . -type f | cut -c 3-); do \
-	    echo "Importing $$f..."; \
-	    echfs-utils -g -p0 $(HDD) import $(SYSROOT)/$$f $$f; \
-	    done
-	$(DEPENDENCIES)/limine/limine-install-linux-x86_64 $(HDD)
+	@echo "=====! CREATING ISO FOR QEMU !====="
+	rm -f $(ISO)
+	xorriso -as mkisofs \
+		-b boot/limine-cd.bin \
+		-no-emul-boot \
+		-boot-load-size 4 -boot-info-table \
+		--efi-boot boot/limine-eltorito-efi.bin \
+		-efi-boot-part \
+		--efi-boot-image \
+		--protective-msdos-label \
+		sysroot -o $(ISO)
 
-# mounting it is easier than using mmd for the time being
 usb: sysroot
-	@echo "=====! CREATING HDD FOR USB BOOTING !====="
+	@echo "=====! CREATING ISO FOR USB BOOTING !====="
 	rm -f $(USB)
 	dd if=/dev/zero bs=1M count=256 of=$(USB)
+	parted -s $(ISO) mklabel gpt
 	mkfs.fat -F32 $(USB)
 	mkdir -p $(USB)_mnt
 	mount $(USB) $(USB)_mnt
@@ -67,13 +68,15 @@ sysroot:
 	mkdir -p $(SYSROOT)/EFI/BOOT
 	cp limine.cfg $(SYSROOT)/boot
 	cp $(DEPENDENCIES)/limine/limine.sys $(SYSROOT)/boot
+	cp $(DEPENDENCIES)/limine/limine-cd.bin $(SYSROOT)/boot
+	cp $(DEPENDENCIES)/limine/limine-eltorito-efi.bin $(SYSROOT)/boot
 	cp $(DEPENDENCIES)/limine/BOOTX64.EFI $(SYSROOT)/EFI/BOOT
 
 clean:
 	@for project in $(PROJECTS); do \
 	    make -C $$project clean; \
 	    done
-	rm -rf $(SYSROOT) $(HDD) $(USB)
+	rm -rf $(SYSROOT) $(ISO) $(USB)
 
 # build a generic x86_64-elf gcc cross toolchain with -mno-red-zone libgcc
 toolchain:

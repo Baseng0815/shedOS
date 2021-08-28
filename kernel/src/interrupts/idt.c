@@ -6,7 +6,7 @@
 
 static struct idt_desc idt_descriptors[256] = { 0 };
 
-static void load_interrupt(uint8_t, uintptr_t);
+static void load_interrupt(uint8_t, uintptr_t, uint8_t);
 
 void idt_initialize()
 {
@@ -16,11 +16,14 @@ void idt_initialize()
 
         /* set up exceptions */
         for (uint8_t i = 0; i <= 0x1e; i++) {
-                load_interrupt(i, __exception_interrupts[i]);
+                load_interrupt(i, __exception_interrupts[i], IDT_TA_Interrupt);
         }
 
-        /* timer interrupt */
-        load_interrupt(0x22, (uintptr_t)&__isr34);
+        /* timer */
+        load_interrupt(0x22, (uintptr_t)&__isr34, IDT_TA_Interrupt);
+
+        /* syscall */
+        load_interrupt(0x80, (uintptr_t)&__isr128, IDT_TA_SystemCall);
 
         struct idt idt = {
                 .size = 0x1000 - 1,
@@ -34,7 +37,8 @@ void idt_initialize()
 }
 
 void load_interrupt(uint8_t vector,
-                    uintptr_t callback)
+                    uintptr_t callback,
+                    uint8_t type_attr)
 {
         if (callback == NULL)
                 return;
@@ -45,6 +49,6 @@ void load_interrupt(uint8_t vector,
         desc->offset1 = callback >> 16  & 0xffff;
         desc->offset2 = callback >> 32  & 0xffffffff;
         desc->ist = 0;
-        desc->type_attr = IDT_TA_InterruptGate;
+        desc->type_attr = type_attr;
         desc->selector = 0x08;
 }

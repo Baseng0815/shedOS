@@ -24,8 +24,8 @@
 #include "pci/pci.h"
 #include "user.h"
 
-static uint8_t stack_kernel[0x4000]; /* 16 KiB stack */
-static uint8_t stack_user[0x4000]; /* 16 KiB stack */
+static uint8_t stack_kernel[0x1000]; /* 4 KiB stack */
+static uint8_t stack_interrupts[0x1000]; /* 4 KiB stack */
 
 static void welcome_message();
 static void dump_stivale_info(struct stivale2_struct*);
@@ -114,7 +114,7 @@ void _start(struct stivale2_struct *stivale2_struct)
         dump_memory(mmap);
         pmm_initialize(mmap);
         paging_initialize(mmap, fb);
-        gdt_initialize((uintptr_t)stack_kernel + sizeof(stack_kernel));
+        gdt_initialize((uintptr_t)stack_interrupts + sizeof(stack_interrupts));
 
         /* system descriptor tables */
         struct stivale2_struct_tag_rsdp *rsdp =
@@ -126,20 +126,19 @@ void _start(struct stivale2_struct *stivale2_struct)
         /* interrupts */
         idt_initialize();
         apic_initialize(madt);
-        timer_initialize();
         asm volatile("sti");
+        timer_initialize();
         kmalloc_initialize();
 
         /* pci_init(); */
 
-        /* this is temporary */
-        _user_jump((uintptr_t)stack_user + sizeof(stack_user));
+        _user_jump();
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");
 
         for (;;) {
-                asm volatile("hlt");
+                /* asm volatile("hlt"); */
         }
 }
 

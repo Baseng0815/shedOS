@@ -11,8 +11,9 @@ _user_jump:
     # the IRET instruction pops the return instruction pointer, return segment
     # selector and EFLAGS from the stack and also the stack pointer and SS if
     # the return is to a lower privilege level (which is exactly what we need)
+    movq %rsp, %rax
     pushq $0x23 # user data
-    pushq %rdi # user stack
+    pushq %rax # user stack
     pushfq
     popq %rax
     orq $0x200, %rax # IF enable

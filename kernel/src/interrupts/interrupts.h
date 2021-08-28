@@ -43,7 +43,7 @@ struct interrupt_frame {
 
 extern uintptr_t __exception_interrupts[30];
 extern void(*__isr34)(struct interrupt_frame*); /* timer */
-/* extern void(*__isr128)(struct interrupt_frame*); /1* syscall *1/ */
+extern void(*__isr128)(struct interrupt_frame*); /* syscall */
 /* __attribute__((interrupt)) void __isr32(struct interrupt_frame *frame); */
 
 #endif

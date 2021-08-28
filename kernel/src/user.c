@@ -5,17 +5,14 @@
 
 void user_jump()
 {
-        int a = 3;
-        for (;;) {
-                printf(KMSG_LOGLEVEL_INFO, "asd %x\n", a);
-                a++;
-        }
-
         printf(KMSG_LOGLEVEL_INFO, "Reached target user.\n");
 
-        /* uint8_t *addr = (uint8_t*)0xffff999910000000; */
-        /* vmm_request_at(kernel_table, addr, 1, PAGING_WRITABLE); */
-        /* *addr = 31; */
+        const char *msg = "This is a string printed from ring 3 using a "
+                "system call interrupt!\n";
+
+        asm volatile("movq %0, %%rdi;"
+                     "int $0x80;"
+                     : : "D" (msg));
 
         printf(KMSG_LOGLEVEL_OKAY, "Finished target user.\n");
 }
