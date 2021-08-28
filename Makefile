@@ -4,17 +4,17 @@ export MAKEOPTS 		:= -j12
 export TARGET 			:= x86_64-elf
 export PROJECTS 		:= kernel
 export SYSTEM_HEADER_PROJECTS 	:= kernel
-export SYSROOT 			:= $(shell pwd)/sysroot
-export ISO 			:= kernel.iso
-export USB 			:= kernel_usb.hdd
-export DEPENDENCIES 		:= $(shell pwd)/deps
-export TOOLCHAIN 		:= $(shell pwd)/toolchain
+export SYSROOT 			:= $(CURDIR)/sysroot
+export ISO 			:= $(CURDIR)/kernel.iso
+export USB 			:= $(CURDIR)/kernel_usb.hdd
+export DEPENDENCIES 		:= $(CURDIR)/deps
+export TOOLCHAIN 		:= $(CURDIR)/toolchain
 export PATH 			:= $(TOOLCHAIN)/bin:$(PATH)
 
 QEMU_MEMORY 			:= 2G
 QEMU_FLAGS  			?=
 
-.PHONY: all clean sysroot toolchain toolchain-clean
+.PHONY: all clean $(SYSTEM_HEADER_PROJECTS) $(PROJECTS)
 
 qemu: hdd
 	qemu-system-x86_64 \
@@ -57,13 +57,13 @@ usb: sysroot
 	umount $(USB)
 	rmdir $(USB)_mnt
 
-sysroot:
+sysroot: $(SYSTEM_HEADER_PROJECTS) $(PROJECTS)
 	@echo "=====! CREATING SYSROOT !====="
 	@for project in $(SYSTEM_HEADER_PROJECTS); do \
-	    make -C $$project install-headers || exit 3; \
+	    cd $$project && $(MAKE) install-headers || exit 3; \
 	    done
 	@for project in $(PROJECTS); do \
-	    make -C $$project install-exec || exit 3; \
+	    cd $$project && $(MAKE) install-exec || exit 3; \
 	    done
 	mkdir -p $(SYSROOT)/EFI/BOOT
 	cp limine.cfg $(SYSROOT)/boot
@@ -74,13 +74,13 @@ sysroot:
 
 clean:
 	@for project in $(PROJECTS); do \
-	    make -C $$project clean; \
+	    cd $$project && $(MAKE) clean; \
 	    done
 	rm -rf $(SYSROOT) $(ISO) $(USB)
 
 # build a generic x86_64-elf gcc cross toolchain with -mno-red-zone libgcc
 toolchain:
-	make -C $(TOOLCHAIN)
+	cd $(TOOLCHAIN) && $(MAKE)
 
 toolchain-clean:
-	make -C $(TOOLCHAIN) clean
+	cd $(TOOLCHAIN) && $(MAKE) clean
