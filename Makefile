@@ -59,18 +59,18 @@ usb: sysroot
 
 sysroot: $(SYSTEM_HEADER_PROJECTS) $(PROJECTS)
 	@echo "=====! CREATING SYSROOT !====="
-	@for project in $(SYSTEM_HEADER_PROJECTS); do \
-	    cd $$project && $(MAKE) install-headers || exit 3; \
-	    done
-	@for project in $(PROJECTS); do \
-	    cd $$project && $(MAKE) install-exec || exit 3; \
-	    done
 	mkdir -p $(SYSROOT)/EFI/BOOT
 	cp limine.cfg $(SYSROOT)/boot
 	cp $(DEPENDENCIES)/limine/limine.sys $(SYSROOT)/boot
 	cp $(DEPENDENCIES)/limine/limine-cd.bin $(SYSROOT)/boot
 	cp $(DEPENDENCIES)/limine/limine-eltorito-efi.bin $(SYSROOT)/boot
 	cp $(DEPENDENCIES)/limine/BOOTX64.EFI $(SYSROOT)/EFI/BOOT
+
+$(SYSTEM_HEADER_PROJECTS):
+	cd $@ && $(MAKE) install-headers
+
+$(PROJECTS):
+	cd $@ && $(MAKE) install-exec
 
 clean:
 	@for project in $(PROJECTS); do \
