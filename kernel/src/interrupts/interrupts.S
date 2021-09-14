@@ -81,6 +81,19 @@
     iretq
 .endm
 
+.macro isr_syscall int_no
+    .global __isr\int_no
+    .align 4
+    __isr\int_no:
+    sti # syscalls are interruptable
+    push_all
+    cld
+    mov %rsp, %rdi
+    call isr\int_no
+    pop_all
+    iretq
+.endm
+
 .macro isr_name int_no
     .quad __isr\int_no
 .endm
@@ -120,7 +133,7 @@ isr_err_code    30
 
 # timer
 isr_noerr       34
-isr_noerr       128
+isr_syscall     128
 
 .section .data
 .global __exception_interrupts

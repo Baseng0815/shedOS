@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+extern const uint64_t ticks_per_second;
+
 extern uint64_t ticks;
 
 void timer_initialize();

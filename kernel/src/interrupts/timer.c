@@ -6,6 +6,8 @@
 #include "../libk/printf.h"
 #include "../libk/strutil.h"
 
+const uint64_t ticks_per_second = 1000;
+
 /* one kernel tick is equal to 10 microseconds */
 uint64_t ticks = 0;
 
@@ -28,8 +30,8 @@ void timer_tick()
 char *timer_format(char *buf)
 {
         /* 0000.0000 example format */
-        int seconds         = ticks / 100000;
-        int milliseconds    = (ticks % 100000) / 10;
+        int seconds         = ticks / ticks_per_second;
+        int milliseconds    = (ticks % ticks_per_second) * 10;
 
         for (size_t i = 0; i < 4; i++) {
                 buf[i] = ' ';

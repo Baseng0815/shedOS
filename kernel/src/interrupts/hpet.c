@@ -6,6 +6,7 @@
 
 #include "../libk/printf.h"
 #include "../memory/addrutil.h"
+#include "timer.h"
 
 enum hpet_register {
         HPET_REG_GENERAL_CAPABILITIES   = 0x00,
@@ -103,9 +104,9 @@ void hpet_initialize(struct hpet *hpet)
 
         hpet_mmio_regs[HPET_REG_TIMER_N_CONF_CAP(0)] = timer0;
 
-        /* 100000 kernel ticks per second */
+        /* kernel ticks per second */
         hpet_mmio_regs[HPET_REG_TIMER_N_COMPARATOR(0)]
-                = main_frequency / 100000;
+                = main_frequency / ticks_per_second;
 
         /* configure timer 1 (framebuffer swap) */
 

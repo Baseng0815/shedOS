@@ -22,7 +22,7 @@
 
 #include "libk/kmalloc.h"
 #include "pci/pci.h"
-#include "user.h"
+#include "user/user.h"
 
 static uint8_t stack_kernel[0x1000]; /* 4 KiB stack */
 static uint8_t stack_interrupts[0x1000]; /* 4 KiB stack */
