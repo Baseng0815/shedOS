@@ -162,34 +162,34 @@ typedef struct {
 
 /* shdr special index */
 enum {
-        SHN_UNDEF	= 0,
-        SHN_LORESERVE	= 0xff00,
-        SHN_LOPROC	= 0xff00,
-        SHN_HIPROC	= 0xff1f,
-        SHN_LOOS	= 0xff20,
-        SHN_HIOS	= 0xff3f,
-        SHN_ABS	        = 0xfff1,
-        SHN_COMMON	= 0xfff2,
-        SHN_XINDEX	= 0xffff,
-        SHN_HIRESERVE	= 0xffff
+        SHN_UNDEF       = 0,
+        SHN_LORESERVE   = 0xff00,
+        SHN_LOPROC      = 0xff00,
+        SHN_HIPROC      = 0xff1f,
+        SHN_LOOS        = 0xff20,
+        SHN_HIOS        = 0xff3f,
+        SHN_ABS         = 0xfff1,
+        SHN_COMMON      = 0xfff2,
+        SHN_XINDEX      = 0xffff,
+        SHN_HIRESERVE   = 0xffff
 };
 
 /* shdr type */
 enum {
         SHT_NULL            = 0, /* shdr is inactive */
-        SHT_PROGBITS	    = 1,
+        SHT_PROGBITS        = 1,
         SHT_SYMTAB          = 2, /* symbol table */
         SHT_STRTAB          = 3, /* string table */
         SHT_RELA            = 4,
-        SHT_HASH	    = 5,
-        SHT_DYNAMIC	    = 6,
+        SHT_HASH            = 5,
+        SHT_DYNAMIC         = 6,
         SHT_NOTE            = 7,
         SHT_NOBITS          = 8,
-        SHT_REL	            = 9,
-        SHT_SHLIB	    = 10,
-        SHT_DYNSYM	    = 11, /* minimum dynamic symbol table */
-        SHT_INIT_ARRAY	    = 14,
-        SHT_FINI_ARRAY	    = 15,
+        SHT_REL             = 9,
+        SHT_SHLIB           = 10,
+        SHT_DYNSYM          = 11, /* minimum dynamic symbol table */
+        SHT_INIT_ARRAY      = 14,
+        SHT_FINI_ARRAY      = 15,
         SHT_PREINIT_ARRA    = 16,
         SHT_GROUP           = 17,
         SHT_SYMTAB_SHNDX    = 18
