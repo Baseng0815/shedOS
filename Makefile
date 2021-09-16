@@ -65,6 +65,7 @@ sysroot: $(SYSTEM_HEADER_PROJECTS) $(PROJECTS)
 	cp $(DEPENDENCIES)/limine/limine-cd.bin $(SYSROOT)/boot
 	cp $(DEPENDENCIES)/limine/limine-eltorito-efi.bin $(SYSROOT)/boot
 	cp $(DEPENDENCIES)/limine/BOOTX64.EFI $(SYSROOT)/EFI/BOOT
+	cp $(DEPENDENCIES)/testelf $(SYSROOT)/boot
 
 $(SYSTEM_HEADER_PROJECTS):
 	cd $@ && $(MAKE) install-headers
