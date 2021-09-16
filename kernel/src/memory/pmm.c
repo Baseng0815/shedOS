@@ -5,6 +5,7 @@
 
 #include "vmm.h"
 
+#include "addrutil.h"
 #include "bitmap.h"
 
 /* bytes */

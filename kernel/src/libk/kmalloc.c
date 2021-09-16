@@ -52,7 +52,7 @@ void *kpmalloc()
         do {
                 pnext_free++;
                 entry = paging_entry_get(kernel_table, pnext_free);
-        } while (*entry & PAGING_PRESENT);
+        } while (entry != NULL && *entry & PAGING_PRESENT);
 
         return memory;
 }

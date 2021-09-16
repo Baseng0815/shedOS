@@ -25,7 +25,7 @@ size_t utos(uint64_t i, uint64_t base, char *buf, size_t min_len)
 
         size_t str_len = val_len;
 
-        if (base == 0x10) {
+        if (base == 16) {
                 str_len += 2;
                 buf[0] = '0';
                 buf[1] = 'x';
@@ -79,6 +79,10 @@ size_t strcmp(const char *s1, const char *s2)
                 s2++;
         }
 
+        if (*s1 == '\0' && *s2 == '\0') return 0;
+        else if (*s1 == '\0') return -1;
+        else if (*s2 == '\0') return 1;
+
         return 0;
 }
 
@@ -87,7 +91,9 @@ size_t strncmp(const char *s1, const char *s2, size_t n)
         for (size_t i = 0; i < n; i++) {
                 if (s1[i] < s2[i]) return -1;
                 else if (s1[i] > s2[i]) return 1;
-                else if (s1[i] == '\0' || s2[i] == '\0') break;
+                else if (s1[i] == '\0' && s2[i] == '\0') return 0;
+                else if (s1[i] == '\0') return -1;
+                else if (s2[i] == '\0') return 1;
         }
 
         return 0;

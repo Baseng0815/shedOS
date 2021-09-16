@@ -21,10 +21,10 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
         printf(KMSG_LOGLEVEL_INFO, "Reached target paging.\n");
 
         /* disable kernel write access to read-only pages */
-        asm volatile("movq %%cr0, %%rax;"
-                     "orq $(1 << 16), %%rax;"
-                     "movq %%rax, %%cr0;"
-                     : : : "rax");
+        /* asm volatile("movq %%cr0, %%rax;" */
+        /*              "orq $(1 << 16), %%rax;" */
+        /*              "movq %%rax, %%cr0;" */
+        /*              : : : "rax"); */
 
         kernel_table = (struct page_table*)
                 vaddr_ensure_higher(pmm_request_pages(1));
@@ -171,10 +171,6 @@ static struct page_table *get(struct page_table *parent,
                 *child_entry = PAGING_PRESENT | PAGING_USER |
                         PAGING_WRITABLE |
                         vaddr_ensure_lower(child);
-
-                paging_map(kernel_table,
-                           (void*)child,
-                           (void*)vaddr_ensure_lower(child), PAGING_WRITABLE);
         } else {
                 /* child is present, all good (mask off first 12 bits) */
                 child = (struct page_table*)

@@ -25,7 +25,7 @@ enum desc_access {
 };
 
 enum desc_flags {
-        LONG_GRAN   = 1 << 1,   /* x86-64 segment */
+        LONG_GRAN   = 1 << 1,   /* x86-64 code segment */
         SIZE        = 1 << 2,   /* 0/1 <=> 16/32 bit pmode */
         PAGE_GRAN   = 1 << 3    /* 0/1 <=> byte/page granularity */
 };

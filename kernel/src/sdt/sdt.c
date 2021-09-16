@@ -126,7 +126,7 @@ void *find_sdt(const char *signature)
                                 vaddr_ensure_higher(sdt_base[i]);
                 }
 
-                if (strcmp(signature, hdr->signature) == 0) {
+                if (strncmp(signature, hdr->signature, 4) == 0) {
                         return (void*)hdr;
                 }
         }

@@ -1,7 +1,7 @@
 #include "addrutil.h"
 
-const uintptr_t VADDR_HIGHER = 0xffff800000000000;
-const uintptr_t VADDR_KERNEL = 0xffffffff80000000;
+const uintptr_t VADDR_HIGHER = 0xffff800000000000UL;
+const uintptr_t VADDR_KERNEL = 0xffffffff80000000UL;
 
 uintptr_t vaddr_offset_higher(uintptr_t p)
 {
@@ -31,7 +31,7 @@ uintptr_t addr_align_up(uintptr_t p, size_t a)
 
 uintptr_t addr_align_down(uintptr_t p, size_t a)
 {
-        return p & ~a;
+        return (p / a) * a;
 }
 
 uintptr_t addr_page_align_up(uintptr_t p)

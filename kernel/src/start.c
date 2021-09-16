@@ -4,6 +4,7 @@
 #include "cpuinfo.h"
 
 #include "libk/printf.h"
+#include "libk/strutil.h"
 #include "libk/kmalloc.h"
 
 #include "fb/framebuffer.h"
@@ -22,10 +23,11 @@
 
 #include "libk/kmalloc.h"
 #include "pci/pci.h"
-#include "user/user.h"
+#include "user/elf_load.h"
 
 static uint8_t stack_kernel[0x1000]; /* 4 KiB stack */
 static uint8_t stack_interrupts[0x1000]; /* 4 KiB stack */
+static uint8_t *elf_module_data;
 
 static void welcome_message();
 static void dump_stivale_info(struct stivale2_struct*);
@@ -73,8 +75,6 @@ void *stivale2_get_tag(struct stivale2_struct*, uint64_t);
 
 void _start(struct stivale2_struct *stivale2_struct)
 {
-        asm volatile("cli");
-
         /* framebuffer and terminal */
         struct stivale2_struct_tag_framebuffer *fb =
                 stivale2_get_tag(stivale2_struct,
@@ -126,13 +126,14 @@ void _start(struct stivale2_struct *stivale2_struct)
         /* interrupts */
         idt_initialize();
         apic_initialize(madt);
-        asm volatile("sti");
+        asm volatile("cli");
         timer_initialize();
         kmalloc_initialize();
 
         /* pci_init(); */
 
-        _user_jump();
+        /* _user_jump(); */
+        elf_load(elf_module_data, NULL);
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Kernel initialization completed.\n");
@@ -211,6 +212,10 @@ void dump_stivale_info(struct stivale2_struct *stivale2_struct)
                         printf(KMSG_LOGLEVEL_NONE, "|-> begin=%a, end=%a, desc=%s\n",
                                modules->modules[i].begin, modules->modules[i].end,
                                modules->modules[i].string);
+
+                        if (strcmp(modules->modules[i].string, "ELFtest") == 0)
+                                elf_module_data =
+                                        (uint8_t*)modules->modules[i].begin;
                 }
         }
 
