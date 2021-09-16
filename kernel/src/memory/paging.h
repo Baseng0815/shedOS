@@ -48,7 +48,10 @@ void paging_initialize(struct stivale2_struct_tag_memmap*,
 
 void paging_map(struct page_table*, void *vaddr, void *paddr, uint8_t flags);
 void paging_unmap(struct page_table*, void *vaddr);
+/* if create is true, the directory will be created if not present already */
 uint64_t *paging_entry_get(struct page_table*, void *vaddr);
+
+void paging_copy_table(struct page_table *src, struct page_table **dst);
 
 void paging_write_cr3(const struct page_table*);
 void paging_flush_tlb(void *addr);
