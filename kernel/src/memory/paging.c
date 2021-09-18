@@ -48,7 +48,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
 
         printf(KMSG_LOGLEVEL_INFO, "Using new page table...\n");
 
-        paging_write_cr3(vaddr_ensure_lower(kernel_table));
+        paging_write_cr3(kernel_table);
 
         printf(KMSG_LOGLEVEL_OKAY, "Finished target paging.\n");
 }
@@ -105,7 +105,7 @@ static void _paging_copy_table(struct page_table *src,
                         int level)
 {
         if (level == 0) {
-                memcpy(dst->entries, dst->entries, sizeof(struct page_table));
+                memcpy(dst->entries, src->entries, sizeof(struct page_table));
         } else {
                 for (size_t i = 0; i < 512; i++) {
                         struct page_table *src_new = get(src, i, false);
@@ -120,7 +120,7 @@ static void _paging_copy_table(struct page_table *src,
 
 void paging_write_cr3(const struct page_table *table)
 {
-        asm volatile("movq %0, %%cr3" : : "r" (table));
+        asm volatile("movq %0, %%cr3" : : "r" (vaddr_ensure_lower(table)));
 }
 
 void paging_flush_tlb(void *addr)
@@ -136,7 +136,7 @@ static void map_index(uintptr_t vaddr,
 {
         /* 48 bits of the virtual address are translated,
            so we have access to 256TB
-           the first 12 bit are used for indexing inside the page
+           the first 12 bits are used for indexing inside the page
            each consecutive 9-bit block is used to index into a page table
            */
 

@@ -23,11 +23,12 @@
 
 #include "libk/kmalloc.h"
 #include "pci/pci.h"
-#include "user/elf_load.h"
+#include "task/task.h"
 
 static uint8_t stack_kernel[0x1000]; /* 4 KiB stack */
 static uint8_t stack_interrupts[0x1000]; /* 4 KiB stack */
-static uint8_t *elf_module_data;
+static uint8_t *elf_test_1;
+static uint8_t *elf_test_2;
 
 static void welcome_message();
 static void dump_stivale_info(struct stivale2_struct*);
@@ -133,10 +134,14 @@ void _start(struct stivale2_struct *stivale2_struct)
         /* pci_init(); */
 
         /* _user_jump(); */
-        elf_load(elf_module_data, NULL);
+        /* elf_load(elf_test_2, NULL); */
 
-        printf(KMSG_LOGLEVEL_OKAY,
-               "Kernel initialization completed.\n");
+        struct page_table *kernel_table_copy;
+        paging_copy_table(kernel_table, &kernel_table_copy);
+        paging_write_cr3(kernel_table_copy);
+
+        struct task *new_task;
+        create_task(&new_task, elf_test_1);
 
         for (;;) {
                 /* asm volatile("hlt"); */
@@ -209,13 +214,17 @@ void dump_stivale_info(struct stivale2_struct *stivale2_struct)
                 printf(KMSG_LOGLEVEL_INFO, "%d modules loaded\n",
                        modules->module_count);
                 for (size_t i = 0; i < modules->module_count; i++) {
-                        printf(KMSG_LOGLEVEL_NONE, "|-> begin=%a, end=%a, desc=%s\n",
-                               modules->modules[i].begin, modules->modules[i].end,
+                        printf(KMSG_LOGLEVEL_NONE,
+                               "|-> begin=%a, end=%a, desc=%s\n",
+                               modules->modules[i].begin,
+                               modules->modules[i].end,
                                modules->modules[i].string);
 
-                        if (strcmp(modules->modules[i].string, "ELFtest") == 0)
-                                elf_module_data =
-                                        (uint8_t*)modules->modules[i].begin;
+                        if (strcmp(modules->modules[i].string, "testelf1") == 0)
+                                elf_test_1 = (void*)modules->modules[i].begin;
+
+                        if (strcmp(modules->modules[i].string, "testelf2") == 0)
+                                elf_test_2 = (void*)modules->modules[i].begin;
                 }
         }
 
