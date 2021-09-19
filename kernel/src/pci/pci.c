@@ -50,7 +50,7 @@ void pci_init()
 void enumerate(uintptr_t base, struct pci_addr pci_addr)
 {
         uint32_t *conf_addr = (uint32_t*)
-                vaddr_ensure_higher(base + (pci_addr.bus << 20 |
+                addr_ensure_higher(base + (pci_addr.bus << 20 |
                                             pci_addr.device << 15 |
                                             pci_addr.function << 12));
 

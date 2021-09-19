@@ -27,7 +27,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
         /*              : : : "rax"); */
 
         kernel_table = (struct page_table*)
-                vaddr_ensure_higher(pmm_request_pages(1));
+                addr_ensure_higher(pmm_request_pages(1));
         memset(kernel_table, 0, sizeof(struct page_table));
 
         printf(KMSG_LOGLEVEL_INFO,
@@ -95,7 +95,7 @@ uint64_t *paging_entry_get(struct page_table *table, void *vaddr)
 
 void paging_copy_table(struct page_table *src, struct page_table **dst)
 {
-        *dst = (struct page_table*)vaddr_ensure_higher(pmm_request_pages(1));
+        *dst = (struct page_table*)addr_ensure_higher(pmm_request_pages(1));
         memset(*dst, 0, sizeof(struct page_table));
         _paging_copy_table(src, *dst, 2);
 }
@@ -120,7 +120,7 @@ static void _paging_copy_table(struct page_table *src,
 
 void paging_write_cr3(const struct page_table *table)
 {
-        asm volatile("movq %0, %%cr3" : : "r" (vaddr_ensure_lower(table)));
+        asm volatile("movq %0, %%cr3" : : "r" (addr_ensure_lower(table)));
 }
 
 void paging_flush_tlb(void *addr)
@@ -165,16 +165,16 @@ static struct page_table *get(struct page_table *parent,
 
                 /* allocate and zero out */
                 child = (struct page_table*)
-                        vaddr_ensure_higher(pmm_request_pages(1));
+                        addr_ensure_higher(pmm_request_pages(1));
                 memset(child, 0, 0x1000);
 
                 *child_entry = PAGING_PRESENT | PAGING_USER |
                         PAGING_WRITABLE |
-                        vaddr_ensure_lower(child);
+                        addr_ensure_lower(child);
         } else {
                 /* child is present, all good (mask off first 12 bits) */
                 child = (struct page_table*)
-                        vaddr_ensure_higher(*child_entry & ~0xfffUL);
+                        addr_ensure_higher(*child_entry & ~0xfffUL);
         }
 
         return child;

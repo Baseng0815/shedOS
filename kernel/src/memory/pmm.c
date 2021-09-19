@@ -52,7 +52,7 @@ void pmm_initialize(struct stivale2_struct_tag_memmap *mmap)
         page_bitmap.len = bitmap_len;
         printf(KMSG_LOGLEVEL_INFO,
                "Bitmap starting at %a with length of %d bytes\n",
-               vaddr_ensure_higher(page_bitmap.buf), page_bitmap.len);
+               addr_ensure_higher(page_bitmap.buf), page_bitmap.len);
 
         /* lock all pages */
         memset(page_bitmap.buf, 0xff, page_bitmap.len);
@@ -77,7 +77,7 @@ void pmm_initialize(struct stivale2_struct_tag_memmap *mmap)
                free_memory / 0x400, free_memory / 0x1000);
 
         /* we want the bitmap mapped high */
-        page_bitmap.buf = vaddr_ensure_higher(page_bitmap.buf);
+        page_bitmap.buf = addr_ensure_higher(page_bitmap.buf);
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Finished target pmm.\n");
