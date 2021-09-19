@@ -11,12 +11,11 @@
    7 present (set to 0 for unused interrupts)
    */
 
-enum idt_type_attributes {
-        IDT_TA_Interrupt        = 0x8e,
-        IDT_TA_SystemCall       = 0xee,
-        IDT_TA_CallGate         = 0x8c,
-        IDT_TA_TrapGate         = 0x8f
-};
+/* type attributes */
+#define IDT_TA_Interrupt    0x8e
+#define IDT_TA_SystemCall   0xee
+#define IDT_TA_CallGate     0x8c
+#define IDT_TA_TrapGate     0x8f
 
 struct idt_desc {
         uint16_t    offset0;

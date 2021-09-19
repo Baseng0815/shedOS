@@ -3,10 +3,8 @@
 
 #include "pci.h"
 
-enum {
-        NVME_CLASS      = 0x1,
-        NVME_SUBCLASS   = 0x8
-};
+#define NVME_CLASS      0x1
+#define NVME_SUBCLASS   0x8
 
 void nvme_initialize_device(struct pci_device_endpoint *ep,
                             struct pci_addr pci_addr);

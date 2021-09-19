@@ -31,13 +31,12 @@ struct page_table {
         uint64_t entries[512];
 } __attribute__((aligned(0x1000)));
 
-enum {
-        PAGING_PRESENT  = 1UL << 0, /* present */
-        PAGING_WRITABLE = 1UL << 1, /* enable read/write */
-        PAGING_USER     = 1UL << 2, /* enable user access */
-        PAGING_WTHROUGH = 1UL << 3, /* enable write-through caching */
-        PAGING_CDISABLE = 1UL << 4 /* disable cache */
-};
+/* page table flags */
+#define PAGING_PRESENT  (1UL << 0) /* present */
+#define PAGING_WRITABLE (1UL << 1) /* enable read/write */
+#define PAGING_USER     (1UL << 2) /* enable user access */
+#define PAGING_WTHROUGH (1UL << 3) /* enable write-through caching */
+#define PAGING_CDISABLE (1UL << 4)/* disable cache */
 
 extern struct page_table *kernel_table;
 

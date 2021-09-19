@@ -58,13 +58,13 @@ struct xsdt {
 
 /* ---------- MADT ---------- */
 
-enum madt_entry_type {
-        ENTRY_LAPIC     = 0x0,
-        ENTRY_IOAPIC    = 0x1,
-        ENTRY_ISO       = 0x2,
-        ENTRY_NMI       = 0x4,
-        ENTRY_LAAO      = 0x5
-};
+/* MADT entry type */
+
+#define MET_LAPIC     0x0
+#define MET_IOAPIC    0x1
+#define MET_ISO       0x2
+#define MET_NMI       0x4
+#define MET_LAAO      0x5
 
 struct madt_entry_header {
         uint8_t entry_type;

@@ -25,104 +25,88 @@
 #include <stdint.h>
 
 /* e_ident index */
-enum {
-        EI_MAG0         = 0, /* file identification */
-        EI_MAG1         = 1, /* file identification */
-        EI_MAG2         = 2, /* file identification */
-        EI_MAG3         = 3, /* file identification */
-        EI_CLASS        = 4, /* file class */
-        EI_DATA         = 5, /* data encoding */
-        EI_VERSION      = 6, /* file version */
-        EI_OSABI        = 7, /* ABI identification */
-        EI_ABIVERSION   = 8, /* ABI version */
-        EI_PAD          = 9, /* start of padding bytes */
-        EI_NIDENT       = 16 /* size of e_ident */
-};
+#define EI_MAG0         0 /* file identification */
+#define EI_MAG1         1 /* file identification */
+#define EI_MAG2         2 /* file identification */
+#define EI_MAG3         3 /* file identification */
+#define EI_CLASS        4 /* file class */
+#define EI_DATA         5 /* data encoding */
+#define EI_VERSION      6 /* file version */
+#define EI_OSABI        7 /* ABI identification */
+#define EI_ABIVERSION   8 /* ABI version */
+#define EI_PAD          9 /* start of padding bytes */
+#define EI_NIDENT       16 /* size of e_ident */
 
 /* ei_class */
-enum {
-        ELFCLASSNONE    = 0, /* invalid class */
-        ELFCLASS32      = 1, /* 32-bit objects */
-        ELFCLASS64      = 2 /* 64-bit objects */
-};
+#define ELFCLASSNONE    0 /* invalid class */
+#define ELFCLASS32      1 /* 32-bit objects */
+#define ELFCLASS64      2 /* 64-bit objects */
 
 /* ei_data */
-enum {
-        ELFDATANONE     = 0, /* invalid data */
-        ELFDATA2LSB     = 1, /* least significant byte first */
-        ELFDATA2MSB     = 2 /* most significant byte first */
-};
+#define ELFDATANONE     0 /* invalid data */
+#define ELFDATA2LSB     1 /* least significant byte first */
+#define ELFDATA2MSB     2 /* most significant byte first */
 
 /* ei_version */
 /* other versions are equal to current */
-enum {
-        EV_NONE = 0 /* invalid version */
-};
+#define EV_NONE 0 /* invalid version */
 
 /* ei_osabi */
 /* we only list a few examples */
-enum {
-        ELFOSABI_NONE       = 0, /* UNIX SysV */
-        ELFOSABI_SYSV       = 0, /* alias */
-        ELFOSABI_HPUX       = 1, /* HP-UX */
-        ELFOSABI_NETBSD     = 2, /* NetBSD */
-        ELFOSABI_LINUX      = 3, /* Linux */
-        ELFOSABI_GNU        = 3, /* alias */
-        ELFOSABI_SOLARIS    = 6, /* Sun Solaris */
-        ELFOSABI_AIX        = 7, /* IBM AIX */
-        ELFOSABI_IRIX       = 8, /* SGI Irix */
-        ELFOSABI_FREEBSD    = 9, /* FreeBSD */
-        ELFOSABI_TRU64      = 10, /* Compax TRU64 UNIX */
-        ELFOSABI_MODESTO    = 11, /* Novell Modesto */
-        ELFOSABI_OPENBSD    = 12, /* OpenBSD */
-        ELFOSABI_ARM_AEABI  = 64, /* ARM EABI */
-        ELFOSABI_ARM        = 97, /* ARM */
-        ELFOSABI_STANDALONE = 255 /* standalone (embedded) application */
-};
+#define ELFOSABI_NONE       0 /* UNIX SysV */
+#define ELFOSABI_SYSV       0 /* alias */
+#define ELFOSABI_HPUX       1 /* HP-UX */
+#define ELFOSABI_NETBSD     2 /* NetBSD */
+#define ELFOSABI_LINUX      3 /* Linux */
+#define ELFOSABI_GNU        3 /* alias */
+#define ELFOSABI_SOLARIS    6 /* Sun Solaris */
+#define ELFOSABI_AIX        7 /* IBM AIX */
+#define ELFOSABI_IRIX       8 /* SGI Irix */
+#define ELFOSABI_FREEBSD    9 /* FreeBSD */
+#define ELFOSABI_TRU64      10 /* Compax TRU64 UNIX */
+#define ELFOSABI_MODESTO    11 /* Novell Modesto */
+#define ELFOSABI_OPENBSD    12 /* OpenBSD */
+#define ELFOSABI_ARM_AEABI  64 /* ARM EABI */
+#define ELFOSABI_ARM        97 /* ARM */
+#define ELFOSABI_STANDALONE 255 /* standalone (embedded) application */
 
 /* e_type */
-enum {
-        ET_NONE     = 0, /* no file type */
-        ET_REL      = 1, /* relocatable file */
-        ET_EXEC     = 2, /* executable file */
-        ET_DYN      = 3, /* shared object file */
-        ET_CORE     = 4, /* core file */
-        ET_LOOS     = 0xfe00, /* lobound os-specific */
-        ET_HIOS     = 0xfeff, /* hibound os-specific */
-        ET_LOPROC   = 0xff00, /* lobound processor-specific */
-        ET_HIPROC   = 0xffff /* hibound processor-specific */
-};
+#define ET_NONE     0 /* no file type */
+#define ET_REL      1 /* relocatable file */
+#define ET_EXEC     2 /* executable file */
+#define ET_DYN      3 /* shared object file */
+#define ET_CORE     4 /* core file */
+#define ET_LOOS     0xfe00 /* lobound os-specific */
+#define ET_HIOS     0xfeff /* hibound os-specific */
+#define ET_LOPROC   0xff00 /* lobound processor-specific */
+#define ET_HIPROC   0xffff /* hibound processor-specific */
 
 /* e_machine */
-enum {
-        EM_NONE         = 0, /* no machine */
-        EM_M32          = 1, /* AT&T WE 32100 */
-        EM_SPARC        = 2, /* SPARC */
-        EM_386          = 3, /* Intel 80386 */
-        EM_68K          = 4, /* Motorola 68K */
-        EM_88K          = 5, /* Motorola 88K */
-        EM_IAMCU        = 6, /* Intel MCU */
-        EM_860          = 7, /* Intel 80860 */
-        EM_MIPS         = 8, /* MIPS I (R3000 big-endian) */
-        EM_S370         = 9, /* IBM System/370 */
-        EM_MIPS_RS3_LE  = 10, /* MIPS R3000 little-endian */
-        EM_PARISC       = 15, /* HPPA */
-        EM_VPP500       = 17, /* VPP500 */
-        EM_SPARC32PLUS  = 18, /* v8plus */
-        EM_960          = 19, /* Intel 80960 */
-        EM_PPC          = 20, /* PowerPC */
-        EM_PPC64        = 21, /* 64-bit PowerPC */
-        EM_S390         = 22, /* IBM System/390 */
-        EM_SPU          = 23, /* IBM SPU/SPC */
-        EM_V800         = 36, /* NEC V800 */
-        EM_FR20         = 37, /* Fujitsu FR20 */
-        EM_RH32         = 38, /* TRW RH-32 */
-        EM_RCE          = 39, /* Motorola RCE */
-        EM_ARM          = 40, /* ARM */
-        EM_IA64         = 50, /* Intel 64-bit architecture */
-        EM_X86_64       = 62 /* AMD x86-64 architecture */
-
-};
+#define EM_NONE         0 /* no machine */
+#define EM_M32          1 /* AT&T WE 32100 */
+#define EM_SPARC        2 /* SPARC */
+#define EM_386          3 /* Intel 80386 */
+#define EM_68K          4 /* Motorola 68K */
+#define EM_88K          5 /* Motorola 88K */
+#define EM_IAMCU        6 /* Intel MCU */
+#define EM_860          7 /* Intel 80860 */
+#define EM_MIPS         8 /* MIPS I (R3000 big-endian) */
+#define EM_S370         9 /* IBM System/370 */
+#define EM_MIPS_RS3_LE  10 /* MIPS R3000 little-endian */
+#define EM_PARISC       15 /* HPPA */
+#define EM_VPP500       17 /* VPP500 */
+#define EM_SPARC32PLUS  18 /* v8plus */
+#define EM_960          19 /* Intel 80960 */
+#define EM_PPC          20 /* PowerPC */
+#define EM_PPC64        21 /* 64-bit PowerPC */
+#define EM_S390         22 /* IBM System/390 */
+#define EM_SPU          23 /* IBM SPU/SPC */
+#define EM_V800         36 /* NEC V800 */
+#define EM_FR20         37 /* Fujitsu FR20 */
+#define EM_RH32         38 /* TRW RH-32 */
+#define EM_RCE          39 /* Motorola RCE */
+#define EM_ARM          40 /* ARM */
+#define EM_IA64         50 /* Intel 64-bit architecture */
 
 /* ELF header */
 typedef struct {
@@ -161,39 +145,35 @@ typedef struct {
 } Elf64_Ehdr;
 
 /* shdr special index */
-enum {
-        SHN_UNDEF       = 0,
-        SHN_LORESERVE   = 0xff00,
-        SHN_LOPROC      = 0xff00,
-        SHN_HIPROC      = 0xff1f,
-        SHN_LOOS        = 0xff20,
-        SHN_HIOS        = 0xff3f,
-        SHN_ABS         = 0xfff1,
-        SHN_COMMON      = 0xfff2,
-        SHN_XINDEX      = 0xffff,
-        SHN_HIRESERVE   = 0xffff
-};
+#define SHN_UNDEF       0
+#define SHN_LORESERVE   0xff00
+#define SHN_LOPROC      0xff00
+#define SHN_HIPROC      0xff1f
+#define SHN_LOOS        0xff20
+#define SHN_HIOS        0xff3f
+#define SHN_ABS         0xfff1
+#define SHN_COMMON      0xfff2
+#define SHN_XINDEX      0xffff
+#define SHN_HIRESERVE   0xffff
 
 /* shdr type */
-enum {
-        SHT_NULL            = 0, /* shdr is inactive */
-        SHT_PROGBITS        = 1,
-        SHT_SYMTAB          = 2, /* symbol table */
-        SHT_STRTAB          = 3, /* string table */
-        SHT_RELA            = 4,
-        SHT_HASH            = 5,
-        SHT_DYNAMIC         = 6,
-        SHT_NOTE            = 7,
-        SHT_NOBITS          = 8,
-        SHT_REL             = 9,
-        SHT_SHLIB           = 10,
-        SHT_DYNSYM          = 11, /* minimum dynamic symbol table */
-        SHT_INIT_ARRAY      = 14,
-        SHT_FINI_ARRAY      = 15,
-        SHT_PREINIT_ARRA    = 16,
-        SHT_GROUP           = 17,
-        SHT_SYMTAB_SHNDX    = 18
-};
+#define SHT_NULL            0 /* shdr is inactive */
+#define SHT_PROGBITS        1
+#define SHT_SYMTAB          2 /* symbol table */
+#define SHT_STRTAB          3 /* string table */
+#define SHT_RELA            4
+#define SHT_HASH            5
+#define SHT_DYNAMIC         6
+#define SHT_NOTE            7
+#define SHT_NOBITS          8
+#define SHT_REL             9
+#define SHT_SHLIB           10
+#define SHT_DYNSYM          11 /* minimum dynamic symbol table */
+#define SHT_INIT_ARRAY      14
+#define SHT_FINI_ARRAY      15
+#define SHT_PREINIT_ARRA    16
+#define SHT_GROUP           17
+#define SHT_SYMTAB_SHNDX    18
 
 /* 32-bit section header */
 typedef struct {
@@ -233,38 +213,32 @@ typedef struct {
 #define ELF64_ST_INFO(b,t) (((b)<<4)+((t)&0xf))
 
 /* symbol type attribute */
-enum {
-        STT_NOTYPE  = 0, /* not specified */
-        STT_OBJECT  = 1, /* associated with a data object */
-        STT_FUNC    = 2, /* associated with a function */
-        STT_SECTION = 3, /* associated with a section */
-        STT_FILE    = 4, /* associated with a source file */
-        STT_COMMON  = 5, /* uninitialized common block */
-        STT_TLS     = 6, /* thread-local storage  entity */
-        STT_LOOS    = 10, /* lobound os-reserved */
-        STT_HIOS    = 12, /* hibound os-reserved */
-        STT_LOPROC  = 13, /* lobound processor-reserved */
-        STT_HIPROC  = 15 /* hibound processor-reserved */
-};
+#define STT_NOTYPE  0 /* not specified */
+#define STT_OBJECT  1 /* associated with a data object */
+#define STT_FUNC    2 /* associated with a function */
+#define STT_SECTION 3 /* associated with a section */
+#define STT_FILE    4 /* associated with a source file */
+#define STT_COMMON  5 /* uninitialized common block */
+#define STT_TLS     6 /* thread-local storage  entity */
+#define STT_LOOS    10 /* lobound os-reserved */
+#define STT_HIOS    12 /* hibound os-reserved */
+#define STT_LOPROC  13 /* lobound processor-reserved */
+#define STT_HIPROC  15 /* hibound processor-reserved */
 
 /* symbol binding attribute */
-enum {
-        STB_LOCAL   = 0, /* local symbols not visible outside of file */
-        STB_GLOBAL  = 1, /* global symbols are visible to all combined files */
-        STB_WEAK    = 2, /* lower precedence than global symbols */
-        STB_LOOS    = 10, /* lobound os-reserved */
-        STB_HIOS    = 12, /* hibound os-reserved */
-        STB_LOPROC  = 13, /* lobound processor-reserved */
-        STB_HIPROC  = 15 /* hibound processor-reserved */
-};
+#define STB_LOCAL   0 /* local symbols not visible outside of file */
+#define STB_GLOBAL  1 /* global symbols are visible to all combined files */
+#define STB_WEAK    2 /* lower precedence than global symbols */
+#define STB_LOOS    10 /* lobound os-reserved */
+#define STB_HIOS    12 /* hibound os-reserved */
+#define STB_LOPROC  13 /* lobound processor-reserved */
+#define STB_HIPROC  15 /* hibound processor-reserved */
 
 /* symbol visibility */
-enum {
-        STV_DEFAULT     = 0, /* as specified by the binding attribute */
-        STV_INTERNAL    = 1, /* meaning defined by processor supplements */
-        STV_HIDDEN      = 2, /* not visible to other components */
-        STV_PROTECTED   = 3 /* visible in other components, not preemptable */
-};
+#define STV_DEFAULT     0 /* as specified by the binding attribute */
+#define STV_INTERNAL    1 /* meaning defined by processor supplements */
+#define STV_HIDDEN      2 /* not visible to other components */
+#define STV_PROTECTED   3 /* visible in other components not preemptable */
 
 /* 32-bit ELF symbol */
 typedef struct {
@@ -319,33 +293,29 @@ typedef struct {
 } Elf64_Rela;
 
 /* segment type */
-enum {
-        PT_NULL         = 0, /* unused */
-        PT_LOAD         = 1, /* loadable segment */
-        PT_DYNAMIC      = 2, /* dynamic linking information */
-        PT_INTERP       = 3, /* location of path to invoke as interpreter */
-        PT_NOTE         = 4, /* location of auxiliary information */
-        PT_SHLIB        = 5, /* reserved */
-        PT_PHDR         = 6, /* location and size of phdr itself */
-        PT_TLS          = 7, /* thread-local storage template */
-        PT_LOOS         = 0x60000000, /* lobound os-specific */
-        PT_GNU_EH_FRAME = 0x6474e550, /* GCC .eh_frame_hdr segment */
-        PT_GNU_STACK    = 0x6474e551, /* stack executability */
-        PT_GNU_RELRO    = 0x6474e552, /* read-only after relocation */
-        PT_GNU_PROPERTY = 0x6474e553, /* GNU property */
-        PT_HIOS         = 0x6fffffff, /* hibound os-specific */
-        PT_LOPROC       = 0x70000000, /* lobound processor-specific */
-        PT_HIPROC       = 0x7fffffff /* hibound processor-specific */
-};
+#define PT_NULL         0 /* unused */
+#define PT_LOAD         1 /* loadable segment */
+#define PT_DYNAMIC      2 /* dynamic linking information */
+#define PT_INTERP       3 /* location of path to invoke as interpreter */
+#define PT_NOTE         4 /* location of auxiliary information */
+#define PT_SHLIB        5 /* reserved */
+#define PT_PHDR         6 /* location and size of phdr itself */
+#define PT_TLS          7 /* thread-local storage template */
+#define PT_LOOS         0x60000000 /* lobound os-specific */
+#define PT_GNU_EH_FRAME 0x6474e550 /* GCC .eh_frame_hdr segment */
+#define PT_GNU_STACK    0x6474e551 /* stack executability */
+#define PT_GNU_RELRO    0x6474e552 /* read-only after relocation */
+#define PT_GNU_PROPERTY 0x6474e553 /* GNU property */
+#define PT_HIOS         0x6fffffff /* hibound os-specific */
+#define PT_LOPROC       0x70000000 /* lobound processor-specific */
+#define PT_HIPROC       0x7fffffff /* hibound processor-specific */
 
 /* segment flags */
-enum {
-        PF_X        = (1 << 0), /* execute */
-        PF_W        = (1 << 1), /* write */
-        PF_R        = (1 << 2), /* read */
-        PF_MASKOS   = 0x0ff00000, /* unspecified */
-        PF_MASKPROC = 0xf0000000 /* unspecified */
-};
+#define PF_X        (1 << 0) /* execute */
+#define PF_W        (1 << 1) /* write */
+#define PF_R        (1 << 2) /* read */
+#define PF_MASKOS   0x0ff00000 /* unspecified */
+#define PF_MASKPROC 0xf0000000 /* unspecified */
 
 typedef struct {
         uint32_t p_type; /* segment type */

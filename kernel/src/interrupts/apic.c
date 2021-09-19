@@ -13,37 +13,32 @@
 /* to set the core count */
 #include "../cpuinfo.h"
 
-enum lapic_register {
-        LAPIC_REG_ID        = 0x08,
-        LAPIC_REG_VERSION   = 0x0c,
-        LAPIC_REG_TPR       = 0x20,
-        LAPIC_REG_EOI       = 0x2c,
-        LAPIC_REG_SIVR      = 0x3c
-};
+/* LAPIC register */
+#define LAPIC_REG_ID        0x08
+#define LAPIC_REG_VERSION   0x0c
+#define LAPIC_REG_TPR       0x20
+#define LAPIC_REG_EOI       0x2c
+#define LAPIC_REG_SIVR      0x3c
 
-enum delivery_mode {
-        FIXED           = 0x000,
-        LOWEST_PRIORITY = 0x001,
-        SMI             = 0x010,
-        NMI             = 0x100,
-        INIT            = 0x101,
-        EXTINT          = 0x111
-};
+/* delivery mode */
+#define DEL_MODE_FIXED              0x0
+#define DEL_MODE_LOWEST_PRIORITY    0x001
+#define DEL_MODE_SMI                0x010
+#define DEL_MODE_NMI                0x100
+#define DEL_MODE_INIT               0x101
+#define DEL_MODE_EXTINT             0x111
 
-enum destination_mode {
-        PHYSICAL    = 0x0,
-        LOGICAL     = 0x1
-};
+/* destination mode */
+#define DEST_MODE_PHYSICAL  0x0
+#define DEST_MODE_LOGICAL   0x1
 
-enum pin_polarity {
-        ACTIVE_HIGH = 0x0,
-        ACTIVE_LOW  = 0x1
-};
+/* pin polarity */
+#define POLARITY_ACTIVE_HIGH    0x0
+#define POLARITY_ACTIVE_LOW     0x1
 
-enum trigger_mode {
-        EDGE    = 0x0,
-        LEVEL   = 0x1,
-};
+/* trigger mode */
+#define TRIGGER_EDGE    0x0
+#define TRIGGER_LEVEL   0x1
 
 /* there are 24 IOREDTBL (I/O redirection tables), one for each IRQ */
 struct ioredtbl {
@@ -119,12 +114,12 @@ void apic_initialize(const struct madt *madt)
                 struct madt_entry_iso iso = isos[i];
 
                 struct ioredtbl tbl;
-                tbl.delivery_mode = FIXED;
+                tbl.delivery_mode = DEL_MODE_FIXED;
                 tbl.destination_mode = 0;
-                tbl.pin_polarity =
-                        (iso.flags & 0x2 > 0) ? ACTIVE_LOW : ACTIVE_HIGH;
-                tbl.trigger_mode =
-                        (iso.flags & 0x8 > 0) ? LEVEL : EDGE;
+                tbl.pin_polarity = (iso.flags & 0x2 > 0)
+                        ? POLARITY_ACTIVE_LOW : POLARITY_ACTIVE_HIGH;
+                tbl.trigger_mode = (iso.flags & 0x8 > 0)
+                        ? TRIGGER_LEVEL : TRIGGER_EDGE;
                 tbl.mask = 0;
                 tbl.destination = bsp_lapic_id;
 
@@ -160,7 +155,7 @@ void apic_send_eoi()
 size_t parse_madt_entry(const struct madt_entry_header *hdr)
 {
         switch (hdr->entry_type) {
-                case ENTRY_LAPIC: {
+                case MET_LAPIC: {
                         struct madt_entry_lapic *entry =
                                 (struct madt_entry_lapic*)hdr;
 
@@ -168,13 +163,13 @@ size_t parse_madt_entry(const struct madt_entry_header *hdr)
                         break;
                 }
 
-                case ENTRY_IOAPIC:
+                case MET_IOAPIC:
                         ioapics[ioapic_count++] =
                                 *(struct madt_entry_ioapic*)hdr;
 
                         break;
 
-                case ENTRY_ISO: {
+                case MET_ISO: {
                         isos[iso_count++] =
                                 *(struct madt_entry_iso*)hdr;
 

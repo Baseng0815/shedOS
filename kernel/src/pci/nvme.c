@@ -180,9 +180,9 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
                pci_addr.bus, pci_addr.device, pci_addr.function);
 
         /* make bus master and enable mmio */
-        ep->hdr.command |= bus_master;
-        ep->hdr.command |= mem_space;
-        ep->hdr.command |= IO_space;
+        ep->hdr.command |= PHC_BUS_MASTER;
+        ep->hdr.command |= PHC_MEM_SPACE;
+        ep->hdr.command |= PHC_IO_SPACE;
 
         assert((ep->bar0 & 0x4) > 0,
                "NVMe BAR does not support 64-bit mapping.");

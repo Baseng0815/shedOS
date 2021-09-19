@@ -4,9 +4,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-enum {
-        HEADER_ENDPOINT = 0x0
-};
+#define HEADER_ENDPOINT (0x0UL)
 
 struct pci_addr {
         uint8_t bus;
@@ -21,37 +19,35 @@ struct pci_device_header {
         uint32_t cl_size; /* cache line size */
 } __attribute__((packed));
 
-enum pci_hdr_command {
-        IO_space            = 1U << 0,
-        mem_space           = 1U << 1,
-        bus_master          = 1U << 2,
-        spec_cycles         = 1U << 3,
-        mem_write_invld     = 1U << 4,
-        vga_palette_snoop   = 1U << 5,
-        parity_err_resp     = 1U << 6,
-        SERR_enable         = 1U << 8,
-        fast_b2b_enable     = 1U << 9,
-        interrupt_disable   = 1U << 10
-};
+/* PCI hdr command */
+#define PHC_IO_SPACE            (1UL << 0)
+#define PHC_MEM_SPACE           (1UL << 1)
+#define PHC_BUS_MASTER          (1UL << 2)
+#define PHC_SPEC_CYCLES         (1UL << 3)
+#define PHC_MEM_WRITE_INVLD     (1UL << 4)
+#define PHC_VGA_PALETTE_SNOOP   (1UL << 5)
+#define PHC_PARITY_ERR_RESP     (1UL << 6)
+#define PHC_serr_ENABLE         (1UL << 8)
+#define PHC_FAST_B2B_ENABLE     (1UL << 9)
+#define PHC_INTERRUPT_DISABLE   (1UL << 10
 
 struct pci_cap_hdr {
         uint8_t cap_id;
         uint8_t next;
 } __attribute__((packed));
 
-enum pci_hdr_status {
-        interrupt_status    = 1U << 3,
-        capabilities_list   = 1U << 4,
-        fast_clock_capable  = 1U << 5, /* 66MHz */
-        fast_b2b_capable    = 1U << 7,
-        master_data_par_err = 1U << 8,
-        devsel_timing       = 1U << 9,
-        sig_target_abort    = 1U << 11,
-        rec_target_abort    = 1U << 12,
-        rec_master_abort    = 1U << 13,
-        sig_system_error    = 1U << 14,
-        parity_error        = 1U << 15
-};
+/* PCI hdr status */
+#define PHS_INTERRUPT_STATUS    (1UL << 3)
+#define PHS_CAPABILITIES_LIST   (1UL << 4)
+#define PHS_FAST_CLOCK_CAPABLE  (1UL << 5) /* 66MHz */
+#define PHS_FAST_B2B_CAPABLE    (1UL << 7)
+#define PHS_MASTER_DATA_PAR_ERR (1UL << 8)
+#define PHS_DEVSEL_TIMING       (1UL << 9)
+#define PHS_SIG_TARGET_ABORT    (1UL << 11)
+#define PHS_REC_TARGET_ABORT    (1UL << 12)
+#define PHS_REC_MASTER_ABORT    (1UL << 13)
+#define PHS_SIG_SYSTEM_ERROR    (1UL << 14)
+#define PHS_PARITY_ERROR        (1UL << 15)
 
 /* extended capabilities pointer is at 0x100, but we don't
  * care about that right now*/
@@ -77,7 +73,7 @@ uint32_t *pci_conf_addr(struct pci_addr *pci_addr);
 
 /* extended capabilities differ from normal capabilities */
 bool pci_get_cap(uintptr_t cap_ptr, uintptr_t conf_base,
-                  uint16_t cap_id,
-                  struct pci_cap_hdr **cap_hdr);
+                 uint16_t cap_id,
+                 struct pci_cap_hdr **cap_hdr);
 
 #endif
