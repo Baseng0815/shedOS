@@ -22,8 +22,7 @@ mappings:
 
 regions:
 0xffff800000000000-0xffff800100000000 (first 4G)
-0xffff900000000000-0xffff900000000000 (4GB page heap)
-0xffff900200000000-0xffff900300000000 (4GB norm heap)
+0xffff800100000000-0xffff800200000000 (4GB bump heap)
 0xfffffff800000000-0xffffffffffffffff (kernel mapped to last 2G)
 */
 
