@@ -26,10 +26,15 @@ struct task {
         struct registers regs;
         struct task *next_task;
         uint64_t rsp;
+        uint64_t rip;
         struct page_table *vmap; /* virtual memory map */
 };
 
+/* SysV ABI: RDI, RSI, RDX, RCX, R8, R9 */
+
 /* create task from elf executable file */
-void create_task(struct task **new_task, uint8_t *elf_data);
+void task_create(struct task **new_task, uint8_t *elf_data);
+
+void switch_to_task(const struct task *task);
 
 #endif

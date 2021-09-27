@@ -11,6 +11,7 @@
 
 #include "memory/pmm.h"
 #include "memory/paging.h"
+#include "memory/addrutil.h"
 
 #include "gdt/gdt.h"
 #include "sdt/sdt.h"
@@ -132,20 +133,11 @@ void _start(struct stivale2_struct *stivale2_struct)
         /* pci_init(); */
 
         /* _user_jump(); */
-        /* elf_load(elf_test_2, NULL); */
-
-        int *arr = bump_alloc(sizeof(int) * 512, 0x30);
-        for (size_t i = 0; i < 512; i++) {
-                arr[i] = i * i;
-        }
-
-
-        struct page_table *kernel_table_copy;
-        paging_copy_table(kernel_table, &kernel_table_copy);
-        paging_write_cr3(kernel_table_copy);
 
         struct task *new_task;
-        task_create(&new_task, elf_test_1);
+        task_create(&new_task, elf_test_2);
+        switch_to_task(new_task);
+        printf(KMSG_LOGLEVEL_CRIT, "Finish\n");
 
         for (;;) {
                 /* asm volatile("hlt"); */

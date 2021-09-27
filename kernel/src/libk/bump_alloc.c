@@ -16,7 +16,10 @@ static struct bump_alloc bump = {
 void *bump_alloc(size_t n, size_t alignment)
 {
         uintptr_t new_ptr = bump.bump_ptr - n;
-        new_ptr = addr_align_down(new_ptr, alignment);
+        if (alignment > 0) {
+                new_ptr = addr_align_down(new_ptr, alignment);
+        }
+
         if (new_ptr < bump.start) {
                 /* grow bump */
                 size_t pc = addr_page_align_up(bump.start - new_ptr) / 0x1000;

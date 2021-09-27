@@ -19,4 +19,6 @@ int _start()
                              "int $0x80;"
                              : : "D" (msg));
         }
+
+        return 69;
 }

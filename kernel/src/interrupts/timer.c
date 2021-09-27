@@ -8,7 +8,7 @@
 
 const uint64_t ticks_per_second = 1000;
 
-/* one kernel tick is equal to 10 microseconds */
+/* one kernel tick is equal to 1 millisecond */
 uint64_t ticks = 0;
 
 void timer_initialize()
