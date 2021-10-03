@@ -29,29 +29,24 @@
 #define DEL_MODE_EXTINT             0x111
 
 /* destination mode */
-#define DEST_MODE_PHYSICAL  0x0
-#define DEST_MODE_LOGICAL   0x1
+#define DEST_MODE_PHYSICAL  (0UL << 3)
+#define DEST_MODE_LOGICAL   (1UL << 3)
 
 /* pin polarity */
-#define POLARITY_ACTIVE_HIGH    0x0
-#define POLARITY_ACTIVE_LOW     0x1
+#define POLARITY_ACTIVE_HIGH    (0UL << 5)
+#define POLARITY_ACTIVE_LOW     (1UL << 5)
 
 /* trigger mode */
-#define TRIGGER_EDGE    0x0
-#define TRIGGER_LEVEL   0x1
+#define TRIGGER_EDGE    (0UL << 7)
+#define TRIGGER_LEVEL   (1UL << 7)
 
 /* there are 24 IOREDTBL (I/O redirection tables), one for each IRQ */
 struct ioredtbl {
-        uint64_t vector             : 8;
-        uint64_t delivery_mode      : 3;
-        uint64_t destination_mode   : 1;
-        uint64_t delivery_status    : 1;
-        uint64_t pin_polarity       : 1;
-        uint64_t remote_irr         : 1;
-        uint64_t trigger_mode       : 1;
-        uint64_t mask               : 1;
-        uint64_t reserved0          : 39;
-        uint64_t destination        : 8;
+        uint8_t     vector;
+        uint8_t     conf;
+        uint8_t     mask;
+        uint32_t    reserved0;
+        uint8_t     destination;
 };
 
 size_t                      ioapic_count = 0;
@@ -114,21 +109,17 @@ void apic_initialize(const struct madt *madt)
                 struct madt_entry_iso iso = isos[i];
 
                 struct ioredtbl tbl;
-                tbl.delivery_mode = DEL_MODE_FIXED;
-                tbl.destination_mode = 0;
-                tbl.pin_polarity = (iso.flags & 0x2 > 0)
-                        ? POLARITY_ACTIVE_LOW : POLARITY_ACTIVE_HIGH;
-                tbl.trigger_mode = (iso.flags & 0x8 > 0)
-                        ? TRIGGER_LEVEL : TRIGGER_EDGE;
+                tbl.conf = DEL_MODE_FIXED |
+                        DEST_MODE_PHYSICAL |
+                        ((iso.flags & 0x2 > 0)
+                         ? POLARITY_ACTIVE_LOW : POLARITY_ACTIVE_HIGH) |
+                        ((iso.flags & 0x8 > 0)
+                         ? TRIGGER_LEVEL : TRIGGER_EDGE);
+
                 tbl.mask = 0;
                 tbl.destination = bsp_lapic_id;
 
-                /* timer (HPET) */
-                if (iso.irq_source == 0) {
-                        tbl.vector = 0x22;
-                } else {
-                        tbl.vector = iso.gsi + 0x20;
-                }
+                tbl.vector = iso.gsi + 32;
 
                 printf(KMSG_LOGLEVEL_INFO,
                        "Setting up redirection entry in IOAPIC %d with IRQ "

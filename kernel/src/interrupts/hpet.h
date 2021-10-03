@@ -11,4 +11,6 @@
 
 void hpet_initialize(struct hpet*);
 
+uint64_t hpet_read_counter();
+
 #endif

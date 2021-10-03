@@ -6,10 +6,8 @@
 #include "../libk/printf.h"
 #include "../libk/strutil.h"
 
-const uint64_t ticks_per_second = 1000;
-
 /* one kernel tick is equal to 1 millisecond */
-uint64_t ticks = 0;
+uint64_t timer_elapsed_us = 0;
 
 void timer_initialize()
 {
@@ -22,16 +20,16 @@ void timer_initialize()
         printf(KMSG_LOGLEVEL_OKAY, "Finished target timer.\n");
 }
 
-void timer_tick()
+void timer_tick(uint64_t dus)
 {
-        ticks++;
+        timer_elapsed_us += dus;
 }
 
 char *timer_format(char *buf)
 {
         /* 0000.0000 example format */
-        int seconds         = ticks / ticks_per_second;
-        int milliseconds    = (ticks % ticks_per_second) * 10;
+        int seconds         = timer_elapsed_us / 1000000;
+        int milliseconds    = (timer_elapsed_us % 1000000) / 100;
 
         for (size_t i = 0; i < 4; i++) {
                 buf[i] = ' ';

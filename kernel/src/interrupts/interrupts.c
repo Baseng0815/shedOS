@@ -3,6 +3,8 @@
 #include "apic.h"
 #include "timer.h"
 
+#include "hpet.h"
+
 #include "../libk/printf.h"
 
 static const char *exception_names[] = {
@@ -72,9 +74,15 @@ void exception_handle(struct exception_frame *frame)
         }
 }
 
+/* HPET */
 void isr34(struct interrupt_frame *frame)
 {
-        timer_tick();
+        static uint64_t prev_time = 0;
+
+        uint64_t current_time = hpet_read_counter();
+        uint64_t dus = current_time - prev_time;
+        prev_time = current_time;
+        timer_tick(dus);
 
         apic_send_eoi();
 }

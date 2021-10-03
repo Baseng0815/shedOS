@@ -21,9 +21,9 @@ qemu: hdd
 	    -boot d \
 	    -cdrom $(ISO) \
 	    -enable-kvm \
+	    -cpu host \
 	    -vga std \
 	    -soundhw pcspk \
-	    -cpu host \
 	    -smp $$(nproc) \
 	    -net none \
 	    -M q35 \

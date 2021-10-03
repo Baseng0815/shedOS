@@ -15,15 +15,15 @@ void idt_initialize()
         printf(KMSG_LOGLEVEL_INFO, "idt at %a\n", idt_descriptors);
 
         /* set up exceptions */
-        for (uint8_t i = 0; i <= 0x1e; i++) {
+        for (uint8_t i = 0; i < 31; i++) {
                 load_interrupt(i, __exception_interrupts[i], IDT_TA_Interrupt);
         }
 
         /* timer */
-        load_interrupt(0x22, (uintptr_t)&__isr34, IDT_TA_Interrupt);
+        load_interrupt(34, (uintptr_t)&__isr34, IDT_TA_Interrupt);
 
         /* syscall */
-        load_interrupt(0x80, (uintptr_t)&__isr128, IDT_TA_SystemCall);
+        load_interrupt(128, (uintptr_t)&__isr128, IDT_TA_SystemCall);
 
         struct idt idt = {
                 .size = 0x1000 - 1,

@@ -131,7 +131,7 @@ isr_err_nocode  28
 isr_err_nocode  29
 isr_err_code    30
 
-# timer
+# hpet
 isr_noerr       34
 isr_syscall     128
 

@@ -20,18 +20,18 @@ void framebuffer_putpixel(int x, int y, uint32_t px)
         x += 8;
         y += 8;
         /* TODO use framebuffer masks instead of non-based assumptions */
-        *(uint32_t*)(fb->framebuffer_addr
-                + y * fb->framebuffer_pitch
-                + x * fb->framebuffer_bpp / 8) = px;
+        *(volatile uint32_t*)(fb->framebuffer_addr
+                              + y * fb->framebuffer_pitch
+                              + x * fb->framebuffer_bpp / 8) = px;
 }
 
 uint32_t framebuffer_getpixel(int x, int y)
 {
         x += 8;
         y += 8;
-        return *(uint32_t*)(fb->framebuffer_addr
-                            + y * fb->framebuffer_pitch
-                            + x * fb->framebuffer_bpp / 8);
+        return *(volatile uint32_t*)(fb->framebuffer_addr
+                                     + y * fb->framebuffer_pitch
+                                     + x * fb->framebuffer_bpp / 8);
 }
 
 void framebuffer_drawborder(uint32_t color)

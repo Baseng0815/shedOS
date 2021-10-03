@@ -3,13 +3,12 @@
 
 #include <stdint.h>
 
-extern const uint64_t ticks_per_second;
-
-extern uint64_t ticks;
+/* kernel timer uses microseconds */
+extern uint64_t timer_elapsed_us;
 
 void timer_initialize();
 
-void timer_tick();
+void timer_tick(uint64_t dus);
 char *timer_format(char*);
 
 #endif
