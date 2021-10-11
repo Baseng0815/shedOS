@@ -33,8 +33,7 @@ size_t utos(uint64_t i, uint64_t base, char *buf, size_t min_len)
 
         buf[str_len] = '\0';
         for (size_t n = 0; n < val_len; n++) {
-                char m = '0' + i % base;
-                if (m > '9') { m += 0x7; }
+                char m = "0123456789ABCDEF"[i % base];
                 buf[str_len - n - 1] = m;
 
                 i /= base;
