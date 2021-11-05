@@ -4,7 +4,7 @@
 
 #include "../libk/printf.h"
 
-void vmm_request_at(struct page_table *table, void *vaddr,
+void vmm_request_at(uint64_t *table, void *vaddr,
                     size_t n, uint8_t flags)
 {
         for (size_t i = 0; i < n; i++) {
@@ -22,7 +22,7 @@ void vmm_request_at(struct page_table *table, void *vaddr,
         }
 }
 
-void vmm_release_at(struct page_table *table, void *vaddr, size_t n)
+void vmm_release_at(uint64_t *table, void *vaddr, size_t n)
 {
         uint64_t *entry = paging_entry_get(kernel_table, vaddr);
         /* is not present */

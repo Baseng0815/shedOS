@@ -20,9 +20,14 @@ void timer_initialize()
         printf(KMSG_LOGLEVEL_OKAY, "Finished target timer.\n");
 }
 
-void timer_tick(uint64_t dus)
+void timer_tick(int dus)
 {
         timer_elapsed_us += dus;
+}
+
+uint64_t timer_read_counter()
+{
+        return timer_elapsed_us;
 }
 
 char *timer_format(char *buf)

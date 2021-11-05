@@ -27,31 +27,29 @@ regions:
 */
 
 /* a page table is exactly 4096 bytes large so it fits into a single frame */
-struct page_table {
-        uint64_t entries[512];
-} __attribute__((aligned(0x1000)));
 
 /* page table flags */
 #define PAGING_PRESENT  (1UL << 0) /* present */
 #define PAGING_WRITABLE (1UL << 1) /* enable read/write */
 #define PAGING_USER     (1UL << 2) /* enable user access */
 #define PAGING_WTHROUGH (1UL << 3) /* enable write-through caching */
-#define PAGING_CDISABLE (1UL << 4)/* disable cache */
+#define PAGING_CDISABLE (1UL << 4) /* disable cache */
 
-extern struct page_table *kernel_table;
+extern uint64_t *kernel_table;
 
-/* create a page table for the kernel */
+/* create a new page table for the kernel */
 void paging_initialize(struct stivale2_struct_tag_memmap*,
                        struct stivale2_struct_tag_framebuffer*);
 
-void paging_map(struct page_table*, void *vaddr, void *paddr, uint8_t flags);
-void paging_unmap(struct page_table*, void *vaddr);
+void paging_map(uint64_t *page_table, void *vaddr, void *paddr, uint8_t flags);
+void paging_unmap(uint64_t *page_table, void *vaddr);
 /* if create is true, the directory will be created if not present already */
-uint64_t *paging_entry_get(struct page_table*, void *vaddr);
+uint64_t *paging_entry_get(uint64_t *page_table, void *vaddr);
 
-void paging_copy_table(struct page_table *src, struct page_table **dst);
+/* create a new page table which links to the kernel */
+void paging_create_empty(uint64_t **dst);
 
-void paging_write_cr3(const struct page_table*);
+void paging_write_cr3(uint64_t *page_table);
 void paging_flush_tlb(void *addr);
 
 #endif

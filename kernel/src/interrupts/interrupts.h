@@ -3,8 +3,6 @@
 
 #include "../task/task.h"
 
-#include <stdint.h>
-
 struct interrupt_frame_other {
         uint64_t rip;
         uint64_t cs;

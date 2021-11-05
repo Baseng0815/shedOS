@@ -9,7 +9,7 @@
 
 #define HDR_OFF(off)((void*)((uintptr_t)(hdr))+(off))
 
-void task_create(struct task **new_task, uint8_t *elf_data)
+void task_create(struct task **new_task, const uint8_t *elf_data)
 {
         /* allocate task structure */
         struct task *task = bump_alloc(sizeof(struct task), 0);
@@ -20,7 +20,7 @@ void task_create(struct task **new_task, uint8_t *elf_data)
 
         asm volatile("cli");
         /* create new address space */
-        paging_copy_table(kernel_table, &task->vmap);
+        paging_create_empty(&task->vmap);
         paging_write_cr3(task->vmap);
 
         /* load elf into address space */

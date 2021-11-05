@@ -128,19 +128,20 @@ void _start(struct stivale2_struct *stivale2_struct)
         idt_initialize();
         apic_initialize(madt);
         timer_initialize();
-        asm volatile("sti");
 
         /* pci_init(); */
 
         /* _user_jump(); */
 
-        /* struct task *new_task; */
-        /* task_create(&new_task, elf_test_2); */
-        /* switch_to_task(new_task); */
+        struct task *new_task;
+        task_create(&new_task, elf_test_1);
+        switch_to_task(new_task);
 
+        /* asm volatile("sti"); */
+
+        printf(KMSG_LOGLEVEL_CRIT, "Finish\n");
         for (;;) {
-                printf(KMSG_LOGLEVEL_CRIT, "Finish\n");
-                /* asm volatile("hlt"); */
+                asm volatile("hlt");
         }
 }
 

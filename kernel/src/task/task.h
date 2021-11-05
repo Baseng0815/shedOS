@@ -1,7 +1,8 @@
 #ifndef _TASK_H
-#define _TAKS_H
+#define _TASK_H
 
 #include "../memory/paging.h"
+
 #include <stdint.h>
 
 struct registers {
@@ -24,17 +25,20 @@ struct registers {
 
 struct task {
         struct registers regs;
-        struct task *next_task;
         uint64_t rsp;
+        uint64_t rflags;
         uint64_t rip;
+        struct task *next_task;
         struct page_table *vmap; /* virtual memory map */
-};
+        uint64_t deadline;
+} __attribute__((packed));
 
 /* SysV ABI: RDI, RSI, RDX, RCX, R8, R9 */
 
-/* create task from elf executable file */
-void task_create(struct task **new_task, uint8_t *elf_data);
+/* create task from elf data */
+void task_create(struct task **new_task, const uint8_t *elf_data);
 
+/* load task context and transfer control */
 void switch_to_task(const struct task *task);
 
 #endif
