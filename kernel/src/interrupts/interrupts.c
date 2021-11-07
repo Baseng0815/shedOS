@@ -77,19 +77,17 @@ void exception_handle(struct exception_frame *frame)
 /* HPET */
 void isr34(struct interrupt_frame *frame)
 {
+        apic_send_eoi();
+
         static uint64_t prev_time = 0;
 
         uint64_t current_time = hpet_read_counter();
         uint64_t dus = current_time - prev_time;
         prev_time = current_time;
-        timer_tick(dus);
-
-        apic_send_eoi();
+        timer_tick(frame, dus);
 }
 
 void isr128(struct interrupt_frame *frame)
 {
         printf(KMSG_LOGLEVEL_CRIT, (const char*)frame->gprs.rdi);
-
-        apic_send_eoi();
 }

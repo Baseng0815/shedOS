@@ -7,7 +7,7 @@
 
 void timer_initialize();
 
-void timer_tick(int dus);
+void timer_tick(const struct interrupt_frame *ifr, int dus);
 uint64_t timer_read_counter();
 
 char *timer_format(char*);

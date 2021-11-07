@@ -6,6 +6,8 @@
 #include "../libk/printf.h"
 #include "../libk/strutil.h"
 
+#include "../task/sched.h"
+
 /* one kernel tick is equal to 1 millisecond */
 uint64_t timer_elapsed_us = 0;
 
@@ -20,9 +22,10 @@ void timer_initialize()
         printf(KMSG_LOGLEVEL_OKAY, "Finished target timer.\n");
 }
 
-void timer_tick(int dus)
+void timer_tick(const struct interrupt_frame *ifr, int dus)
 {
         timer_elapsed_us += dus;
+        sched_tick(ifr);
 }
 
 uint64_t timer_read_counter()

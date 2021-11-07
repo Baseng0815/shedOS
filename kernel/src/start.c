@@ -23,7 +23,7 @@
 
 #include "libk/bump_alloc.h"
 #include "pci/pci.h"
-#include "task/task.h"
+#include "task/sched.h"
 
 static uint8_t stack_kernel[0x1000]; /* 4 KiB stack */
 static uint8_t stack_interrupts[0x1000]; /* 4 KiB stack */
@@ -76,6 +76,8 @@ void *stivale2_get_tag(struct stivale2_struct*, uint64_t);
 
 void _start(struct stivale2_struct *stivale2_struct)
 {
+        asm volatile("cli");
+
         /* framebuffer and terminal */
         struct stivale2_struct_tag_framebuffer *fb =
                 stivale2_get_tag(stivale2_struct,
@@ -133,11 +135,12 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         /* _user_jump(); */
 
-        struct task *new_task;
-        task_create(&new_task, elf_test_1);
-        switch_to_task(new_task);
-
-        /* asm volatile("sti"); */
+        struct task *task_1, *task_2;
+        task_create(&task_1, elf_test_1);
+        task_create(&task_2, elf_test_2);
+        task_1->next_task = task_2;
+        task_2->next_task = task_1;
+        sched_run(task_1);
 
         printf(KMSG_LOGLEVEL_CRIT, "Finish\n");
         for (;;) {

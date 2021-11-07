@@ -29,7 +29,7 @@ struct task {
         uint64_t rflags;
         uint64_t rip;
         struct task *next_task;
-        struct page_table *vmap; /* virtual memory map */
+        uint64_t *vmap; /* virtual memory map */
         uint64_t deadline;
 } __attribute__((packed));
 

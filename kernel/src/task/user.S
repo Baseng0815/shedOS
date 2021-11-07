@@ -1,7 +1,6 @@
 .global _user_jump
 .extern user_jump
 _user_jump:
-    cli
     movw $0x23, %ax # user data
     movw %ax, %ds
     movw %ax, %es

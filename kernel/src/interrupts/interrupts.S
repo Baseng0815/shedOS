@@ -85,7 +85,6 @@
     .global __isr\int_no
     .align 4
     __isr\int_no:
-    sti # syscalls are interruptable
     push_all
     cld
     mov %rsp, %rdi

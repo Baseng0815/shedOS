@@ -18,7 +18,6 @@ void task_create(struct task **new_task, const uint8_t *elf_data)
 
         printf(KMSG_LOGLEVEL_INFO, "Loading elf at %x\n", elf_data);
 
-        asm volatile("cli");
         /* create new address space */
         paging_create_empty(&task->vmap);
         paging_write_cr3(task->vmap);
@@ -29,7 +28,7 @@ void task_create(struct task **new_task, const uint8_t *elf_data)
         const Elf64_Phdr *phdrs = HDR_OFF(hdr->e_phoff);
         for (size_t i = 0; i < hdr->e_phnum; i++) {
                 if (phdrs[i].p_type == PT_LOAD) {
-                        uint8_t flags = 0;
+                        uint8_t flags = PAGING_USER;
                         /* writable */
                         if (phdrs[i].p_flags & PF_W) flags |= PAGING_WRITABLE;
 
@@ -48,6 +47,7 @@ void task_create(struct task **new_task, const uint8_t *elf_data)
         }
 
         task->rsp = 0x7ffffffffff0UL;
-        vmm_request_at(task->vmap, addr_page_align_down(task->rsp), 1, 0);
+        vmm_request_at(task->vmap, addr_page_align_down(task->rsp), 1,
+                       PAGING_USER | PAGING_WRITABLE);
         task->rip = hdr->e_entry;
 }

@@ -1,12 +1,26 @@
 .global switch_to_task
 switch_to_task:
+    # ring 3 data segments
+    movw $0x23, %ax # user data
+    movw %ax, %ds
+    movw %ax, %es
+    movw %ax, %fs
+    movw %ax, %gs # ss is handled by iret
+
+    # virtual address space
+    movq 152(%rdi), %rax
+    movq $0xffff800000000000, %rbx
+    subq %rbx, %rax
+    movq %rax, %cr3
+
     # set up stack expected by iretq
-    pushq $0x10 # SS
+    pushq $0x23 # SS
     movq 120(%rdi), %rax
     pushq %rax # RSP
     movq 128(%rdi), %rax
+    orq $0x200, %rax # IF enable
     pushq %rax # RFLAGS
-    pushq $0x08 # CS
+    pushq $0x1b # CS (user code)
     movq 136(%rdi), %rax
     pushq %rax # RIP
 

@@ -48,8 +48,8 @@ hdd: sysroot
 usb: sysroot
 	@echo "=====! CREATING ISO FOR USB BOOTING !====="
 	rm -f $(USB)
-	dd if=/dev/zero bs=1M count=256 of=$(USB)
-	parted -s $(ISO) mklabel gpt
+	dd if=/dev/zero bs=4M count=16 of=$(USB)
+	parted -s $(USB) mklabel gpt
 	mkfs.fat -F32 $(USB)
 	mkdir -p $(USB)_mnt
 	mount $(USB) $(USB)_mnt

@@ -42,7 +42,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
                         (uint64_t*)addr_ensure_higher(pmm_request_pages(1));
                 memset(child, 0, 0x1000);
 
-                *child_entry = PAGING_PRESENT | PAGING_WRITABLE |
+                *child_entry = PAGING_PRESENT | PAGING_WRITABLE | PAGING_USER |
                         addr_ensure_lower(child);
         }
 
@@ -73,7 +73,7 @@ void paging_map(uint64_t *table,
 {
         uint64_t *entry = paging_entry_get(table, vaddr);
 
-        *entry = PAGING_PRESENT | PAGING_USER | /* TODO remove user */
+        *entry = PAGING_PRESENT | /* TODO remove user */
                 flags |
                 addr_page_align_down((uintptr_t)paddr);
 
@@ -184,7 +184,7 @@ static void map_kernel_region(uintptr_t voffset,
         for (uintptr_t addr = poffset;
              addr < poffset + len;
              addr += 0x1000) {
-                paging_map(kernel_table, (void*)(voffset + addr), (void*)addr,
-                           PAGING_WRITABLE);
+                paging_map(kernel_table, (void*)(voffset + addr),
+                           (void*)addr, 0);
         }
 }
