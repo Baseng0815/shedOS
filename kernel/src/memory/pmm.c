@@ -1,6 +1,5 @@
 #include "pmm.h"
 
-#include "../libk/printf.h"
 #include "../libk/memutil.h"
 
 #include "vmm.h"
@@ -23,9 +22,6 @@ static size_t unlock_pages(uintptr_t, size_t);
 
 void pmm_initialize(struct stivale2_struct_tag_memmap *mmap)
 {
-        printf(KMSG_LOGLEVEL_INFO,
-               "Reached target pmm.\n");
-
         /* find largest (conventional) memory map entry to put the bitmap into.
            also get total amount of memory */
         total_memory = free_memory = 0;
@@ -50,9 +46,6 @@ void pmm_initialize(struct stivale2_struct_tag_memmap *mmap)
         size_t bitmap_len = total_memory / (0x1000 * 8) + 1;
         page_bitmap.buf = (uint8_t*)largest_entry->base;
         page_bitmap.len = bitmap_len;
-        printf(KMSG_LOGLEVEL_INFO,
-               "Bitmap starting at %a with length of %d bytes\n",
-               addr_ensure_higher(page_bitmap.buf), page_bitmap.len);
 
         /* lock all pages */
         memset(page_bitmap.buf, 0xff, page_bitmap.len);
@@ -70,17 +63,8 @@ void pmm_initialize(struct stivale2_struct_tag_memmap *mmap)
         /* lock bitmap pages */
         lock_pages((uintptr_t)page_bitmap.buf, page_bitmap.len / 0x1000);
 
-        printf(KMSG_LOGLEVEL_INFO,
-               "Total memory: %dKiB (%d pages).\n"
-               "Total usable amount of memory: %dKiB (%d pages).\n",
-               total_memory / 0x400, total_memory / 0x1000,
-               free_memory / 0x400, free_memory / 0x1000);
-
         /* we want the bitmap mapped high */
         page_bitmap.buf = addr_ensure_higher(page_bitmap.buf);
-
-        printf(KMSG_LOGLEVEL_OKAY,
-               "Finished target pmm.\n");
 }
 
 void *pmm_request_pages(size_t count)

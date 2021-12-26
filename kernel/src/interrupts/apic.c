@@ -2,7 +2,6 @@
 
 #include "../libk/printf.h"
 #include "../debug.h"
-#include "../io.h"
 
 #include "../memory/addrutil.h"
 
@@ -11,7 +10,7 @@
 #define IOREDTBL_OFFSET(N) (0x10 + N * 2)
 
 /* to set the core count */
-#include "../cpuinfo.h"
+#include "../cpu/cpuinfo.h"
 
 /* LAPIC register */
 #define LAPIC_REG_ID        0x08

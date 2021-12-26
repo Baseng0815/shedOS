@@ -62,7 +62,7 @@ void cpuinfo_initialize()
         *((uint32_t*)(cpuinfo.vendor_string + 4)) = d;
         *((uint32_t*)(cpuinfo.vendor_string + 8)) = c;
 
-        /* version information and feature bits*/
+        /* version information and feature bits */
         __cpuid(0x1);
         cpuinfo.stepping        = (a >> 0)  & 0xf;
         cpuinfo.model           = (a >> 4)  & 0xf;
@@ -79,7 +79,7 @@ void cpuinfo_initialize()
                 cpuinfo.family += efamily_id;
         }
 
-        cpuinfo.featureset = d + ((uint64_t)c << 32);
+        cpuinfo.featureset = d | ((uint64_t)c << 32);
 
         /* clock speeds and frequencies */
         __cpuid(0x16);

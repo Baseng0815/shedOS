@@ -38,8 +38,7 @@ regions:
 extern uint64_t *kernel_table;
 
 /* create a new page table for the kernel */
-void paging_initialize(struct stivale2_struct_tag_memmap*,
-                       struct stivale2_struct_tag_framebuffer*);
+void paging_initialize(struct stivale2_struct_tag_memmap*);
 
 void paging_map(uint64_t *page_table, void *vaddr, void *paddr, uint8_t flags);
 void paging_unmap(uint64_t *page_table, void *vaddr);

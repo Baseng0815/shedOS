@@ -1,7 +1,6 @@
 #include "pic.h"
 
-#include "../io.h"
-
+#include "../cpu/cpu.h"
 #include "../libk/printf.h"
 
 static void remap_pic();

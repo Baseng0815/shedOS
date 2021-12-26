@@ -1,7 +1,7 @@
 #include "terminal.h"
 
 #include "font.h"
-#include "../fb/framebuffer.h"
+#include "framebuffer.h"
 #include "../libk/printf.h"
 
 
@@ -62,6 +62,8 @@ void terminal_putchar(char c)
                                              : bg);
                 }
         }
+
+        framebuffer_flush();
 }
 
 void terminal_puts(const char *str)
@@ -83,6 +85,7 @@ void terminal_clear(void)
         }
 
         chr_index = 0;
+        framebuffer_flush();
 }
 
 void terminal_scroll(void)

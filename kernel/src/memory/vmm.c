@@ -8,17 +8,17 @@ void vmm_request_at(uint64_t *table, void *vaddr,
                     size_t n, uint8_t flags)
 {
         for (size_t i = 0; i < n; i++) {
+                uintptr_t target_vaddr = (uintptr_t)vaddr + i * 0x1000;
+
                 /* check if vaddr is free */
-                uint64_t *entry = paging_entry_get(kernel_table, vaddr);
+                uint64_t *entry = paging_entry_get(kernel_table, target_vaddr);
                 /* is present */
                 if (entry != NULL && (*entry & PAGING_PRESENT) != 0)
                         continue;
 
                 void *memory = pmm_request_pages(1);
 
-                paging_map(table,
-                           (uintptr_t)vaddr + (uintptr_t)(i * 0x1000),
-                           memory, flags);
+                paging_map(table, target_vaddr, memory, flags);
         }
 }
 

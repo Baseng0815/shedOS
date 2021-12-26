@@ -2,7 +2,6 @@
 
 #include "pmm.h"
 #include "../libk/memutil.h"
-#include "../libk/printf.h"
 
 #include "addrutil.h"
 
@@ -15,11 +14,8 @@ static uint64_t *get(uint64_t*, size_t, bool);
 static void _paging_copy_table(uint64_t*, uint64_t*, int);
 static void map_kernel_region(uintptr_t, uintptr_t, size_t);
 
-void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
-                       struct stivale2_struct_tag_framebuffer *fb)
+void paging_initialize(struct stivale2_struct_tag_memmap *mmap)
 {
-        printf(KMSG_LOGLEVEL_INFO, "Reached target paging.\n");
-
         /* disable kernel write access to read-only pages */
         /* asm volatile("movq %%cr0, %%rax;" */
         /*              "orq $(1 << 16), %%rax;" */
@@ -28,9 +24,6 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
 
         kernel_table = (uint64_t*)addr_ensure_higher(pmm_request_pages(1));
         memset(kernel_table, 0, sizeof(uint64_t) * 512);
-
-        printf(KMSG_LOGLEVEL_INFO,
-               "Kernel table at %a\n", kernel_table);
 
         /* create kernel top-level entries so that all derived page tables
          * have access to the same structure and can share kernel mappings */
@@ -48,7 +41,6 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
 
         map_kernel_region(VADDR_HIGHER, 0x0, 0x100000000); /* 4G */
         map_kernel_region(VADDR_KERNEL, 0x0, 0x80000000); /* 2G */
-        printf(KMSG_LOGLEVEL_INFO, "Mapped 4G/2G to higher/kernel\n");
 
         for (size_t i = 0; i < mmap->entries; i++) {
                 /* map all memory map entries */
@@ -59,11 +51,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap,
         /* unmap NULL page */
         paging_unmap(kernel_table, NULL);
 
-        printf(KMSG_LOGLEVEL_INFO, "Using new page table...\n");
-
         paging_write_cr3(kernel_table);
-
-        printf(KMSG_LOGLEVEL_OKAY, "Finished target paging.\n");
 }
 
 void paging_map(uint64_t *table,
@@ -73,7 +61,7 @@ void paging_map(uint64_t *table,
 {
         uint64_t *entry = paging_entry_get(table, vaddr);
 
-        *entry = PAGING_PRESENT | /* TODO remove user */
+        *entry = PAGING_PRESENT |
                 flags |
                 addr_page_align_down((uintptr_t)paddr);
 

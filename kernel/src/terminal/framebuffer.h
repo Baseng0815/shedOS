@@ -13,4 +13,6 @@ void framebuffer_initialize(struct stivale2_struct_tag_framebuffer*);
 void framebuffer_putpixel(int, int, uint32_t);
 uint32_t framebuffer_getpixel(int, int);
 
+void framebuffer_flush(void);
+
 #endif

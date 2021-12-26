@@ -1,17 +1,19 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#include "cpuinfo.h"
+#include "cpu/cpuinfo.h"
 
 #include "libk/printf.h"
 #include "libk/strutil.h"
 
-#include "fb/framebuffer.h"
-#include "terminal/terminal.h"
-
 #include "memory/pmm.h"
 #include "memory/paging.h"
 #include "memory/addrutil.h"
+
+#include "terminal/framebuffer.h"
+#include "terminal/terminal.h"
+
+#include "debug.h"
 
 #include "gdt/gdt.h"
 #include "sdt/sdt.h"
@@ -51,13 +53,8 @@ static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
                 /* zero indicates the end of the linked list */
                 .next = &unmap_null_header_tag
         },
-#ifdef FB_FHD
         .framebuffer_width  = 1920,
         .framebuffer_height = 1080,
-#elif defined(FB_QHD)
-        .framebuffer_width  = 2560,
-        .framebuffer_height = 1440,
-#endif
         .framebuffer_bpp    = 32
 };
 
@@ -77,6 +74,16 @@ void *stivale2_get_tag(struct stivale2_struct*, uint64_t);
 void _start(struct stivale2_struct *stivale2_struct)
 {
         asm volatile("cli");
+        /* enable SSE */
+        sse_enable();
+
+        /* memory */
+        struct stivale2_struct_tag_memmap *mmap =
+                stivale2_get_tag(stivale2_struct,
+                                 STIVALE2_STRUCT_TAG_MEMMAP_ID);
+
+        pmm_initialize(mmap);
+        paging_initialize(mmap);
 
         /* framebuffer and terminal */
         struct stivale2_struct_tag_framebuffer *fb =
@@ -90,6 +97,12 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         welcome_message();
         dump_stivale_info(stivale2_struct);
+
+        printf(KMSG_LOGLEVEL_INFO,
+               "Total memory: %dKiB (%d pages).\n"
+               "Total usable amount of memory: %dKiB (%d pages).\n",
+               total_memory / 0x400, total_memory / 0x1000,
+               free_memory / 0x400, free_memory / 0x1000);
 
         printf(KMSG_LOGLEVEL_OKAY,
                "Framebuffer initialized with dimension of %dx%d, "
@@ -108,15 +121,9 @@ void _start(struct stivale2_struct *stivale2_struct)
         /* processor information */
         cpuinfo_initialize();
         dump_cpu();
-
-        /* memory */
-        struct stivale2_struct_tag_memmap *mmap =
-                stivale2_get_tag(stivale2_struct,
-                                 STIVALE2_STRUCT_TAG_MEMMAP_ID);
-
         dump_memory(mmap);
-        pmm_initialize(mmap);
-        paging_initialize(mmap, fb);
+
+        /* global descriptor table */
         gdt_initialize((uintptr_t)stack_interrupts + sizeof(stack_interrupts));
 
         /* system descriptor tables */
