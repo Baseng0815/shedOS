@@ -1,34 +1,34 @@
-CC 		:= $(TARGET)-gcc --sysroot=$(SYSROOT)
-AS 		:= $(TARGET)-as
-LD 		:= $(TARGET)-ld
-AR 		:= $(TARGET)-ar
+CC 		:= cc
+AS 		:= as
+LD 		:= ld
+AR 		:= ar
 
 # 1920x1080: FB_FHD
 # 2560x1440: FB_QHD
 FB_SIZE 	:= FB_FHD
 
-CFLAGS 		:= \
-    $(USER_CFLAGS) \
-    -I. \
-    -I$(SYSROOT)/include \
-    -ffreestanding \
-    -fno-stack-protector \
-    -fno-pic -fpie \
-    -mno-mmx \
-    -mno-3dnow \
-    -mno-sse \
-    -mno-sse2 \
-    -mno-red-zone \
-    -D$(FB_SIZE)
+CFLAGS	:=\
+    	$(USER_CFLAGS) \
+	-I.\
+	-std=gnu11 \
+	-ffreestanding \
+	-fno-stack-protector \
+	-fno-pic \
+	-mno-80387 \
+	-mno-mmx \
+	-mno-3dnow \
+	-mno-sse \
+	-mno-sse2 \
+	-mno-red-zone \
+	-mcmodel=kernel \
+	-MMD \
+    	-D$(FB_SIZE)
 
-CPPFLAGS 	:=
-
-LDFLAGS 	:= \
-    -Tlinker.ld \
-    -nostdlib \
-    -static \
-    -pie -fno-pic -fpie \
-    -z max-page-size=0x1000
+LDFLAGS :=\
+    	-Tlinker.ld \
+    	-nostdlib \
+    	-z max-page-size=0x1000 \
+	-static \
 
 ASFLAGS 	:=
 
@@ -36,6 +36,7 @@ SOURCES 	:= $(shell find ./src -type f -name "*.c")
 ASM_SOURCES 	:= $(shell find ./src -type f -name "*.S")
 HEADERS 	:= $(shell find ./src -type f -name "*.h")
 OBJS 		:= $(SOURCES:.c=_c.o) $(ASM_SOURCES:.S=_S.o)
+HEADER_DEPS	:= $(SOURCES:.c=.d)
 
 .PHONY: all clean install-header install-exec
 
@@ -53,7 +54,7 @@ install-exec: kernel.elf
 
 kernel.elf: $(OBJS)
 	@echo "=====! LINKING $< INTO $@ !====="
-	$(CC) $(OBJS) $(LDFLAGS) -o $@
+	$(LD) $(OBJS) $(LDFLAGS) -o $@
 
 %_c.o: %.c
 	@echo "=====! COMPILING $< INTO $@ !====="
@@ -69,4 +70,4 @@ src/interrupts/interrupts_c.o: src/interrupts/interrupts.c
 	    -mgeneral-regs-only -c -o $@ $<
 
 clean:
-	rm -rf $(OBJS) kernel.elf
+	rm -rf $(OBJS) $(HEADER_DEPS) kernel.elf
