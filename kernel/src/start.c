@@ -251,13 +251,6 @@ void dump_stivale_info(struct stivale2_struct *stivale2_struct)
                 printf(KMSG_LOGLEVEL_INFO, "MMIO UART at %a\n",
                        mmio_uart->addr);
         }
-
-        struct stivale2_struct_vmap *vmap =
-                stivale2_get_tag(stivale2_struct,
-                                 STIVALE2_STRUCT_TAG_VMAP);
-        if (vmap) {
-                printf(KMSG_LOGLEVEL_INFO, "VMAP_HIGH=%a\n", vmap->addr);
-        }
 }
 
 void dump_cpu()
