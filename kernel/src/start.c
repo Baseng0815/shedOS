@@ -67,7 +67,7 @@ __attribute__((section(".stivale2hdr"), used))
 static struct stivale2_header header = {
         .entry_point = 0,
         .stack = (uintptr_t)stack_kernel + sizeof(stack_kernel),
-        .flags = 2,
+        .flags = (1 << 1) | (1 << 4),
         .tags = (uintptr_t)&framebuffer_hdr_tag
 };
 

@@ -38,7 +38,7 @@ HEADERS 	:= $(shell find ./src -type f -name "*.h")
 OBJS 		:= $(SOURCES:.c=_c.o) $(ASM_SOURCES:.S=_S.o)
 HEADER_DEPS	:= $(SOURCES:.c=.d)
 
-.PHONY: all clean install-header install-exec
+.PHONY: clean install-header install-exec
 
 all: kernel.elf
 
