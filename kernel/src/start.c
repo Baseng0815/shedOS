@@ -27,6 +27,9 @@
 #include "pci/pci.h"
 #include "task/sched.h"
 
+/* TODO remove, only for tests */
+#include "memory/vmm.h"
+
 static uint8_t stack_kernel[0x1000]; /* 4 KiB stack */
 static uint8_t stack_interrupts[0x1000]; /* 4 KiB stack */
 static uint8_t *elf_test_1;
@@ -53,8 +56,13 @@ static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
                 /* zero indicates the end of the linked list */
                 .next = &unmap_null_header_tag
         },
+#ifdef FB_FHD
         .framebuffer_width  = 1920,
         .framebuffer_height = 1080,
+#elif defined(FB_QHD)
+        .framebuffer_width  = 2560,
+        .framebuffer_height = 1440,
+#endif
         .framebuffer_bpp    = 32
 };
 
@@ -140,13 +148,17 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         /* pci_init(); */
 
-        /* _user_jump(); */
+        uint32_t *addr = (uint32_t*)0x12345000UL;
+        vmm_request_at(kernel_table, addr, 1, 0);
+        *addr = 0x41;
+        printf(KMSG_LOGLEVEL_CRIT, "%x\n", *addr);
 
         struct task *task_1, *task_2;
         task_create(&task_1, elf_test_1);
-        task_create(&task_2, elf_test_2);
-        task_1->next_task = task_2;
-        task_2->next_task = task_1;
+        task_1->vmap_parent = kernel_table;
+        /* task_create(&task_2, elf_test_2); */
+        task_1->next_task = task_1;
+        /* task_2->next_task = task_1; */
         sched_run(task_1);
 
         printf(KMSG_LOGLEVEL_CRIT, "Finish\n");

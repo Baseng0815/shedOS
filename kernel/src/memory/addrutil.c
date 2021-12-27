@@ -42,3 +42,8 @@ uintptr_t addr_page_align_down(uintptr_t p)
 {
         return addr_align_down(p, 0x1000);
 }
+
+bool ptr_is_user(void *ptr)
+{
+        return ptr <= 0x7ffffffffff0UL;
+}

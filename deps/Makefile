@@ -1,7 +1,8 @@
 FILES	:= testelf1 testelf2
 
 CC 	:= gcc
-FLAGS 	:= -nostdlib -static -pie -fno-pic -fpie -z max-page-size=0x1000 -fno-asynchronous-unwind-tables
+FLAGS 	:= -nostdlib -static -pie -fno-pic -fpie -O0 -z max-page-size=0x1000 \
+	   -fno-asynchronous-unwind-tables -fno-stack-protector
 SOURCE	:= testelf.c
 
 .PHONY: all

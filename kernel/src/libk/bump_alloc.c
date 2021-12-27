@@ -3,8 +3,8 @@
 #include "../memory/addrutil.h"
 #include "../memory/vmm.h"
 
-static const uintptr_t LOWER_BOUND = 0xffff800100000000;
-static const uintptr_t UPPER_BOUND = 0xffff8ffffffff000;
+static const uintptr_t LOWER_BOUND = 0xffff810000000000UL;
+static const uintptr_t UPPER_BOUND = 0xffff810200000000UL;
 
 /* initial size of 1 page (4K) */
 static struct bump_alloc bump = {

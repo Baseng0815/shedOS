@@ -30,6 +30,7 @@ struct task {
         uint64_t rip;
         struct task *next_task;
         uint64_t *vmap; /* virtual memory map */
+        uint64_t *vmap_parent; /* virtual memory map of parent (used for cow) */
         uint64_t deadline;
 } __attribute__((packed));
 

@@ -1,6 +1,27 @@
 #ifndef _INTERRUPTS_H
 #define _INTERRUPTS_H
 
+/* exceptions */
+#define EXCEPTION_DE 0 /* divide error */
+#define EXCEPTION_DB 1 /* debug */
+#define EXCEPTION_BP 3 /* breakpoint */
+#define EXCEPTION_OF 4 /* overflow */
+#define EXCEPTION_BR 5 /* bound range exceeded */
+#define EXCEPTION_UD 6 /* undefined opcode */
+#define EXCEPTION_NM 7 /* device not available (math coprocessor) */
+#define EXCEPTION_DF 8 /* double fault */
+#define EXCEPTION_TS 10 /* invalid TSS */
+#define EXCEPTION_NP 11 /* segment not present */
+#define EXCEPTION_SS 12 /* stack segment fault */
+#define EXCEPTION_GP 13 /* general protection fault */
+#define EXCEPTION_PF 14 /* page fault */
+#define EXCEPTION_MF 16 /* floating-point error (math fault) */
+#define EXCEPTION_AC 17 /* alignment check */
+#define EXCEPTION_MC 18 /* machine check */
+#define EXCEPTION_XM 19 /* SIMD floating-point exception */
+#define EXCEPTION_VE 20 /* virtualization exception */
+#define EXCEPTION_CP 21 /* control protection */
+
 #include "../task/task.h"
 
 struct interrupt_frame_other {

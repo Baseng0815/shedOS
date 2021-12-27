@@ -3,7 +3,7 @@
 #include "../interrupts/timer.h"
 #include "../libk/printf.h"
 
-static struct task *current_task;
+struct task *current_task;
 
 void sched_run(struct task *initial_task)
 {

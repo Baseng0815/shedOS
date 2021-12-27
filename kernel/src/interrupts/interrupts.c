@@ -2,8 +2,10 @@
 
 #include "apic.h"
 #include "timer.h"
-
 #include "hpet.h"
+
+#include "../memory/addrutil.h"
+#include "../memory/cow.h"
 
 #include "../libk/printf.h"
 
@@ -50,9 +52,20 @@ static const char *exception_names[] = {
         "Security exception (0x1e)"
 };
 
-/* all interrupts are handled through this procedure */
+/* all exceptions are handled by this procedure */
 void exception_handle(struct exception_frame *frame)
 {
+        if (frame->int_no == EXCEPTION_PF) {
+                uint64_t faulting_address;
+                asm volatile("movq %%cr2, %0"
+                             : "=g" (faulting_address));
+                if (ptr_is_user(faulting_address)) {
+                        /* page fault is user address */
+                        cow_copy_on_fault((void*)faulting_address);
+                        return;
+                }
+        }
+
         printf(KMSG_LOGLEVEL_CRIT,
                "%s: err=%x\n"
                "rax=%x, rbx=%x, rcx=%x, rdx=%x\n"

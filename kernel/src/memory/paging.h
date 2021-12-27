@@ -19,10 +19,13 @@
 mappings:
 0x0000000000000000-0x0000000100000000 -> 0xffff800000000000-0xffff800100000000
 0x0000000000000000-0x0000000080000000 -> 0xfffffff800000000-0xffffffffffffffff
+every additional mmap entry           -> 0xffff800000000000-end
 
 regions:
 0xffff800000000000-0xffff800100000000 (first 4G)
-0xffff800100000000-0xffff800200000000 (4GB bump heap)
+0xffff800100000000-0xffff810000000000 (1024G for additional mmap entries)
+0xffff810000000000-0xffff810200000000 (4GB bump heap)
+0xffff810200000000-0xffff810200001000 (page mapping for cow)
 0xfffffff800000000-0xffffffffffffffff (kernel mapped to last 2G)
 */
 
@@ -43,10 +46,10 @@ void paging_initialize(struct stivale2_struct_tag_memmap*);
 void paging_map(uint64_t *page_table, void *vaddr, void *paddr, uint8_t flags);
 void paging_unmap(uint64_t *page_table, void *vaddr);
 /* if create is true, the directory will be created if not present already */
-uint64_t *paging_entry_get(uint64_t *page_table, void *vaddr);
+uint64_t *paging_entry_get(uint64_t *page_table, void *vaddr, bool create);
 
 /* create a new page table which links to the kernel */
-void paging_create_empty(uint64_t **dst);
+uint64_t *paging_create_empty(void);
 
 void paging_write_cr3(uint64_t *page_table);
 void paging_flush_tlb(void *addr);

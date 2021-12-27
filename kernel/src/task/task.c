@@ -19,7 +19,7 @@ void task_create(struct task **new_task, const uint8_t *elf_data)
         printf(KMSG_LOGLEVEL_INFO, "Loading elf at %x\n", elf_data);
 
         /* create new address space */
-        paging_create_empty(&task->vmap);
+        task->vmap = paging_create_empty();
         paging_write_cr3(task->vmap);
 
         /* load elf into address space */
@@ -50,4 +50,6 @@ void task_create(struct task **new_task, const uint8_t *elf_data)
         vmm_request_at(task->vmap, addr_page_align_down(task->rsp), 1,
                        PAGING_USER | PAGING_WRITABLE);
         task->rip = hdr->e_entry;
+
+        printf(KMSG_LOGLEVEL_CRIT, "ELF loaded and task created.\n");
 }

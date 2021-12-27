@@ -28,7 +28,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap)
         /* create kernel top-level entries so that all derived page tables
          * have access to the same structure and can share kernel mappings */
         for (size_t i = 256; i < 512; i++) {
-                uint64_t *child_entry = &kernel_table[i];
+                int64_t *child_entry = &kernel_table[i];
 
                 /* allocate and zero out */
                 uint64_t *child =
@@ -59,10 +59,9 @@ void paging_map(uint64_t *table,
                 void *paddr,
                 uint8_t flags)
 {
-        uint64_t *entry = paging_entry_get(table, vaddr);
+        uint64_t *entry = paging_entry_get(table, vaddr, true);
 
-        *entry = PAGING_PRESENT |
-                flags |
+        *entry = PAGING_PRESENT | flags |
                 addr_page_align_down((uintptr_t)paddr);
 
         paging_flush_tlb(vaddr);
@@ -70,13 +69,13 @@ void paging_map(uint64_t *table,
 
 void paging_unmap(uint64_t *table, void *vaddr)
 {
-        uint64_t *entry = paging_entry_get(table, vaddr);
+        uint64_t *entry = paging_entry_get(table, vaddr, false);
         if (entry) {
                 *entry &= ~PAGING_PRESENT;
         }
 }
 
-uint64_t *paging_entry_get(uint64_t *table, void *vaddr)
+uint64_t *paging_entry_get(uint64_t *table, void *vaddr, bool create)
 {
         size_t lvl4_index, lvl3_index, lvl2_index, lvl1_index;
         map_index((uintptr_t)vaddr,
@@ -85,16 +84,20 @@ uint64_t *paging_entry_get(uint64_t *table, void *vaddr)
                   &lvl2_index,
                   &lvl1_index);
 
-        uint64_t *lvl4 = get(table, lvl4_index, true);
-        uint64_t *lvl3 = get(lvl4, lvl3_index, true);
-        uint64_t *lvl2 = get(lvl3, lvl2_index, true);
-        if (lvl2 == NULL)
+        uint64_t *lvl4 = get(table, lvl4_index, create);
+        if (!lvl4)
+                return NULL;
+        uint64_t *lvl3 = get(lvl4, lvl3_index, create);
+        if (!lvl3)
+                return NULL;
+        uint64_t *lvl2 = get(lvl3, lvl2_index, create);
+        if (!lvl2)
                 return NULL;
 
         return &lvl2[lvl1_index];
 }
 
-void paging_create_empty(uint64_t **dst)
+uint64_t *paging_create_empty(void)
 {
         uint64_t *new_table = (uint64_t*)addr_ensure_higher(pmm_request_pages(1));
         memset(new_table, 0, sizeof(uint64_t) * 512);
@@ -102,7 +105,7 @@ void paging_create_empty(uint64_t **dst)
         memcpy((void*)((uintptr_t)new_table + half_off),
                (void*)((uintptr_t)kernel_table + half_off), half_off);
 
-        *dst = new_table;
+        return new_table;
 }
 
 void paging_write_cr3(uint64_t *table)

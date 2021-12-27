@@ -429,7 +429,7 @@ void namespace_identify(void)
 
         printf(KMSG_LOGLEVEL_INFO,
                "Namespace size/capacity/utilization: %d/%d/%d blocks, "
-                "LBA data/metadata size=%d/%d bytes, relative perf=%d\n",
+               "LBA data/metadata size=%d/%d bytes, relative perf=%d\n",
                namespace_id->nsze, namespace_id->ncap, namespace_id->nuse,
                1 << format->lbads, format->ms, format->rp);
 }
