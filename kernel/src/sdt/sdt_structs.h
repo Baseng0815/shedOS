@@ -30,7 +30,7 @@ struct rsdp_rev1 {
         uint64_t xsdt_addr;
         uint8_t xchecksum;
         uint8_t reserved[3];
-};
+} __attribute__((packed));
 
 struct rsdp {
         char signature[8]; /* "RSD PTR " */

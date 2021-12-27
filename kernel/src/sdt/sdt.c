@@ -35,8 +35,11 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
                "RSDP checksum invalid.");
 
         printf(KMSG_LOGLEVEL_INFO,
-               "rsdp signature=%s, oemid=%s, revision=%d\n",
-               rsdp->signature, rsdp->oem_id, rsdp->revision);
+               "rsdp signature=");
+        putsn(rsdp->signature, 7);
+        puts(", oemid=");
+        putsn(rsdp->oem_id, 5);
+        printf(KMSG_LOGLEVEL_NONE, ", revision=%x\n", rsdp->revision);
 
         if (use_xsdt) {
                 xsdt = (struct xsdt*)
@@ -114,14 +117,12 @@ void *find_sdt(const char *signature)
         for (size_t i = 0; i < num_sdts; i++) {
                 struct sdt_header *hdr;
                 if (use_xsdt) {
-                        uint64_t *sdt_base = (uint64_t*)
-                                addr_ensure_higher(((uintptr_t)xsdt +
-                                                     sizeof(struct xsdt)));
-                        hdr = (struct sdt_header*)sdt_base[i];
+                        uint64_t *sdt_base = (uint64_t*)((uintptr_t)xsdt +
+                                                     sizeof(struct xsdt));
+                        hdr = (struct sdt_header*)addr_ensure_higher(sdt_base[i]);
                 } else {
-                        uint32_t *sdt_base = (uint32_t*)
-                                addr_ensure_higher(((uintptr_t)rsdt +
-                                                     sizeof(struct rsdt)));
+                        uint32_t *sdt_base = (uint32_t*)((uintptr_t)rsdt +
+                                                     sizeof(struct rsdt));
                         hdr = (struct sdt_header*)
                                 addr_ensure_higher(sdt_base[i]);
                 }
