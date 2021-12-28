@@ -19,6 +19,7 @@ io_inb:
     movw %si, %dx   # port
     xorq %rax, %rax
     inb %dx, %al
+    ret
 
 io_wait:
     xorb %al, %al

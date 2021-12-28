@@ -5,23 +5,20 @@
 
 #include "addrutil.h"
 
+#include "../libk/printf.h"
+
 uint64_t *kernel_table;
 
 /* get level indices */
 static void map_index(uintptr_t, size_t*, size_t*, size_t*, size_t*);
 
-static uint64_t *get(uint64_t*, size_t, bool);
+static uint64_t *get(uint64_t*, size_t, uint8_t);
 static void _paging_copy_table(uint64_t*, uint64_t*, int);
 static void map_kernel_region(uintptr_t, uintptr_t, size_t);
+static uint64_t *paging_shallow_clone_rec(const uint64_t *table, uint8_t level);
 
 void paging_initialize(struct stivale2_struct_tag_memmap *mmap)
 {
-        /* disable kernel write access to read-only pages */
-        /* asm volatile("movq %%cr0, %%rax;" */
-        /*              "orq $(1 << 16), %%rax;" */
-        /*              "movq %%rax, %%cr0;" */
-        /*              : : : "rax"); */
-
         kernel_table = (uint64_t*)addr_ensure_higher(pmm_request_pages(1));
         memset(kernel_table, 0, sizeof(uint64_t) * 512);
 
@@ -35,7 +32,7 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap)
                         (uint64_t*)addr_ensure_higher(pmm_request_pages(1));
                 memset(child, 0, 0x1000);
 
-                *child_entry = PAGING_PRESENT | PAGING_WRITABLE | PAGING_USER |
+                *child_entry = PAGING_PRESENT |
                         addr_ensure_lower(child);
         }
 
@@ -59,7 +56,7 @@ void paging_map(uint64_t *table,
                 void *paddr,
                 uint8_t flags)
 {
-        uint64_t *entry = paging_entry_get(table, vaddr, true);
+        uint64_t *entry = paging_entry_get(table, vaddr, PAGING_PRESENT);
 
         *entry = PAGING_PRESENT | flags |
                 addr_page_align_down((uintptr_t)paddr);
@@ -69,13 +66,13 @@ void paging_map(uint64_t *table,
 
 void paging_unmap(uint64_t *table, void *vaddr)
 {
-        uint64_t *entry = paging_entry_get(table, vaddr, false);
+        uint64_t *entry = paging_entry_get(table, vaddr, 0);
         if (entry) {
                 *entry &= ~PAGING_PRESENT;
         }
 }
 
-uint64_t *paging_entry_get(uint64_t *table, void *vaddr, bool create)
+uint64_t *paging_entry_get(uint64_t *table, void *vaddr, uint8_t create)
 {
         size_t lvl4_index, lvl3_index, lvl2_index, lvl1_index;
         map_index((uintptr_t)vaddr,
@@ -106,6 +103,44 @@ uint64_t *paging_create_empty(void)
                (void*)((uintptr_t)kernel_table + half_off), half_off);
 
         return new_table;
+}
+
+uint64_t *paging_shallow_clone(const uint64_t *table)
+{
+        return paging_shallow_clone_rec(table, 4);
+}
+
+uint64_t *paging_shallow_clone_rec(const uint64_t *table, uint8_t level)
+{
+        uint64_t *new_entry;
+        if (level == 4) {
+                /* top level is linked with kernel */
+                new_entry = paging_create_empty();
+        } else {
+                new_entry = (uint64_t*)addr_ensure_higher(pmm_request_pages(1));
+        }
+
+        if (level == 1) {
+                memcpy(new_entry, table, 0x1000);
+        } else {
+                for (size_t i = 0; i < (level == 4 ? 256 : 512); i++) {
+                        uint64_t *entry = get(table, i, 0);
+                        if (!entry)
+                                continue;
+
+                        uint64_t *new_child =
+                                paging_shallow_clone_rec(entry, level - 1);
+                        new_entry[i] = addr_ensure_lower((uintptr_t)new_child);
+                }
+        }
+
+        /* unset writable bits */
+        for (size_t i = 0; i < (level == 4 ? 256 : 512); i++) {
+                uint64_t *entry = &new_entry[i];
+                *entry &= ~PAGING_WRITABLE;
+        }
+
+        return new_entry;
 }
 
 void paging_write_cr3(uint64_t *table)
@@ -142,7 +177,7 @@ static void map_index(uintptr_t vaddr,
 
 static uint64_t *get(uint64_t *parent,
                      size_t index,
-                     bool create)
+                     uint8_t create)
 {
         if (parent == NULL)
                 return NULL;
@@ -150,15 +185,14 @@ static uint64_t *get(uint64_t *parent,
         uint64_t *child_entry = &parent[index];
         uint64_t *child;
         if (!(*child_entry & PAGING_PRESENT)) {
-                if (!create)
+                if (!(create & PAGING_PRESENT))
                         return NULL;
 
                 /* allocate and zero out */
                 child = (uint64_t*)addr_ensure_higher(pmm_request_pages(1));
                 memset(child, 0, 0x1000);
 
-                *child_entry = PAGING_PRESENT | PAGING_USER |
-                        PAGING_WRITABLE |
+                *child_entry = create |
                         addr_ensure_lower(child);
         } else {
                 /* child is present, all good (mask off first 12 bits) */
@@ -176,6 +210,6 @@ static void map_kernel_region(uintptr_t voffset,
              addr < poffset + len;
              addr += 0x1000) {
                 paging_map(kernel_table, (void*)(voffset + addr),
-                           (void*)addr, 0);
+                           (void*)addr, PAGING_WRITABLE);
         }
 }

@@ -31,7 +31,7 @@ void *bump_alloc(size_t n, size_t alignment)
                 vmm_request_at(kernel_table,
                                bump.start - pc * 0x1000,
                                pc,
-                               0);
+                               PAGING_WRITABLE);
                 bump.start -= pc * 0x1000;
         }
 

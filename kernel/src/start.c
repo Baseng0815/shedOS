@@ -149,13 +149,16 @@ void _start(struct stivale2_struct *stivale2_struct)
         /* pci_init(); */
 
         uint32_t *addr = (uint32_t*)0x12345000UL;
-        vmm_request_at(kernel_table, addr, 1, 0);
+        vmm_request_at(kernel_table, addr, 1, PAGING_WRITABLE);
         *addr = 0x41;
         printf(KMSG_LOGLEVEL_CRIT, "%x\n", *addr);
 
+        uint64_t *copied = paging_shallow_clone(kernel_table);
+        paging_write_cr3(copied);
+
         struct task *task_1, *task_2;
         task_create(&task_1, elf_test_1);
-        task_1->vmap_parent = kernel_table;
+        task_1->vmap_parent = copied;
         /* task_create(&task_2, elf_test_2); */
         task_1->next_task = task_1;
         /* task_2->next_task = task_1; */

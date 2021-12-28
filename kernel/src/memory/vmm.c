@@ -25,7 +25,7 @@ void vmm_request_at(uint64_t *table, void *vaddr,
 
 void vmm_release_at(uint64_t *table, void *vaddr, size_t n)
 {
-        uint64_t *entry = paging_entry_get(table, vaddr, false);
+        uint64_t *entry = paging_entry_get(table, vaddr, 0);
         /* is not present */
         if (entry == NULL || (*entry & PAGING_PRESENT) == 0)
                 return;

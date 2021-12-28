@@ -46,10 +46,12 @@ void paging_initialize(struct stivale2_struct_tag_memmap*);
 void paging_map(uint64_t *page_table, void *vaddr, void *paddr, uint8_t flags);
 void paging_unmap(uint64_t *page_table, void *vaddr);
 /* if create is true, the directory will be created if not present already */
-uint64_t *paging_entry_get(uint64_t *page_table, void *vaddr, bool create);
+uint64_t *paging_entry_get(uint64_t *page_table, void *vaddr, uint8_t create);
 
 /* create a new page table which links to the kernel */
 uint64_t *paging_create_empty(void);
+/* clones the structure of page_table while preserving the underlying memory */
+uint64_t *paging_shallow_clone(const uint64_t *table);
 
 void paging_write_cr3(uint64_t *page_table);
 void paging_flush_tlb(void *addr);

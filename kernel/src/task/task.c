@@ -30,7 +30,7 @@ void task_create(struct task **new_task, const uint8_t *elf_data)
                 if (phdrs[i].p_type == PT_LOAD) {
                         uint8_t flags = PAGING_USER;
                         /* writable */
-                        if (phdrs[i].p_flags & PF_W) flags |= PAGING_WRITABLE;
+                        flags |= PAGING_WRITABLE;
 
                         size_t to_alloc =
                                 addr_page_align_up(phdrs[i].p_memsz +

@@ -9,10 +9,10 @@
 
 static void *kernel_copy_vaddr = (void*)0xffff810200000000UL;
 
-void cow_copy_on_fault(void *vaddr)
+void cow_copy_on_write(void *vaddr)
 {
         uint64_t *parent_entry = paging_entry_get(current_task->vmap_parent,
-                                                  vaddr, false);
+                                                  vaddr, 0);
         if (!parent_entry) {
                 printf(KMSG_LOGLEVEL_WARN, "parent doesn't have %x\n", vaddr);
                 return;

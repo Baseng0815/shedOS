@@ -61,7 +61,7 @@ void exception_handle(struct exception_frame *frame)
                              : "=g" (faulting_address));
                 if (ptr_is_user(faulting_address)) {
                         /* page fault is user address */
-                        cow_copy_on_fault((void*)faulting_address);
+                        cow_copy_on_write((void*)faulting_address);
                         return;
                 }
         }
