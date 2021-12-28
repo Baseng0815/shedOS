@@ -37,7 +37,7 @@ struct task {
 /* SysV ABI: RDI, RSI, RDX, RCX, R8, R9 */
 
 /* create task from elf data */
-void task_create(struct task **new_task, const uint8_t *elf_data);
+struct task *task_create(uint64_t *vmap_parent, const uint8_t *elf_data);
 
 /* load task context and transfer control */
 void switch_to_task(const struct task *task);

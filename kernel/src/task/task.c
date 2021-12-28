@@ -9,21 +9,21 @@
 
 #define HDR_OFF(off)((void*)((uintptr_t)(hdr))+(off))
 
-void task_create(struct task **new_task, const uint8_t *elf_data)
+struct task *task_create(uint64_t *vmap_parent, const uint8_t *elf_data)
 {
         /* allocate task structure */
         struct task *task = bump_alloc(sizeof(struct task), 0);
-        *new_task = task;
         memset(task, 0, sizeof(struct task));
 
         printf(KMSG_LOGLEVEL_INFO, "Loading elf at %x\n", elf_data);
 
         /* create new address space */
-        task->vmap = paging_create_empty();
-        paging_write_cr3(task->vmap);
+        task->vmap = paging_shallow_clone(vmap_parent);
+        task->vmap_parent = vmap_parent;
 
         /* load elf into address space */
         const Elf64_Ehdr *hdr = (Elf64_Ehdr*)elf_data;
+        paging_write_cr3(task->vmap);
 
         const Elf64_Phdr *phdrs = HDR_OFF(hdr->e_phoff);
         for (size_t i = 0; i < hdr->e_phnum; i++) {
@@ -52,4 +52,6 @@ void task_create(struct task **new_task, const uint8_t *elf_data)
         task->rip = hdr->e_entry;
 
         printf(KMSG_LOGLEVEL_CRIT, "ELF loaded and task created.\n");
+
+        return task;
 }

@@ -60,9 +60,10 @@ void exception_handle(struct exception_frame *frame)
                 asm volatile("movq %%cr2, %0"
                              : "=g" (faulting_address));
                 if (ptr_is_user(faulting_address)) {
-                        /* page fault is user address */
-                        cow_copy_on_write((void*)faulting_address);
-                        return;
+                        /* page fault comes from user address */
+                        if (cow_copy_on_write((void*)faulting_address)) {
+                                return;
+                        }
                 }
         }
 

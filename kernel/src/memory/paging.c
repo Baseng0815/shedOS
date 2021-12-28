@@ -56,7 +56,8 @@ void paging_map(uint64_t *table,
                 void *paddr,
                 uint8_t flags)
 {
-        uint64_t *entry = paging_entry_get(table, vaddr, PAGING_PRESENT);
+        uint64_t *entry =
+                paging_entry_get(table, vaddr, PAGING_PRESENT | flags);
 
         *entry = PAGING_PRESENT | flags |
                 addr_page_align_down((uintptr_t)paddr);
@@ -118,10 +119,16 @@ uint64_t *paging_shallow_clone_rec(const uint64_t *table, uint8_t level)
                 new_entry = paging_create_empty();
         } else {
                 new_entry = (uint64_t*)addr_ensure_higher(pmm_request_pages(1));
+                memset(new_entry, 0, 0x1000);
         }
 
         if (level == 1) {
                 memcpy(new_entry, table, 0x1000);
+                /* unset writable bits */
+                for (size_t i = 0; i < (level == 4 ? 256 : 512); i++) {
+                        uint64_t *entry = &new_entry[i];
+                        *entry &= ~PAGING_WRITABLE;
+                }
         } else {
                 for (size_t i = 0; i < (level == 4 ? 256 : 512); i++) {
                         uint64_t *entry = get(table, i, 0);
@@ -130,14 +137,10 @@ uint64_t *paging_shallow_clone_rec(const uint64_t *table, uint8_t level)
 
                         uint64_t *new_child =
                                 paging_shallow_clone_rec(entry, level - 1);
-                        new_entry[i] = addr_ensure_lower((uintptr_t)new_child);
+                        /* all levels except the last one are user-writable */
+                        new_entry[i] = addr_ensure_lower((uintptr_t)new_child) |
+                                PAGING_PRESENT | PAGING_USER | PAGING_WRITABLE;
                 }
-        }
-
-        /* unset writable bits */
-        for (size_t i = 0; i < (level == 4 ? 256 : 512); i++) {
-                uint64_t *entry = &new_entry[i];
-                *entry &= ~PAGING_WRITABLE;
         }
 
         return new_entry;

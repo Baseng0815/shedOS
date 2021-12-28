@@ -15,6 +15,7 @@ int _start()
         /* return (a + b * c) * d * -1; */
 
         uint32_t *addr = (uint32_t*)0x12345000UL;
+        *addr = 0x42;
 
         for (;;) {
                 /* const char *msg = "TEST ELF 1 LOOP\n"; */
