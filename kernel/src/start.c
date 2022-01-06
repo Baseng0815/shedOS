@@ -148,7 +148,7 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         /* pci_init(); */
 
-        uint64_t *copied = paging_shallow_clone(kernel_table);
+        uint64_t *copied = paging_create_from_parent(kernel_table);
         paging_write_cr3(copied);
 
         uint32_t *addr = (uint32_t*)0x12345000UL;

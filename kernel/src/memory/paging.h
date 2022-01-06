@@ -8,26 +8,22 @@
 #include "../stivale2.h"
 
 /* we use 4-level paging (top to bottom), each containing 512 children:
-   lvl5 ("level 5" - top level)
-   lvl4 (level 4)
-   lvl3 (level 3)
-   lvl2 (level 2)
-   lvl1 (level 1) (this is the actual physical page)
-   */
+PML4
+PML3
+PML2
+PML1 (its entries refer to the actual physical pages) */
 
 /* schematic of how the address space looks
 mappings:
 0x0000000000000000-0x0000000100000000 -> 0xffff800000000000-0xffff800100000000
 0x0000000000000000-0x0000000080000000 -> 0xfffffff800000000-0xffffffffffffffff
-every additional mmap entry           -> 0xffff800000000000-end
+every additional mmap entry           -> 0xffff800000000000-max
 
 regions:
-0xffff800000000000-0xffff800100000000 (first 4G)
-0xffff800100000000-0xffff810000000000 (1024G for additional mmap entries)
+0xffff800000000000-0xffff810000000000 (up to 1024G for mmap entries)
 0xffff810000000000-0xffff810200000000 (4GB bump heap)
 0xffff810200000000-0xffff810200001000 (page mapping for cow)
-0xfffffff800000000-0xffffffffffffffff (kernel mapped to last 2G)
-*/
+0xffffffff80000000-0xffffffffffffffff (kernel mapped to last 2G) */
 
 /* a page table is exactly 4096 bytes large so it fits into a single frame */
 
@@ -37,6 +33,7 @@ regions:
 #define PAGING_USER     (1UL << 2) /* enable user access */
 #define PAGING_WTHROUGH (1UL << 3) /* enable write-through caching */
 #define PAGING_CDISABLE (1UL << 4) /* disable cache */
+#define PAGING_HUGE     (1UL << 7) /* huge pages */
 
 extern uint64_t *kernel_table;
 
@@ -45,13 +42,12 @@ void paging_initialize(struct stivale2_struct_tag_memmap*);
 
 void paging_map(uint64_t *page_table, void *vaddr, void *paddr, uint8_t flags);
 void paging_unmap(uint64_t *page_table, void *vaddr);
-/* if create is true, the directory will be created if not present already */
-uint64_t *paging_entry_get(uint64_t *page_table, void *vaddr, uint8_t create);
+uint64_t paging_get(uint64_t *page_table, void *vaddr);
 
-/* create a new page table which links to the kernel */
+/* create a new page table */
 uint64_t *paging_create_empty(void);
-/* clones the structure of page_table while preserving the underlying memory */
-uint64_t *paging_shallow_clone(const uint64_t *table);
+/* create a new page table with the same references as the parent */
+uint64_t *paging_create_from_parent(uint64_t *table);
 
 void paging_write_cr3(uint64_t *page_table);
 void paging_flush_tlb(void *addr);

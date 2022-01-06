@@ -10,11 +10,9 @@ void vmm_request_at(uint64_t *table, void *vaddr,
         for (size_t i = 0; i < n; i++) {
                 uintptr_t target_vaddr = (uintptr_t)vaddr + i * 0x1000;
 
-                /* check if vaddr is free */
-                uint64_t *entry = paging_entry_get(table,
-                                                   target_vaddr, false);
-                /* is present */
-                if (entry != NULL && (*entry & PAGING_PRESENT) != 0)
+                /* make sure vaddr is free */
+                uint64_t entry = paging_get(table, target_vaddr);
+                if (entry & PAGING_PRESENT)
                         continue;
 
                 void *memory = pmm_request_pages(1);
@@ -25,11 +23,11 @@ void vmm_request_at(uint64_t *table, void *vaddr,
 
 void vmm_release_at(uint64_t *table, void *vaddr, size_t n)
 {
-        uint64_t *entry = paging_entry_get(table, vaddr, 0);
+        uint64_t entry = paging_get(table, vaddr);
         /* is not present */
-        if (entry == NULL || (*entry & PAGING_PRESENT) == 0)
+        if (!(entry & PAGING_PRESENT))
                 return;
 
-        pmm_release_pages(*entry & ~0xfffUL, n);
+        pmm_release_pages(entry & ~0xfffUL, n);
         paging_unmap(table, vaddr);
 }

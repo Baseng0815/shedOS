@@ -17,8 +17,8 @@ PHDRS
 
 SECTIONS
 {
-    /* We wanna be placed in the topmost 2GiB of the address space, for optimisations */
-    /* and because that is what the stivale2 spec mandates. */
+    /* We wanna be placed in the topmost 2G of the address space */
+    /* because that is what the stivale2 spec mandates (higher half) */
     . = 0xffffffff80000000 + 2M;
 
     .text : {

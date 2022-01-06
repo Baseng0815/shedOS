@@ -18,7 +18,7 @@ struct task *task_create(uint64_t *vmap_parent, const uint8_t *elf_data)
         printf(KMSG_LOGLEVEL_INFO, "Loading elf at %x\n", elf_data);
 
         /* create new address space */
-        task->vmap = paging_shallow_clone(vmap_parent);
+        task->vmap = paging_create_from_parent(vmap_parent);
         task->vmap_parent = vmap_parent;
 
         /* load elf into address space */
