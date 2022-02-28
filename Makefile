@@ -1,4 +1,4 @@
-export USER_CFLAGS 		:= -O0 -Wall -Wextra -ggdb -pipe
+export USER_CFLAGS 		:= -O0 -Wall -Werror -Wextra -Wno-missing-field-initializers -ggdb -pipe
 export MAKEOPTS 		:= -j12
 
 export TARGET 			:= x86_64-elf
@@ -13,7 +13,7 @@ export PATH 			:= $(TOOLCHAIN)/bin:$(PATH)
 QEMU_MEMORY 			:= 2G
 QEMU_FLAGS  			?=
 
-.PHONY: all clean $(SYSTEM_HEADER_PROJECTS) $(PROJECTS)
+.PHONY: all clean sysroot $(SYSTEM_HEADER_PROJECTS) $(PROJECTS)
 
 qemu: iso
 	qemu-system-x86_64 \

@@ -35,10 +35,12 @@ ASFLAGS 	:=
 SOURCES 	:= $(shell find ./src -type f -name "*.c")
 ASM_SOURCES 	:= $(shell find ./src -type f -name "*.S")
 HEADERS 	:= $(shell find ./src -type f -name "*.h")
-OBJS 		:= $(SOURCES:.c=_c.o) $(ASM_SOURCES:.S=_S.o)
-HEADER_DEPS	:= $(SOURCES:.c=.d)
+OBJS 		:= $(SOURCES:.c=.o) $(ASM_SOURCES:.S=_S.o)
+DEP_FILES	:= $(SOURCES:.c=.d)
 
-.PHONY: clean install-header install-exec
+-include $(DEP_FILES)
+
+.PHONY: all clean install-headers install-exec
 
 all: kernel.elf
 
@@ -48,16 +50,16 @@ install-headers:
 	cp -f $(HEADERS) $(SYSROOT)/include/kernel
 
 install-exec: kernel.elf
-	@echo "=====! INSTALLING $< !====="
+	@echo "=====! INSTALLING $^ !====="
 	mkdir -p $(SYSROOT)/boot
 	cp -f kernel.elf $(SYSROOT)/boot
 
 kernel.elf: $(OBJS)
-	@echo "=====! LINKING $< INTO $@ !====="
+	@echo "=====! LINKING $^ INTO $@ !====="
 	$(LD) $(OBJS) $(LDFLAGS) -o $@
 
-%_c.o: %.c
-	@echo "=====! COMPILING $< INTO $@ !====="
+%.o: %.c
+	@echo "=====! COMPILING $^ INTO $@ !====="
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 %_S.o: %.S
@@ -65,9 +67,9 @@ kernel.elf: $(OBJS)
 	$(AS) $(ASFLAGS) -o $@ $<
 
 src/interrupts/interrupts_c.o: src/interrupts/interrupts.c
-	@echo "=====! COMPILING $< INTO $@ !====="
+	@echo "=====! COMPILING $^ INTO $@ !====="
 	$(CC) $(CPPFLAGS) $(CFLAGS) \
 	    -mgeneral-regs-only -c -o $@ $<
 
 clean:
-	rm -rf $(OBJS) $(HEADER_DEPS) kernel.elf
+	rm -rf $(OBJS) $(DEP_FILES) kernel.elf
