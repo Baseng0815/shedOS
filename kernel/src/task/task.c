@@ -2,7 +2,7 @@
 
 #include "../libk/printf.h"
 #include "../libk/memutil.h"
-#include "../libk/bump_alloc.h"
+#include "../libk/alloc.h"
 #include "../memory/addrutil.h"
 #include "../memory/vmm.h"
 #include "elf.h"
@@ -12,14 +12,13 @@
 struct task *task_create(uint64_t *vmap_parent, const uint8_t *elf_data)
 {
         /* allocate task structure */
-        struct task *task = bump_alloc(sizeof(struct task), 0);
+        struct task *task = balloc(sizeof(struct task), 0);
         memset(task, 0, sizeof(struct task));
 
         printf(KMSG_LOGLEVEL_INFO, "Loading elf at %x\n", elf_data);
 
         /* create new address space */
-        task->vmap = paging_create_from_parent(vmap_parent);
-        task->vmap_parent = vmap_parent;
+        task->vmap = paging_copy(vmap_parent);
 
         /* load elf into address space */
         const Elf64_Ehdr *hdr = (Elf64_Ehdr*)elf_data;
@@ -32,14 +31,13 @@ struct task *task_create(uint64_t *vmap_parent, const uint8_t *elf_data)
                         /* writable */
                         flags |= PAGING_WRITABLE;
 
-                        size_t to_alloc =
-                                addr_page_align_up(phdrs[i].p_memsz +
+                        size_t to_alloc = addr_page_align_up(phdrs[i].p_memsz +
                                                    phdrs[i].p_vaddr % 0x1000);
                         vmm_request_at(task->vmap,
-                                       phdrs[i].p_vaddr,
+                                       (void*)phdrs[i].p_vaddr,
                                        to_alloc / 0x1000,
                                        flags);
-                        memset(phdrs[i].p_vaddr, 0, phdrs[i].p_filesz);
+                        memset((void*)phdrs[i].p_vaddr, 0, phdrs[i].p_filesz);
                         memcpy((void*)phdrs[i].p_vaddr,
                                HDR_OFF(phdrs[i].p_offset),
                                phdrs[i].p_memsz);
@@ -47,7 +45,7 @@ struct task *task_create(uint64_t *vmap_parent, const uint8_t *elf_data)
         }
 
         task->rsp = 0x7ffffffffff0UL;
-        vmm_request_at(task->vmap, addr_page_align_down(task->rsp), 1,
+        vmm_request_at(task->vmap, (void*)addr_page_align_down(task->rsp), 1,
                        PAGING_USER | PAGING_WRITABLE);
         task->rip = hdr->e_entry;
 

@@ -24,7 +24,7 @@ void sched_tick(const struct interrupt_frame *ifr)
 
                 /* reset deadline and switch to new task */
                 current_task = current_task->next_task;
-                current_task->deadline = current_time + 100000;
+                current_task->deadline = current_time + 1000000;
                 switch_to_task(current_task);
         }
 }

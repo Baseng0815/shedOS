@@ -30,8 +30,7 @@ struct task {
         uint64_t rip;
         struct task *next_task;
         uint64_t *vmap; /* virtual memory map */
-        uint64_t *vmap_parent; /* virtual memory map of parent (used for cow) */
-        uint64_t deadline;
+        uint64_t deadline; /* in microseconds */
 } __attribute__((packed));
 
 /* SysV ABI: RDI, RSI, RDX, RCX, R8, R9 */
