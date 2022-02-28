@@ -21,7 +21,6 @@ static bool do_checksum_rsdp(struct rsdp*);
 static bool do_checksum_sdt(struct sdt_header*);
 
 static void *find_sdt(const char*);
-static void dump_madt(struct madt*);
 
 void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
 {

@@ -6,7 +6,7 @@
 
 static struct idt_desc idt_descriptors[256] = { 0 };
 
-static void load_interrupt(uint8_t, uintptr_t, uint8_t);
+static void load_interrupt(uint8_t, uint64_t, uint8_t);
 
 void idt_initialize()
 {
@@ -20,14 +20,14 @@ void idt_initialize()
         }
 
         /* timer */
-        load_interrupt(34, (uintptr_t)&__isr34, IDT_TA_Interrupt);
+        load_interrupt(34, (uint64_t)&__isr34, IDT_TA_Interrupt);
 
         /* syscall */
-        load_interrupt(128, (uintptr_t)&__isr128, IDT_TA_SystemCall);
+        load_interrupt(128, (uint64_t)&__isr128, IDT_TA_SystemCall);
 
         struct idt idt = {
                 .size = 0x1000 - 1,
-                .offset = idt_descriptors
+                .offset = (uint64_t)idt_descriptors
         };
 
         asm volatile("lidt %0;"
@@ -37,10 +37,10 @@ void idt_initialize()
 }
 
 void load_interrupt(uint8_t vector,
-                    uintptr_t callback,
+                    uint64_t callback,
                     uint8_t type_attr)
 {
-        if (callback == NULL)
+        if (!callback)
                 return;
 
         struct idt_desc *desc = &idt_descriptors[vector];

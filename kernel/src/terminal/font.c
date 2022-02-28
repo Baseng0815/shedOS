@@ -1,6 +1,7 @@
 #include "font.h"
 
 #include <stdint.h>
+#include <stddef.h>
 
 static uint8_t font8x8_basic[128][8] = {
         { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 },   // U+0000 (nul)
@@ -138,6 +139,6 @@ bool font_is_set(char c, int x, int y)
         if (c < ' ')
                 return false;
 
-        uint8_t row = font8x8_basic[c][y];
+        uint8_t row = font8x8_basic[(size_t)c][y];
         return (row >> x) & 0x1;
 }

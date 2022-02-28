@@ -8,6 +8,7 @@
 #include "../memory/cow.h"
 
 #include "../libk/printf.h"
+#include "../syscall/syscalls.h"
 
 static const char *exception_names[] = {
         "Divide by zero exception (0x00)",
@@ -59,7 +60,7 @@ void exception_handle(struct exception_frame *frame)
                 uint64_t faulting_address;
                 asm volatile("movq %%cr2, %0"
                              : "=g" (faulting_address));
-                if (ptr_is_user(faulting_address)) {
+                if (ptr_is_user((void*)faulting_address)) {
                         /* page fault comes from user address */
                         if (cow_copy_on_write((void*)faulting_address)) {
                                 return;
@@ -101,7 +102,15 @@ void isr34(struct interrupt_frame *frame)
         timer_tick(frame, dus);
 }
 
-void isr128(struct interrupt_frame *frame)
+uint64_t isr128(struct interrupt_frame *frame)
 {
-        printf(KMSG_LOGLEVEL_CRIT, (const char*)frame->gprs.rdi);
+        uint8_t syscall_id = frame->gprs.rax;
+        if (!syscalls[syscall_id]) {
+                printf(KMSG_LOGLEVEL_WARN,
+                       "Received invalid syscall %d\n",
+                       syscall_id);
+                return 1;
+        }
+
+        return syscalls[syscall_id](frame);
 }

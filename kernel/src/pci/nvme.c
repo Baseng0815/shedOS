@@ -194,9 +194,7 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
         ep->bar0 = prev_bar;
 
         const size_t bar_size = ~cur_bar + 1;
-        regs = (struct regs*)addr_ensure_higher(
-                (ep->bar0 & 0xfffffff0) +
-                (ep->bar1 >> 32 & 0xffffffff));
+        regs = (struct regs*)addr_ensure_higher(ep->bar0);
         printf(KMSG_LOGLEVEL_INFO, "BAR=%a, size=%x bytes\n",
                regs, bar_size);
 
@@ -219,7 +217,7 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
         regs->cc &= ~(1 << 0);
 
         /* wait for controller to be disabled */
-        while (regs->csts & 1 << 0 != 0) {}
+        while (regs->csts & 1 << 0) {}
 
         create_admin_queue();
 
@@ -233,7 +231,7 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
                 6 << 16 | /* 2^6 = 64 byte sqentry size */
                 4 << 20;  /* 2^4 = 16 byte cqentry size */
 
-        while (regs->csts & 1 << 0 == 0) {}
+        while (!(regs->csts & 1 << 0)) {}
 
         /* MSI-X */
         configure_msix(ep);
@@ -246,16 +244,16 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
         namespace_identify();
 
         uint8_t *md = (uint8_t*)
-                addr_ensure_higher((uintptr_t)pmm_request_pages(1));
+                addr_ensure_higher((uint64_t)pmm_request_pages(1));
         uint8_t *data = (uint8_t*)
-                addr_ensure_higher((uintptr_t)pmm_request_pages(1));
+                addr_ensure_higher((uint64_t)pmm_request_pages(1));
 
         /* test read */
         struct sq_entry cmd = {
                 .cdw0 = 0x2,
                 .nsid = nsid[0],
-                .mptr = addr_ensure_lower((uintptr_t)md),
-                .prp1 = addr_ensure_lower((uintptr_t)data),
+                .mptr = addr_ensure_lower((uint64_t)md),
+                .prp1 = addr_ensure_lower((uint64_t)data),
                 .cdw10 = 0x44a000 / 512, .cdw11 = 0, /* starting LBA */
                 .cdw12 = 0 /* number of LBAs - 1 */
         };
@@ -288,9 +286,9 @@ void create_admin_queue(void)
 
         const uint32_t doorbell_stride = 1 << (2 + (regs->cap >> 32 & 0xf));
         admin_queue.sq_tail_dbl = (uint32_t*)
-                ((uintptr_t)regs + 0x1000 + (2 * 0 + 0) * doorbell_stride);
+                ((uint64_t)regs + 0x1000 + (2 * 0 + 0) * doorbell_stride);
         admin_queue.cq_head_dbl = (uint32_t*)
-                ((uintptr_t)regs + 0x1000 + (2 * 0 + 1) * doorbell_stride);
+                ((uint64_t)regs + 0x1000 + (2 * 0 + 1) * doorbell_stride);
 
         printf(KMSG_LOGLEVEL_INFO,
                "ASQ/ACQ at %x/%x, AQA=%x, doorbell stride=%x\n",
@@ -301,9 +299,9 @@ void configure_msix(struct pci_device_endpoint *ep)
 {
         /* find capability */
         struct msix_cap *msix_cap;
-        assert(pci_get_cap(ep->capabilities_ptr, (uintptr_t)ep,
+        assert(pci_get_cap(ep->capabilities_ptr, (uint64_t)ep,
                            0x11,
-                           &msix_cap),
+                           (struct pci_cap_hdr**)&msix_cap),
                "MSI-X capability not found.");
         printf(KMSG_LOGLEVEL_INFO, "MSI-X: mxc=%x, mpba=%x, mtab=%x\n",
                msix_cap->mxc, msix_cap->mpba, msix_cap->mtab);
@@ -311,7 +309,7 @@ void configure_msix(struct pci_device_endpoint *ep)
         size_t table_size = (msix_cap->mxc & 0x7ff) + 1;
 
         /* get table and pba address */
-        uintptr_t table_addr, pba_addr;
+        uint64_t table_addr, pba_addr;
         switch (msix_cap->mtab & 0x7) {
                 case 0: table_addr = ep->bar0; break;
                 case 4: table_addr = ep->bar4; break;
@@ -321,7 +319,7 @@ void configure_msix(struct pci_device_endpoint *ep)
         }
 
         struct msix_table_entry *table = (struct msix_table_entry*)
-                addr_ensure_higher(table_addr + msix_cap->mtab & ~0x7);
+                addr_ensure_higher(table_addr + (msix_cap->mtab & ~0x7));
 
         switch (msix_cap->mpba & 0x7) {
                 case 0: pba_addr = ep->bar0; break;
@@ -331,7 +329,7 @@ void configure_msix(struct pci_device_endpoint *ep)
                         kernel_panic("PBA BIR invalid.", __FILE__, __LINE__);
         }
 
-        pba_addr = addr_ensure_higher(pba_addr + msix_cap->mpba & ~0x7);
+        pba_addr = addr_ensure_higher(pba_addr + (msix_cap->mpba & ~0x7));
 
         printf(KMSG_LOGLEVEL_INFO,
                "MSI-X: Table at %a (size=%d), PBA at %a\n",
@@ -352,23 +350,23 @@ void create_io_queue(void)
         const size_t sq_page_count = sizeof(struct sq_entry) * 256 / 0x1000;
         const size_t cq_page_count = sizeof(struct cq_entry) * 256 / 0x1000;
         io_queue.sq = (struct sq_entry*)
-                addr_ensure_higher((uintptr_t)pmm_request_pages(1));
-        io_queue.cq = (struct sq_entry*)
-                addr_ensure_higher((uintptr_t)pmm_request_pages(1));
+                addr_ensure_higher((uint64_t)pmm_request_pages(sq_page_count));
+        io_queue.cq = (struct cq_entry*)
+                addr_ensure_higher((uint64_t)pmm_request_pages(cq_page_count));
         io_queue.sq_tail = 0;
         io_queue.cq_head = 0;
 
         const uint32_t doorbell_stride = 1 << (2 + (regs->cap >> 32 & 0xf));
         io_queue.sq_tail_dbl = (uint32_t*)
-                ((uintptr_t)regs + 0x1000 + (2 * 1 + 0) * doorbell_stride);
+                ((uint64_t)regs + 0x1000 + (2 * 1 + 0) * doorbell_stride);
         io_queue.cq_head_dbl = (uint32_t*)
-                ((uintptr_t)regs + 0x1000 + (2 * 1 + 1) * doorbell_stride);
+                ((uint64_t)regs + 0x1000 + (2 * 1 + 1) * doorbell_stride);
 
         /* create completion queue on NVM device */
         struct sq_entry command = {
                 .cdw0 = 0x5,
-                .prp1 = addr_ensure_lower((uintptr_t)io_queue.cq) >> 0,
-                .prp2 = addr_ensure_lower((uintptr_t)io_queue.cq) >> 32,
+                .prp1 = addr_ensure_lower((uint64_t)io_queue.cq) >> 0,
+                .prp2 = addr_ensure_lower((uint64_t)io_queue.cq) >> 32,
                 .cdw10 = 1 << 0 |   /* queue identifier */
                         255 << 16,  /* queue size - 1 */
                 .cdw11 = 1 << 0 |   /* physically contiguous */
@@ -381,8 +379,8 @@ void create_io_queue(void)
 
         /* create submission queue on NVM device */
         command.cdw0 = 0x1;
-        command.prp1 = addr_ensure_lower((uintptr_t)io_queue.sq) >> 0;
-        command.prp2 = addr_ensure_lower((uintptr_t)io_queue.sq) >> 32;
+        command.prp1 = addr_ensure_lower((uint64_t)io_queue.sq) >> 0;
+        command.prp2 = addr_ensure_lower((uint64_t)io_queue.sq) >> 32;
         command.cdw10 = 1 << 0 |    /* queue identifier */
                 255 << 16;          /* queue size - 1 */
         command.cdw11 = 1 << 0 |    /* physically contiguous */
@@ -397,11 +395,11 @@ void create_io_queue(void)
 
 void namespace_identify(void)
 {
-        nsid = (uint32_t*)addr_ensure_higher((uintptr_t)pmm_request_pages(1));
+        nsid = (uint32_t*)addr_ensure_higher((uint64_t)pmm_request_pages(1));
 
         struct sq_entry command = {
                 .cdw0 = 0x06,
-                .prp1 = addr_ensure_lower((uintptr_t)nsid),
+                .prp1 = addr_ensure_lower((uint64_t)nsid),
                 .cdw10 = 2
         };
         send_cmd_sync(&admin_queue, &command, NULL);
@@ -418,8 +416,8 @@ void namespace_identify(void)
         printf(KMSG_LOGLEVEL_NONE, "\n");
 
         namespace_id = (struct namespace_id*)
-                addr_ensure_higher((uintptr_t)pmm_request_pages(1));
-        command.prp1    = addr_ensure_lower((uintptr_t)namespace_id);
+                addr_ensure_higher((uint64_t)pmm_request_pages(1));
+        command.prp1    = addr_ensure_lower((uint64_t)namespace_id);
         command.cdw10   = 0;
         command.nsid    = nsid[0];
         send_cmd_sync(&admin_queue, &command, NULL);
@@ -436,12 +434,12 @@ void namespace_identify(void)
 
 void ctrl_identify(void)
 {
-        ctrl_id = (struct ctrl_identification*)
-                addr_ensure_higher((uintptr_t)pmm_request_pages(1));
+        ctrl_id = (struct ctrl_id*)
+                addr_ensure_higher((uint64_t)pmm_request_pages(1));
 
         struct sq_entry command = {
                 .cdw0 = 0x06,
-                .prp1 = addr_ensure_lower((uintptr_t)ctrl_id),
+                .prp1 = addr_ensure_lower((uint64_t)ctrl_id),
                 .cdw10 = 1
         };
 

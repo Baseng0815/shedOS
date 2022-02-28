@@ -46,7 +46,7 @@ struct interrupt_frame {
 
 extern uintptr_t __exception_interrupts[30];
 extern void(*__isr34)(struct interrupt_frame*); /* HPET */
-extern void(*__isr128)(struct interrupt_frame*); /* syscall */
+extern uint64_t(*__isr128)(struct interrupt_frame*); /* syscall */
 /* __attribute__((interrupt)) void __isr32(struct interrupt_frame *frame); */
 
 #endif

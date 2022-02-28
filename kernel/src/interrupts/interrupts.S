@@ -87,8 +87,9 @@
     __isr\int_no:
     push_all
     cld
-    mov %rsp, %rdi
+    movq %rsp, %rdi
     call isr\int_no
+    movq %rax, 112(%rsp)
     pop_all
     iretq
 .endm

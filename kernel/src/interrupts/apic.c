@@ -74,7 +74,7 @@ void apic_initialize(const struct madt *madt)
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target apic.\n");
 
-        lapic_mmio_regs = addr_ensure_higher(madt->local_apic);
+        lapic_mmio_regs = (uint32_t*)addr_ensure_higher(madt->local_apic);
 
         printf(KMSG_LOGLEVEL_INFO,
                "madt at %a, lapic addr=%a, flags=%x\n",
@@ -110,9 +110,9 @@ void apic_initialize(const struct madt *madt)
                 struct ioredtbl tbl;
                 tbl.conf = DEL_MODE_FIXED |
                         DEST_MODE_PHYSICAL |
-                        ((iso.flags & 0x2 > 0)
+                        ((iso.flags & 0x2)
                          ? POLARITY_ACTIVE_LOW : POLARITY_ACTIVE_HIGH) |
-                        ((iso.flags & 0x8 > 0)
+                        ((iso.flags & 0x8)
                          ? TRIGGER_LEVEL : TRIGGER_EDGE);
 
                 tbl.mask = 0;
@@ -146,8 +146,8 @@ size_t parse_madt_entry(const struct madt_entry_header *hdr)
 {
         switch (hdr->entry_type) {
                 case MET_LAPIC: {
-                        struct madt_entry_lapic *entry =
-                                (struct madt_entry_lapic*)hdr;
+                        /* struct madt_entry_lapic *entry = */
+                        /*         (struct madt_entry_lapic*)hdr; */
 
                         cpuinfo.core_count++;
                         break;
@@ -203,6 +203,8 @@ uint32_t ioapic_register_read(uint32_t ioapic_id,
                                 ioapics[i].ioapic_addr + 0x10);
                 }
         }
+
+        return 0;
 }
 
 void ioapic_ioredtbl_write(uint32_t ioapic_id,

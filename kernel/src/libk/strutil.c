@@ -48,7 +48,7 @@ uint64_t stou(const char *str, uint64_t base)
         uint64_t digit = 1;
         size_t len = strlen(str);
         for (size_t i = 0; i < len; i++) {
-                int v;
+                uint8_t v;
                 char c = str[len - i - 1];
                 if (c > '9') {
                         if (c > 'Z')    v = c - 'a';
@@ -59,7 +59,6 @@ uint64_t stou(const char *str, uint64_t base)
 
                 if (v >= base)
                         return 0;
-
 
                 value += v * digit;
                 digit *= base;
@@ -124,6 +123,8 @@ size_t trim_and_terminate(char *src, size_t max_n)
                         return i;
                 }
         }
+
+        return 0;
 }
 
 bool isdigit(char c)

@@ -55,7 +55,7 @@ void hpet_initialize(struct hpet *hpet)
 {
         printf(KMSG_LOGLEVEL_INFO, "Initializing hpet...\n");
 
-        hpet_mmio_regs = addr_ensure_higher(hpet->addr.addr);
+        hpet_mmio_regs = (uint64_t*)addr_ensure_higher(hpet->addr.addr);
 
         printf(KMSG_LOGLEVEL_INFO,
                "HPET present with pci vendor id %d, addr %x, "

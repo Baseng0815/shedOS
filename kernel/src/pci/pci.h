@@ -72,7 +72,7 @@ void pci_init();
 uint32_t *pci_conf_addr(struct pci_addr *pci_addr);
 
 /* extended capabilities differ from normal capabilities */
-bool pci_get_cap(uintptr_t cap_ptr, uintptr_t conf_base,
+bool pci_get_cap(uint64_t cap_ptr, uint64_t conf_base,
                  uint16_t cap_id,
                  struct pci_cap_hdr **cap_hdr);
 

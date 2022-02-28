@@ -8,7 +8,6 @@
 
 #include "../task/sched.h"
 
-/* one kernel tick is equal to 1 millisecond */
 uint64_t timer_elapsed_us = 0;
 
 void timer_initialize()

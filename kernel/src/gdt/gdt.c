@@ -1,5 +1,6 @@
 #include "gdt.h"
 
+#include "../libk/memutil.h"
 #include "../libk/printf.h"
 
 /* descriptor access */

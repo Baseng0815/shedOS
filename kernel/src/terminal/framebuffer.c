@@ -1,7 +1,7 @@
 #include "framebuffer.h"
 
 #include "../libk/memutil.h"
-#include "../libk/bump_alloc.h"
+#include "../libk/alloc.h"
 
 #include "../memory/paging.h"
 #include "../memory/addrutil.h"
@@ -20,7 +20,7 @@ void framebuffer_initialize(struct stivale2_struct_tag_framebuffer *fb)
         fb_width    = fb->framebuffer_width;
         fb_height   = fb->framebuffer_height;
         fb_pitch    = fb->framebuffer_pitch;
-        fb_buffer   = bump_alloc(fb_height * fb_pitch, 0);
+        fb_buffer   = balloc(fb_height * fb_pitch, 0);
         fb_mmio     = (uint32_t*)fb->framebuffer_addr;
 
         framebuffer_drawborder(0x1c8aa6);

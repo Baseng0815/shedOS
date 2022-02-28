@@ -1,7 +1,6 @@
 #ifndef _TERMINAL_H
 #define _TERMINAL_H
 
-
 #include <stdint.h>
 
 void terminal_initialize(int, int);

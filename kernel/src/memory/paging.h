@@ -46,8 +46,10 @@ uint64_t paging_get(uint64_t *page_table, void *vaddr);
 
 /* create a new page table */
 uint64_t *paging_create_empty(void);
-/* create a new page table with the same references as the parent */
-uint64_t *paging_create_from_parent(uint64_t *table);
+/* create a shallow copy of table */
+uint64_t *paging_copy(uint64_t *table);
+/* make table read-only */
+void paging_make_readonly(uint64_t *table);
 
 void paging_write_cr3(uint64_t *page_table);
 void paging_flush_tlb(void *addr);

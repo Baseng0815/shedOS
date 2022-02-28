@@ -19,11 +19,10 @@
 #include "sdt/sdt.h"
 
 #include "interrupts/timer.h"
-/* #include "interrupts/apic.h" */
-#include "interrupts/pic.h"
+#include "interrupts/apic.h"
 #include "interrupts/idt.h"
 
-#include "libk/bump_alloc.h"
+#include "libk/alloc.h"
 #include "pci/pci.h"
 #include "task/sched.h"
 
@@ -47,14 +46,14 @@ static void dump_memory(struct stivale2_struct_tag_memmap*);
 
 static struct stivale2_tag unmap_null_header_tag = {
         .identifier = STIVALE2_HEADER_TAG_UNMAP_NULL_ID,
-        .next = NULL
+        .next = (uint64_t)NULL
 };
 
 static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
         .tag = {
                 .identifier = STIVALE2_HEADER_TAG_FRAMEBUFFER_ID,
                 /* zero indicates the end of the linked list */
-                .next = &unmap_null_header_tag
+                .next = (uint64_t)&unmap_null_header_tag
         },
 #ifdef FB_FHD
         .framebuffer_width  = 1920,
@@ -71,9 +70,9 @@ static struct stivale2_header_tag_framebuffer framebuffer_hdr_tag = {
 __attribute__((section(".stivale2hdr"), used))
 static struct stivale2_header header = {
         .entry_point = 0,
-        .stack = (uintptr_t)stack_kernel + sizeof(stack_kernel),
+        .stack = (uint64_t)(stack_kernel + sizeof(stack_kernel)),
         .flags = (1 << 1) | (1 << 4),
-        .tags = (uintptr_t)&framebuffer_hdr_tag
+        .tags = (uint64_t)&framebuffer_hdr_tag
 };
 
 /* helper function to traverse the linked list and get the struct we want */
@@ -83,7 +82,7 @@ void _start(struct stivale2_struct *stivale2_struct)
 {
         asm volatile("cli");
         /* enable SSE */
-        sse_enable();
+        /* sse_enable(); */
 
         /* memory */
         struct stivale2_struct_tag_memmap *mmap =
@@ -105,6 +104,10 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         welcome_message();
         dump_stivale_info(stivale2_struct);
+
+        /* for (;;) { */
+        /*         asm volatile("hlt"); */
+        /* } */
 
         printf(KMSG_LOGLEVEL_INFO,
                "Total memory: %dKiB (%d pages).\n"
@@ -132,7 +135,7 @@ void _start(struct stivale2_struct *stivale2_struct)
         dump_memory(mmap);
 
         /* global descriptor table */
-        gdt_initialize((uintptr_t)stack_interrupts + sizeof(stack_interrupts));
+        gdt_initialize((void*)(stack_interrupts + sizeof(stack_interrupts)));
 
         /* system descriptor tables */
         struct stivale2_struct_tag_rsdp *rsdp =
@@ -148,15 +151,7 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         /* pci_init(); */
 
-        uint64_t *copied = paging_create_from_parent(kernel_table);
-        paging_write_cr3(copied);
-
-        uint32_t *addr = (uint32_t*)0x12345000UL;
-        vmm_request_at(copied, addr, 1, PAGING_WRITABLE | PAGING_USER);
-        *addr = 0x41;
-        printf(KMSG_LOGLEVEL_CRIT, "%x\n", *addr);
-
-        struct task *task_1 = task_create(copied, elf_test_1);
+        struct task *task_1 = task_create(kernel_table, elf_test_1);
         task_1->next_task = task_1;
         sched_run(task_1);
 

@@ -64,7 +64,8 @@ void pmm_initialize(struct stivale2_struct_tag_memmap *mmap)
         lock_pages((uintptr_t)page_bitmap.buf, page_bitmap.len / 0x1000);
 
         /* we want the bitmap mapped high */
-        page_bitmap.buf = addr_ensure_higher(page_bitmap.buf);
+        page_bitmap.buf = (uint8_t*)
+                addr_ensure_higher((uint64_t)page_bitmap.buf);
 }
 
 void *pmm_request_pages(size_t count)
@@ -113,8 +114,8 @@ size_t lock_page(uintptr_t paddr)
 size_t lock_pages(uintptr_t paddr, size_t n)
 {
         size_t locked = 0;
-        for (size_t i = 0; i < n; i++) {
-                locked += lock_page(paddr + 0x1000 * i);
+        for (uintptr_t p = paddr; p < paddr + 0x1000 * n; p += 0x1000) {
+                locked += lock_page(p);
         }
 
         return locked;
@@ -135,8 +136,8 @@ size_t unlock_page(uintptr_t paddr)
 size_t unlock_pages(uintptr_t paddr, size_t n)
 {
         size_t unlocked = 0;
-        for (size_t i = 0; i < n; i++) {
-                unlocked += unlock_page(paddr + 0x1000 * i);
+        for (size_t p = paddr; p < paddr + 0x1000 * n; p += 0x1000) {
+                unlocked += unlock_page(p);
         }
         return unlocked;
 }

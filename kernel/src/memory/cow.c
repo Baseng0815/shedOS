@@ -7,30 +7,34 @@
 #include "vmm.h"
 #include "pmm.h"
 
+#include "../memory/addrutil.h"
+
 static void *kernel_copy_vaddr = (void*)0xffff810200000000UL;
 
 bool cow_copy_on_write(void *vaddr)
 {
-        printf(KMSG_LOGLEVEL_CRIT, "COW! %x\n", vaddr);
-        uint64_t parent_entry = paging_get(current_task->vmap_parent, vaddr);
-        if (!(parent_entry & PAGING_PRESENT) ||
-            !(parent_entry & PAGING_WRITABLE)) {
+        printf(KMSG_LOGLEVEL_CRIT, "COW at %x\n", (uint64_t)vaddr);
+        uint64_t offending_page = (uint64_t)vaddr & ~0xfffUL;
+
+        /* map physical page parent to kernel_copy_vaddr */
+        uint64_t entry = paging_get(current_task->vmap, (void*)offending_page);
+        if (!(entry & PAGING_PRESENT))
                 return false;
-        }
 
-        /* map physical page of parent to kernel_copy_vaddr */
-        uintptr_t parent_physical_addr = parent_entry & ~0xfffUL;
-        paging_map(kernel_table, kernel_copy_vaddr, parent_physical_addr, 0);
+        paging_map(kernel_table,
+                   kernel_copy_vaddr,
+                   (void*)(entry & ~0xfffUL),
+                   0);
 
-        /* unmap old, shared, read-only page */
-        paging_unmap(current_task->vmap, vaddr);
+        /* unmap old read-only page */
+        paging_unmap(current_task->vmap, (void*)offending_page);
 
         /* new page for the process, this time with writable bit set */
-        vmm_request_at(current_task->vmap, vaddr, 1,
-                       parent_entry & 0xfff | PAGING_WRITABLE);
+        vmm_request_at(current_task->vmap, (void*)offending_page, 1,
+                       (entry & 0xfff) | PAGING_WRITABLE);
 
         /* copy data from kernel_copy_vaddr to new page */
-        memcpy(vaddr, kernel_copy_vaddr, 0x1000);
+        memcpy((void*)offending_page, kernel_copy_vaddr, 0x1000);
 
         /* unmap kernel_copy_vaddr */
         paging_unmap(kernel_table, kernel_copy_vaddr);
