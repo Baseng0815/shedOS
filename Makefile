@@ -46,6 +46,8 @@ $(ISO): sysroot
 	$(DEPENDENCIES)/limine/limine-install $(ISO)
 
 sysroot: $(SYSTEM_HEADER_PROJECTS) $(PROJECTS)
+	@echo "=====! BUILDING DEPENDENCIES !====="
+	cd $(DEPENDENCIES) && $(MAKE)
 	@echo "=====! CREATING SYSROOT !====="
 	cp limine.cfg $(SYSROOT)/boot
 	cp $(DEPENDENCIES)/limine/limine.sys $(SYSROOT)/boot

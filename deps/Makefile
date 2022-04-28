@@ -11,10 +11,10 @@ all: $(FILES)
 
 # please PR a better solution, it's 5 AM here
 
-testelf1:
+testelf1: testelf1.c
 	$(CC) $(FLAGS) -o $@ testelf1.c
 
-testelf2:
+testelf2: testelf2.c
 	$(CC) $(FLAGS) -o $@ testelf2.c
 
 clean:

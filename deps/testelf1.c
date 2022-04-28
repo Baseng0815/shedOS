@@ -22,11 +22,15 @@ void print(const char *str)
 
 int _start()
 {
-        int ret = fork();
-        for (;;) {
-                char str[] = { ret+'0', '\n', '\0' };
-                print(str);
+        if (fork() == 0) {
+                for (;;) {
+                        for (int i = 0; i < 10000000; i++);
+                        print("child!\n");
+                }
+        } else {
+                for (;;) {
+                        for (int i = 0; i < 10000000; i++);
+                        print("parent!\n");
+                }
         }
-
-        return 12345;
 }

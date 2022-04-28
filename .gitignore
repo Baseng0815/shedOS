@@ -6,6 +6,9 @@ toolchain/*
 !toolchain/
 !toolchain/Makefile
 
+deps/testelf1
+deps/testelf2
+
 *.o
 *.d
 *.so
