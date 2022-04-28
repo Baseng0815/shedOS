@@ -16,7 +16,7 @@ bool cow_copy_on_write(void *vaddr)
         printf(KMSG_LOGLEVEL_CRIT, "COW at %x\n", (uint64_t)vaddr);
         uint64_t offending_page = (uint64_t)vaddr & ~0xfffUL;
 
-        /* map physical page parent to kernel_copy_vaddr */
+        /* map physical page to kernel_copy_vaddr */
         uint64_t entry = paging_get(current_task->vmap, (void*)offending_page);
         if (!(entry & PAGING_PRESENT))
                 return false;

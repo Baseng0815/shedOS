@@ -9,6 +9,8 @@
 
 #define HDR_OFF(off)((void*)((uintptr_t)(hdr))+(off))
 
+static tid_t tid_next = 0;
+
 struct task *task_create(uint64_t *vmap_parent, const uint8_t *elf_data)
 {
         /* allocate task structure */
@@ -52,4 +54,9 @@ struct task *task_create(uint64_t *vmap_parent, const uint8_t *elf_data)
         printf(KMSG_LOGLEVEL_CRIT, "ELF loaded and task created.\n");
 
         return task;
+}
+
+tid_t task_new_tid(void)
+{
+        return tid_next++;
 }

@@ -2,7 +2,9 @@
 
 #include "pmm.h"
 
+#ifdef DEBUG
 #include "../libk/printf.h"
+#endif
 
 void vmm_request_at(uint64_t *table, void *vaddr,
                     size_t n, uint8_t flags)
@@ -16,8 +18,13 @@ void vmm_request_at(uint64_t *table, void *vaddr,
                         continue;
 
                 void *memory = pmm_request_pages(1);
-
                 paging_map(table, (void*)target_vaddr, memory, flags);
+
+#ifdef DEBUG
+                printf(KMSG_LOGLEVEL_INFO, "vmm: mapped %x (phys: %x)\n",
+                       memory, vaddr);
+#endif
+
         }
 }
 
@@ -27,7 +34,12 @@ void vmm_release_at(uint64_t *table, void *vaddr, size_t n)
         /* is not present */
         if (!(entry & PAGING_PRESENT))
                 return;
-
         pmm_release_pages((void*)(entry & ~0xfffUL), n);
         paging_unmap(table, vaddr);
+
+#ifdef DEBUG
+        printf(KMSG_LOGLEVEL_INFO, "vmm: released %x (phys: %x)\n",
+               vaddr, entry & ~0xfffUL);
+#endif
+
 }

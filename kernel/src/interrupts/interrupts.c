@@ -66,6 +66,8 @@ void exception_handle(struct exception_frame *frame)
                                 return;
                         }
                 }
+        } else if (frame->int_no == EXCEPTION_DB) {
+                return;
         }
 
         printf(KMSG_LOGLEVEL_CRIT,

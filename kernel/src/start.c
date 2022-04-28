@@ -152,6 +152,7 @@ void _start(struct stivale2_struct *stivale2_struct)
         /* pci_init(); */
 
         struct task *task_1 = task_create(kernel_table, elf_test_1);
+        task_1->id = task_new_tid();
         task_1->next_task = task_1;
         sched_run(task_1);
 

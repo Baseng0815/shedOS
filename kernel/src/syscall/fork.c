@@ -4,8 +4,12 @@
 
 #include "../libk/alloc.h"
 #include "../libk/memutil.h"
+#include "../libk/printf.h"
 
+#include <stdarg.h>
 #include "../task/sched.h"
+
+#include "../terminal/terminal.h"
 
 uint64_t syscall_fork(struct interrupt_frame *frame)
 {
@@ -16,6 +20,7 @@ uint64_t syscall_fork(struct interrupt_frame *frame)
         new_task->rflags    = frame->frame.rflags;
         new_task->rip       = frame->frame.rip;
         new_task->rsp       = frame->frame.rsp;
+        new_task->id        = task_new_tid();
 
         /* le epic cow */
         paging_make_readonly(current_task->vmap);
@@ -26,5 +31,5 @@ uint64_t syscall_fork(struct interrupt_frame *frame)
 
         new_task->regs.rax = 0;
 
-        return 1;
+        return 2;
 }

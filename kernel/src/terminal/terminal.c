@@ -10,6 +10,8 @@ int width, height;
 int chr_index;
 uint32_t fg, bg;
 
+static bool isready = false;
+
 void terminal_scroll(void);
 
 void terminal_initialize(int _width, int _height)
@@ -23,6 +25,7 @@ void terminal_initialize(int _width, int _height)
 
         terminal_clear();
 
+        isready = true;
         printf(KMSG_LOGLEVEL_INFO, "Term dimensions: %dx%d\n",
                width, height);
         printf(KMSG_LOGLEVEL_OKAY, "Finished target terminal.\n");
@@ -36,6 +39,9 @@ void terminal_setcolor(uint32_t _fg, uint32_t _bg)
 
 void terminal_putchar(char c)
 {
+        if (!isready)
+                return;
+
         /* check for necessary scroll (is chr_index out of bounds?) */
         chr_index++;
         if (chr_index >= width * height) {
@@ -66,6 +72,9 @@ void terminal_putchar(char c)
 
 void terminal_puts(const char *str)
 {
+        if (!isready)
+                return;
+
         if (str == NULL)
                 return;
 
@@ -76,6 +85,9 @@ void terminal_puts(const char *str)
 
 void terminal_clear(void)
 {
+        if (!isready)
+                return;
+
         for (int x = 0; x < 8 * width; x++) {
                 for (int y = 0; y < 16 * height; y++) {
                         framebuffer_putpixel(x, y, 0x0);
@@ -87,6 +99,9 @@ void terminal_clear(void)
 
 void terminal_scroll(void)
 {
+        if (!isready)
+                return;
+
         /* copy lines pixel by pixel
            maybe optimize using double buffering/memcopy/SSE ? */
         for (int py = 0; py < (height - 1) * 16; py++) {

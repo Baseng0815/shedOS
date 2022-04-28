@@ -4,7 +4,10 @@
 
 #include "addrutil.h"
 
+#ifdef DEBUG
 #include "../libk/printf.h"
+#endif
+
 #include "../libk/alloc.h"
 
 uint64_t *kernel_table;
@@ -13,7 +16,7 @@ static void paging_map_recursive(uint8_t, uint64_t*, uint64_t, uint64_t, uint8_t
 static void paging_unmap_recursive(uint8_t, uint64_t*, uint64_t);
 static uint64_t paging_get_recursive(uint8_t, uint64_t*, uint64_t);
 static void paging_copy_recursive(uint64_t*, uint64_t*, uint8_t);
-static void paging_make_readonly_recursive(uint64_t*, uint8_t);
+static void paging_make_readonly_recursive(uint64_t*, uint8_t, uint64_t);
 
 void paging_initialize(struct stivale2_struct_tag_memmap *mmap)
 {
@@ -79,6 +82,10 @@ void paging_map(uint64_t *table, void *vaddr, void *paddr, uint8_t flags)
                              (uint64_t)paddr & ~0xfff, flags);
 
         paging_flush_tlb(vaddr);
+
+#ifdef DEBUG
+        printf(KMSG_LOGLEVEL_INFO, "paging: mapped %x to %x\n", vaddr, paddr);
+#endif
 }
 
 void paging_map_recursive(uint8_t level, uint64_t *table, uint64_t vaddr,
@@ -110,6 +117,10 @@ void paging_map_recursive(uint8_t level, uint64_t *table, uint64_t vaddr,
 void paging_unmap(uint64_t *table, void *vaddr)
 {
         paging_unmap_recursive(4, table, (uint64_t)vaddr >> 12);
+
+#ifdef DEBUG
+        printf(KMSG_LOGLEVEL_INFO, "paging: unmapped %x\n", vaddr);
+#endif
 }
 
 void paging_unmap_recursive(uint8_t level, uint64_t *table, uint64_t vaddr)
@@ -156,6 +167,11 @@ uint64_t *paging_create_empty(void)
         memcpy((void*)((uint64_t)new_table + 0x800),
                (void*)((uint64_t)kernel_table + 0x800), 0x800);
 
+#ifdef DEBUG
+        printf(KMSG_LOGLEVEL_INFO, "paging: new empty table at %x\n",
+               new_table);
+#endif
+
         return new_table;
 }
 
@@ -163,6 +179,12 @@ uint64_t *paging_copy(uint64_t *parent)
 {
         uint64_t *new_table = paging_create_empty();
         paging_copy_recursive(new_table, parent, 4);
+
+#ifdef DEBUG
+        printf(KMSG_LOGLEVEL_INFO, "paging: copied %x to %x\n",
+               parent, new_table);
+#endif
+
         return new_table;
 }
 
@@ -192,14 +214,22 @@ void paging_copy_recursive(uint64_t *dst,
 
 void paging_make_readonly(uint64_t *table)
 {
-        paging_make_readonly_recursive(table, 4);
+        paging_make_readonly_recursive(table, 4, 0);
+
+#ifdef DEBUG
+        printf(KMSG_LOGLEVEL_INFO, "paging: made %x readonly\n",
+               table);
+#endif
 }
 
 void paging_make_readonly_recursive(uint64_t *table,
-                                    uint8_t level)
+                                    uint8_t level,
+                                    uint64_t vaddr)
 {
         if (level == 1) {
                 for (size_t i = 0; i < 512; i++) {
+                        uint64_t final_vaddr = ((vaddr << 9) | i) << 12;
+                        paging_flush_tlb((void*)final_vaddr);
                         table[i] &= ~PAGING_WRITABLE;
                 }
                 return;
@@ -211,7 +241,8 @@ void paging_make_readonly_recursive(uint64_t *table,
 
                 uint64_t *child = (uint64_t*)
                         addr_ensure_higher((table[i] & ~0xfffUL));
-                paging_make_readonly_recursive(child, level - 1);
+                paging_make_readonly_recursive(child, level - 1,
+                                               (vaddr << 9) | i);
         }
 }
 
@@ -226,5 +257,5 @@ void paging_flush_tlb(void *addr)
 {
         asm volatile("invlpg (%0)"
                      :
-                     : "r" ((uint64_t)addr));
+                     : "b" (addr) : "memory");
 }
