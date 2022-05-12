@@ -13,7 +13,6 @@ static void *kernel_copy_vaddr = (void*)0xffff810200000000UL;
 
 bool cow_copy_on_write(void *vaddr)
 {
-        printf(KMSG_LOGLEVEL_CRIT, "COW at %x\n", (uint64_t)vaddr);
         uint64_t offending_page = (uint64_t)vaddr & ~0xfffUL;
 
         /* map physical page to kernel_copy_vaddr */

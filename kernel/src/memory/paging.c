@@ -12,11 +12,10 @@
 
 uint64_t *kernel_table;
 
-static void paging_map_recursive(uint8_t, uint64_t*, uint64_t, uint64_t, uint8_t);
-static void paging_unmap_recursive(uint8_t, uint64_t*, uint64_t);
-static uint64_t paging_get_recursive(uint8_t, uint64_t*, uint64_t);
-static void paging_copy_recursive(uint64_t*, uint64_t*, uint8_t);
-static void paging_make_readonly_recursive(uint64_t*, uint8_t, uint64_t);
+static void vaddr_to_index(uint64_t vaddr, size_t *indices);
+static void paging_copy_recursive(uint64_t *dst, uint64_t *src, uint8_t level);
+static void paging_make_readonly_recursive(uint64_t *table, uint8_t level,
+                                           uint64_t vaddr);
 
 void paging_initialize(struct stivale2_struct_tag_memmap *mmap)
 {
@@ -77,10 +76,29 @@ void paging_initialize(struct stivale2_struct_tag_memmap *mmap)
 
 void paging_map(uint64_t *table, void *vaddr, void *paddr, uint8_t flags)
 {
-        paging_map_recursive(4, table,
-                             (uint64_t)vaddr >> 12,
-                             (uint64_t)paddr & ~0xfff, flags);
+        size_t indices[4];
+        vaddr_to_index((uint64_t)vaddr, indices);
 
+        for (int level = 3; level > 0; level--) {
+                uint64_t child = table[indices[level]];
+                if (!(child & PAGING_PRESENT)) {
+                        /* create if not existing */
+                        child = (uint64_t)palloc(1);
+                        memset((void*)child, 0, 0x1000);
+                        table[indices[level]] =
+                                addr_offset_lower(child) | PAGING_PRESENT;
+
+                        /* we give write and user access for every
+                         * non-final level in userspace */
+                        if ((uint64_t)vaddr < VADDR_HIGHER) {
+                                table[indices[level]] |=
+                                        PAGING_WRITABLE | PAGING_USER;
+                        }
+                }
+                table = (uint64_t*)addr_ensure_higher(child & ~0xfffUL);
+        }
+
+        table[indices[0]] = (uint64_t)paddr | flags | PAGING_PRESENT;
         paging_flush_tlb(vaddr);
 
 #ifdef DEBUG
@@ -88,76 +106,43 @@ void paging_map(uint64_t *table, void *vaddr, void *paddr, uint8_t flags)
 #endif
 }
 
-void paging_map_recursive(uint8_t level, uint64_t *table, uint64_t vaddr,
-                          uint64_t paddr, uint8_t flags)
-{
-        size_t index = (vaddr >> 9 * (level - 1)) & 0x1ff;
-        if (level == 1) {
-                table[index] = paddr | flags | PAGING_PRESENT;
-                return;
-        }
-
-        uint64_t child = table[index];
-        if (!(child & PAGING_PRESENT)) {
-                /* create if not existing */
-                child = (uint64_t)palloc(1);
-                memset((void*)child, 0, 0x1000);
-                table[index] = addr_offset_lower(child) | PAGING_PRESENT;
-
-                /* we give write and user access for every
-                 * non-final level in userspace */
-                if (vaddr < VADDR_HIGHER)
-                        table[index] |= PAGING_WRITABLE | PAGING_USER;
-        }
-
-        table = (uint64_t*)addr_ensure_higher(child & ~0xfffUL);
-        return paging_map_recursive(level - 1, table, vaddr, paddr, flags);
-}
-
 void paging_unmap(uint64_t *table, void *vaddr)
 {
-        paging_unmap_recursive(4, table, (uint64_t)vaddr >> 12);
+        size_t indices[4];
+        vaddr_to_index((uint64_t)vaddr, indices);
+
+        for (int level = 3; level > 0; level--) {
+                uint64_t child = table[indices[level]];
+                if (!(child & PAGING_PRESENT))
+                        return;
+
+                table = (uint64_t*)addr_ensure_higher(child & ~0xfffUL);
+        }
+
+        table[indices[0]] = 0;
+        paging_flush_tlb(vaddr);
 
 #ifdef DEBUG
         printf(KMSG_LOGLEVEL_INFO, "paging: unmapped %x\n", vaddr);
 #endif
 }
 
-void paging_unmap_recursive(uint8_t level, uint64_t *table, uint64_t vaddr)
-{
-        size_t index = (vaddr >> 9 * (level - 1)) & 0x1ff;
-        if (level == 1) {
-                table[index] = 0;
-                return;
-        }
-
-        uint64_t child = table[index];
-        if (!(child & PAGING_PRESENT))
-                return;
-
-        table = (uint64_t*)addr_ensure_higher(child & ~0xfffUL);
-        paging_unmap_recursive(level - 1, table, vaddr);
-}
-
 uint64_t paging_get(uint64_t *table, void *vaddr)
 {
-        return paging_get_recursive(4, table,
-                                    (uint64_t)vaddr >> 12);
-}
+        size_t indices[4];
+        vaddr_to_index((uint64_t)vaddr, indices);
 
-uint64_t paging_get_recursive(uint8_t level,
-                              uint64_t *table,
-                              uint64_t vaddr)
-{
-        size_t index = (vaddr >> 9 * (level - 1)) & 0x1ff;
-        uint64_t child = table[index];
-        if (!(child & PAGING_PRESENT))
-                return 0;
-        if (level == 1 || child & PAGING_HUGE)
-                return child;
+        for (int level = 3; level > 0; level--) {
+                uint64_t child = table[indices[level]];
+                if (!(child & PAGING_PRESENT))
+                        return 0;
+                if (child & PAGING_HUGE)
+                        return child;
 
-        table = (uint64_t*)addr_ensure_higher(child & ~0xfffUL);
-        return paging_get_recursive(level - 1, table, vaddr);
+                table = (uint64_t*)addr_ensure_higher(child & ~0xfffUL);
+        }
+
+        return table[indices[0]];
 }
 
 uint64_t *paging_create_empty(void)
@@ -258,4 +243,16 @@ void paging_flush_tlb(void *addr)
         asm volatile("invlpg (%0)"
                      :
                      : "b" (addr) : "memory");
+}
+
+static void vaddr_to_index(uint64_t vaddr, size_t *indices)
+{
+        vaddr >>= 12;
+        indices[0] = vaddr & 0x1ff;
+        vaddr >>= 9;
+        indices[1] = vaddr & 0x1ff;
+        vaddr >>= 9;
+        indices[2] = vaddr & 0x1ff;
+        vaddr >>= 9;
+        indices[3] = vaddr & 0x1ff;
 }

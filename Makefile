@@ -43,7 +43,7 @@ $(ISO): sysroot
 		--efi-boot-image \
 		--protective-msdos-label \
 		sysroot -o $(ISO)
-	$(DEPENDENCIES)/limine/limine-install $(ISO)
+	$(DEPENDENCIES)/limine/limine-install-linux-x86_64 $(ISO)
 
 sysroot: $(SYSTEM_HEADER_PROJECTS) $(PROJECTS)
 	@echo "=====! BUILDING DEPENDENCIES !====="
