@@ -17,6 +17,8 @@ int memcmp(const void *str1, const void *str2, size_t n)
 
 void *memcpy(void *dst, const void *src, size_t n)
 {
+        /* yes, we copy byte-by-byte
+         * deal with it */
         uint8_t *dstp = (uint8_t*)dst;
         uint8_t *srcp = (uint8_t*)src;
         for (size_t i = 0; i < n; i++) {

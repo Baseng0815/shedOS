@@ -38,7 +38,7 @@ void _printf(va_list args, char fmtc)
                 }
                 case 's': {
                         const char *str = va_arg(args, const char*);
-                        strcpy(str, buf);
+                        strcpy(buf, str);
                         break;
                 }
         }

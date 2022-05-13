@@ -49,12 +49,12 @@ char *timer_format(char *buf)
         /* seconds */
         char tmp[16];
         utos(seconds, 10, tmp, 0);
-        strcpy(tmp, buf + 4 - strlen(tmp));
+        strcpy(buf + 4 - strlen(tmp), tmp);
 
         /* milliseconds */
         utos(milliseconds, 10, tmp, 0);
         buf[4] = '.';
-        strcpy(tmp, buf + 9 - strlen(tmp));
+        strcpy(buf + 9 - strlen(tmp), tmp);
 
         return buf;
 }
