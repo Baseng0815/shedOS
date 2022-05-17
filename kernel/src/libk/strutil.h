@@ -5,6 +5,8 @@
 #include <stddef.h>
 #include <stdbool.h>
 
+#define NPOS SIZE_MAX
+
 size_t strlen(const char *str);
 
 /* unsigned integer to string conversion
@@ -19,6 +21,10 @@ char *strtok(char *s, char delim);
 
 int strcmp(const char *s1, const char *s2);
 int strncmp(const char *s1, const char *s2, size_t n);
+
+size_t strfind(const char *s, char c);
+
+size_t *strcpy(char *dst, const char *src);
 
 char *strcpy(char *dst, const char *src);
 char *strncpy(char *dst, const char *src, size_t n);

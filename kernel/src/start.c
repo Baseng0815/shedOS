@@ -151,17 +151,6 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         /* pci_init(); */
 
-        char *s = "/home/bastian/shedOS/deps/limine/";
-        char *token = strtok(s, '/');
-        while (token) {
-                printf(KMSG_LOGLEVEL_NONE, "%s\n", token);
-
-                token = strtok(NULL, '/');
-        }
-
-        for (;;) {
-                asm volatile("hlt");
-        }
         struct task *task_1 = task_create(kernel_table, elf_test_1);
         task_1->id = task_new_tid();
         task_1->next_task = task_1;

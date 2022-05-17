@@ -110,7 +110,17 @@ int strncmp(const char *s1, const char *s2, size_t n)
                 s2++;
         }
 
-        return *(const unsigned char*)s1 - *(const unsigned char*)s2;
+        return *s1 - *s2;
+}
+
+size_t strfind(const char *s, char c)
+{
+        for (size_t i = 0; s[i]; i++) {
+                if (s[i] == c)
+                        return i;
+        }
+
+        return NPOS;
 }
 
 char *strcpy(char *dst, const char *src)
