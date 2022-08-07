@@ -2,13 +2,16 @@
 
 #include "../memory/addrutil.h"
 #include "../memory/paging.h"
-#include "../memory/vmm.h"
 #include "../memory/pmm.h"
 #include "../debug.h"
+#include "../vfs/drive.h"
 
 #include "../libk/printf.h"
 #include "../libk/strutil.h"
+#include "../libk/memutil.h"
+#include "../libk/alloc.h"
 
+// BAR0 registers
 struct regs {
         uint64_t cap;
         uint32_t vs;
@@ -116,7 +119,9 @@ struct ctrl_id {
         uint64_t tnvmcap[2]; /* total NVM capacity */
         uint64_t unvmcap[2]; /* unallocated NVM capacity */
         uint32_t rpmbs; /* replay protected memory block support */
+
         /* I will finish this maybe some time later */
+        uint8_t therest[3780];
 } __attribute__((packed));
 
 struct lba_format {
@@ -154,20 +159,30 @@ struct namespace_id {
         uint8_t reserved3[3904];
 } __attribute__((packed));
 
-struct regs *regs;
-struct queue admin_queue;
-struct queue io_queue;
+// we assume a single controller for now
+struct nvme_controller {
+        struct regs *regs;
+        struct ctrl_id *id;
 
-struct ctrl_id *ctrl_id; /* ctrl identify data structure */
-size_t nsid_count;
-uint32_t *nsid; /* namespace IDs */
-struct namespace_id *namespace_id; /* first namespace identify data structure */
+        struct queue admin_queue;
+} controller;
 
-static void create_admin_queue(void);
+// also called "namespace" in NVM terminology
+struct nvme_drive {
+        uint32_t nsid;
+        struct queue io_queue;
+        struct namespace_id *id; // identify namespace capabilities
+};
+
+struct nvme_drive nvme_drives[26]; // 26 maximum drives
+static size_t nvme_drives_count = 0;
+
+static void create_admin_queue(struct nvme_controller *controller);
+static void ctrl_identify(struct nvme_controller *controller);
 static void configure_msix(struct pci_device_endpoint *ep);
-static void create_io_queue(void);
-static void namespace_identify(void);
-static void ctrl_identify(void);
+static void create_io_queue(struct nvme_drive *drive,
+                            struct nvme_controller *controller);
+static void namespaces_identify(struct nvme_controller *controller);
 
 static void send_cmd_sync(struct queue *queue,
                           const struct sq_entry *command,
@@ -194,35 +209,41 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
         ep->bar0 = prev_bar;
 
         const size_t bar_size = ~cur_bar + 1;
-        regs = (struct regs*)addr_ensure_higher(ep->bar0);
+        // actual BAR address (need to mask off some stuff)
+        uint64_t bar0_addr = (ep->bar0 & 0xfffffff0) +
+                ((uint64_t)(ep->bar1 & 0xffffffff) << 32);
+        controller.regs = (struct regs*)addr_ensure_higher(bar0_addr);
         printf(KMSG_LOGLEVEL_INFO, "BAR=%a, size=%x bytes\n",
-               regs, bar_size);
+               controller.regs, bar_size);
 
         /* assert capabilities (NVM, page size) */
-        assert((regs->cap >> 37 & 0x1) > 0, "NVM command set not supported.");
+        assert((controller.regs->cap >> 37 & 0x1) > 0,
+               "NVM command set not supported.");
 
-        const uint32_t page_size_min = 1 << (12 + (regs->cap >> 48 & 0xf));
-        const uint32_t page_size_max = 1 << (12 + (regs->cap >> 52 & 0xf));
+        const uint32_t page_size_min =
+                1UL << (12 + (controller.regs->cap >> 48 & 0xf));
+        const uint32_t page_size_max =
+                1UL << (12 + (controller.regs->cap >> 52 & 0xf));
         assert(page_size_max >= 0x1000 && page_size_min <= 0x1000,
                "The NVM controller can't handle pages of this size.");
 
         /* version */
-        const uint8_t     tert_version    = regs->vs >> 0  & 0xff;
-        const uint8_t     minor_version   = regs->vs >> 8  & 0xff;
-        const uint16_t    major_version   = regs->vs >> 16 & 0xffff;
+        const uint8_t     tert_version    = controller.regs->vs >> 0  & 0xff;
+        const uint8_t     minor_version   = controller.regs->vs >> 8  & 0xff;
+        const uint16_t    major_version   = controller.regs->vs >> 16 & 0xffff;
         printf(KMSG_LOGLEVEL_INFO, "NVMe version %d.%d.%d\n",
                major_version, minor_version, tert_version);
 
         /* disable controller */
-        regs->cc &= ~(1 << 0);
+        controller.regs->cc &= ~(1 << 0);
 
         /* wait for controller to be disabled */
-        while (regs->csts & 1 << 0) {}
+        while (controller.regs->csts & 1 << 0) {}
 
-        create_admin_queue();
+        create_admin_queue(&controller);
 
         /* reenable controller */
-        regs->cc =
+        controller.regs->cc =
                 1 << 0  | /* enable */
                 0 << 4  | /* NVM command set */
                 0 << 7  | /* 2^(12 + 0) = 4K page size */
@@ -231,68 +252,70 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
                 6 << 16 | /* 2^6 = 64 byte sqentry size */
                 4 << 20;  /* 2^4 = 16 byte cqentry size */
 
-        while (!(regs->csts & 1 << 0)) {}
+        while (!(controller.regs->csts & 1 << 0)) {}
+        ctrl_identify(&controller);
 
         /* MSI-X */
         configure_msix(ep);
 
-        create_io_queue();
-
         printf(KMSG_LOGLEVEL_INFO, "Controller configured and reenabled.\n");
 
-        ctrl_identify();
-        namespace_identify();
+        namespaces_identify(&controller);
 
-        uint8_t *md = (uint8_t*)
-                addr_ensure_higher((uint64_t)pmm_request_pages(1));
-        uint8_t *data = (uint8_t*)
-                addr_ensure_higher((uint64_t)pmm_request_pages(1));
+        /* uint8_t *md = (uint8_t*) */
+        /*         addr_ensure_higher((uint64_t)pmm_request_pages(1)); */
+        /* uint8_t *data = (uint8_t*) */
+        /*         addr_ensure_higher((uint64_t)pmm_request_pages(1)); */
 
-        /* test read */
-        struct sq_entry cmd = {
-                .cdw0 = 0x2,
-                .nsid = nsid[0],
-                .mptr = addr_ensure_lower((uint64_t)md),
-                .prp1 = addr_ensure_lower((uint64_t)data),
-                .cdw10 = 0x44a000 / 512, .cdw11 = 0, /* starting LBA */
-                .cdw12 = 0 /* number of LBAs - 1 */
-        };
-        send_cmd_sync(&io_queue, &cmd, NULL);
+        /* /1* test read *1/ */
+        /* struct sq_entry cmd = { */
+        /*         .cdw0 = 0x2, */
+        /*         .nsid = nsid[0], */
+        /*         .mptr = addr_ensure_lower((uint64_t)md), */
+        /*         .prp1 = addr_ensure_lower((uint64_t)data), */
+        /*         .cdw10 = 0x44a000 / 512, .cdw11 = 0, /1* starting LBA *1/ */
+        /*         .cdw12 = 0 /1* number of LBAs - 1 *1/ */
+        /* }; */
+        /* send_cmd_sync(&io_queue, &cmd, NULL); */
 
-        /* dump 256 qwords */
-        for (size_t i = 0; i < 16; i++) {
-                for (size_t j = 0; j < 16; j++)
-                        printf(KMSG_LOGLEVEL_NONE, "%x ", data[i * 16 + j]);
-                printf(KMSG_LOGLEVEL_NONE, "\n");
-        }
+        /* /1* dump 256 qwords *1/ */
+        /* for (size_t i = 0; i < 16; i++) { */
+        /*         for (size_t j = 0; j < 16; j++) */
+        /*                 printf(KMSG_LOGLEVEL_NONE, "%x ", data[i * 16 + j]); */
+        /*         printf(KMSG_LOGLEVEL_NONE, "\n"); */
+        /* } */
 }
 
-void create_admin_queue(void)
+void create_admin_queue(struct nvme_controller *ctrl)
 {
         /* AQA, ASQ, ACQ (256 entries each) */
         const size_t asq_page_count = sizeof(struct sq_entry) * 256 / 0x1000;
         const size_t acq_page_count = sizeof(struct cq_entry) * 256 / 0x1000;
-        regs->asq = (uint64_t)pmm_request_pages(asq_page_count);
-        regs->acq = (uint64_t)pmm_request_pages(acq_page_count);
-        regs->aqa =
+        ctrl->regs->asq = (uint64_t)pmm_request_pages(asq_page_count);
+        ctrl->regs->acq = (uint64_t)pmm_request_pages(acq_page_count);
+        ctrl->regs->aqa =
                 255 << 0 | /* submission queue entries */
                 255 << 16; /* completion queue entries */
 
         /* configure admin queue */
-        admin_queue.sq = (struct sq_entry*)addr_ensure_higher(regs->asq);
-        admin_queue.cq = (struct cq_entry*)addr_ensure_higher(regs->acq);
-        admin_queue.sq_tail = 0;
-        admin_queue.cq_head = 0;
+        ctrl->admin_queue.sq =
+                (struct sq_entry*)addr_ensure_higher(ctrl->regs->asq);
+        ctrl->admin_queue.cq =
+                (struct cq_entry*)addr_ensure_higher(ctrl->regs->acq);
+        ctrl->admin_queue.sq_tail = 0;
+        ctrl->admin_queue.cq_head = 0;
 
-        const uint32_t doorbell_stride = 1 << (2 + (regs->cap >> 32 & 0xf));
-        admin_queue.sq_tail_dbl = (uint32_t*)
-                ((uint64_t)regs + 0x1000 + (2 * 0 + 0) * doorbell_stride);
-        admin_queue.cq_head_dbl = (uint32_t*)
-                ((uint64_t)regs + 0x1000 + (2 * 0 + 1) * doorbell_stride);
+        const uint32_t doorbell_stride =
+                1 << (2 + (ctrl->regs->cap >> 32 & 0xf));
+        ctrl->admin_queue.sq_tail_dbl = (uint32_t*)
+                ((uint64_t)ctrl->regs + 0x1000 + (2 * 0 + 0) * doorbell_stride);
+        ctrl->admin_queue.cq_head_dbl = (uint32_t*)
+                ((uint64_t)ctrl->regs + 0x1000 + (2 * 0 + 1) * doorbell_stride);
 
         printf(KMSG_LOGLEVEL_INFO,
                "ASQ/ACQ at %x/%x, AQA=%x, doorbell stride=%x\n",
-               regs->asq, regs->acq, regs->aqa, doorbell_stride);
+               ctrl->regs->asq, ctrl->regs->acq, ctrl->regs->aqa,
+               doorbell_stride);
 }
 
 void configure_msix(struct pci_device_endpoint *ep)
@@ -344,29 +367,30 @@ void configure_msix(struct pci_device_endpoint *ep)
 
 /* yes, lots of code is duplicated from the create_admin_queue() procedure.
  * too bad! */
-void create_io_queue(void)
+void create_io_queue(struct nvme_drive *drive, struct nvme_controller *ctrl)
 {
         /* allocate memory and initialize driver structures */
         const size_t sq_page_count = sizeof(struct sq_entry) * 256 / 0x1000;
         const size_t cq_page_count = sizeof(struct cq_entry) * 256 / 0x1000;
-        io_queue.sq = (struct sq_entry*)
+        drive->io_queue.sq = (struct sq_entry*)
                 addr_ensure_higher((uint64_t)pmm_request_pages(sq_page_count));
-        io_queue.cq = (struct cq_entry*)
+        drive->io_queue.cq = (struct cq_entry*)
                 addr_ensure_higher((uint64_t)pmm_request_pages(cq_page_count));
-        io_queue.sq_tail = 0;
-        io_queue.cq_head = 0;
+        drive->io_queue.sq_tail = 0;
+        drive->io_queue.cq_head = 0;
 
-        const uint32_t doorbell_stride = 1 << (2 + (regs->cap >> 32 & 0xf));
-        io_queue.sq_tail_dbl = (uint32_t*)
-                ((uint64_t)regs + 0x1000 + (2 * 1 + 0) * doorbell_stride);
-        io_queue.cq_head_dbl = (uint32_t*)
-                ((uint64_t)regs + 0x1000 + (2 * 1 + 1) * doorbell_stride);
+        const uint32_t doorbell_stride =
+                1 << (2 + (ctrl->regs->cap >> 32 & 0xf));
+        drive->io_queue.sq_tail_dbl = (uint32_t*)
+                ((uint64_t)ctrl->regs + 0x1000 + (2 * 1 + 0) * doorbell_stride);
+        drive->io_queue.cq_head_dbl = (uint32_t*)
+                ((uint64_t)ctrl->regs + 0x1000 + (2 * 1 + 1) * doorbell_stride);
 
         /* create completion queue on NVM device */
         struct sq_entry command = {
                 .cdw0 = 0x5,
-                .prp1 = addr_ensure_lower((uint64_t)io_queue.cq) >> 0,
-                .prp2 = addr_ensure_lower((uint64_t)io_queue.cq) >> 32,
+                .prp1 = addr_ensure_lower((uint64_t)drive->io_queue.cq) >> 0,
+                .prp2 = addr_ensure_lower((uint64_t)drive->io_queue.cq) >> 32,
                 .cdw10 = 1 << 0 |   /* queue identifier */
                         255 << 16,  /* queue size - 1 */
                 .cdw11 = 1 << 0 |   /* physically contiguous */
@@ -375,89 +399,96 @@ void create_io_queue(void)
         };
 
         printf(KMSG_LOGLEVEL_INFO, "Creating I/O completion queue...\n");
-        send_cmd_sync(&admin_queue, &command, NULL);
+        send_cmd_sync(&ctrl->admin_queue, &command, NULL);
 
         /* create submission queue on NVM device */
         command.cdw0 = 0x1;
-        command.prp1 = addr_ensure_lower((uint64_t)io_queue.sq) >> 0;
-        command.prp2 = addr_ensure_lower((uint64_t)io_queue.sq) >> 32;
+        command.prp1 = addr_ensure_lower((uint64_t)drive->io_queue.sq) >> 0;
+        command.prp2 = addr_ensure_lower((uint64_t)drive->io_queue.sq) >> 32;
         command.cdw10 = 1 << 0 |    /* queue identifier */
                 255 << 16;          /* queue size - 1 */
         command.cdw11 = 1 << 0 |    /* physically contiguous */
                 1 << 16;            /* completion queue identifier */
 
         printf(KMSG_LOGLEVEL_INFO, "Creating I/O submission queue...\n");
-        send_cmd_sync(&admin_queue, &command, NULL);
+        send_cmd_sync(&ctrl->admin_queue, &command, NULL);
 
         printf(KMSG_LOGLEVEL_INFO, "Created I/O queue with sq/cq at %a/%a\n",
-               io_queue.sq, io_queue.cq);
+               drive->io_queue.sq, drive->io_queue.cq);
 }
 
-void namespace_identify(void)
+void namespaces_identify(struct nvme_controller *ctrl)
 {
-        nsid = (uint32_t*)addr_ensure_higher((uint64_t)pmm_request_pages(1));
+        // get list of namespace IDs
+        uint32_t *nsids = (uint32_t*)palloc(1);
 
         struct sq_entry command = {
                 .cdw0 = 0x06,
-                .prp1 = addr_ensure_lower((uint64_t)nsid),
+                .prp1 = addr_ensure_lower((uint64_t)nsids),
                 .cdw10 = 2
         };
-        send_cmd_sync(&admin_queue, &command, NULL);
+        send_cmd_sync(&ctrl->admin_queue, &command, NULL);
 
-        nsid_count = 0;
-        while (nsid[nsid_count]) {
-                nsid_count++;
+        // register each namespace as drive and initialize
+        for (size_t i = 0; nsids[i] != 0; i++) {
+                printf(KMSG_LOGLEVEL_INFO,
+                       "Processing namespace with id %d...\n", nsids[i]);
+                struct nvme_drive *ndrive = &nvme_drives[nvme_drives_count++];
+                create_io_queue(ndrive, ctrl);
+
+                // identify namespace
+                ndrive->id = palloc(1);
+                command.prp1    = addr_ensure_lower((uint64_t)&ndrive->id);
+                command.cdw10   = 0;
+                command.nsid    = nsids[i];
+                send_cmd_sync(&ctrl->admin_queue, &command, NULL);
+
+                const struct lba_format *current_format =
+                        &ndrive->id->lba_formats[ndrive->id->flbas & 0x3];
+
+                printf(KMSG_LOGLEVEL_INFO,
+                       "Namespace size/capacity/utilization: %d/%d/%d blocks, "
+                       "LBA data/metadata size=%d/%d bytes, relative perf=%d\n",
+                       ndrive->id->nsze, ndrive->id->ncap,
+                       ndrive->id->nuse, 1 << current_format->lbads,
+                       current_format->ms, current_format->rp);
+
+                struct drive *drive;
+                drive_new(&drive);
+                drive->type = DRIVE_TYPE_NVME;
+
         }
 
-        printf(KMSG_LOGLEVEL_INFO, "%d namespace(s) found: ", nsid_count);
-        for (size_t i = 0; i < nsid_count; i++) {
-                printf(KMSG_LOGLEVEL_NONE, "%d ", nsid[i]);
-        }
-        printf(KMSG_LOGLEVEL_NONE, "\n");
+        send_cmd_sync(&ctrl->admin_queue, &command, NULL);
 
-        namespace_id = (struct namespace_id*)
-                addr_ensure_higher((uint64_t)pmm_request_pages(1));
-        command.prp1    = addr_ensure_lower((uint64_t)namespace_id);
-        command.cdw10   = 0;
-        command.nsid    = nsid[0];
-        send_cmd_sync(&admin_queue, &command, NULL);
 
-        const struct lba_format *format =
-                &namespace_id->lba_formats[namespace_id->flbas & 0x3];
-
-        printf(KMSG_LOGLEVEL_INFO,
-               "Namespace size/capacity/utilization: %d/%d/%d blocks, "
-               "LBA data/metadata size=%d/%d bytes, relative perf=%d\n",
-               namespace_id->nsze, namespace_id->ncap, namespace_id->nuse,
-               1 << format->lbads, format->ms, format->rp);
+        pfree(nsids, 1);
 }
 
-void ctrl_identify(void)
+void ctrl_identify(struct nvme_controller *ctrl)
 {
-        ctrl_id = (struct ctrl_id*)
-                addr_ensure_higher((uint64_t)pmm_request_pages(1));
-
+        ctrl->id = palloc(1);
         struct sq_entry command = {
                 .cdw0 = 0x06,
-                .prp1 = addr_ensure_lower((uint64_t)ctrl_id),
+                .prp1 = addr_ensure_lower((uint64_t)ctrl->id),
                 .cdw10 = 1
         };
 
-        send_cmd_sync(&admin_queue, &command, NULL);
+        send_cmd_sync(&ctrl->admin_queue, &command, NULL);
 
-        trim_and_terminate(ctrl_id->sn, 20);
-        trim_and_terminate(ctrl_id->mn, 40);
-        trim_and_terminate(ctrl_id->fr, 8);
+        trim_and_terminate(ctrl->id->sn, 20);
+        trim_and_terminate(ctrl->id->mn, 40);
+        trim_and_terminate(ctrl->id->fr, 8);
 
         printf(KMSG_LOGLEVEL_INFO,
                "Model/Serial: %s/%s, Firmware Revision %s\n",
-               ctrl_id->sn, ctrl_id->mn, ctrl_id->fr);
+               ctrl->id->sn, ctrl->id->mn, ctrl->id->fr);
 
         /* TNVMCAP and UNVMCAP attribute supported */
-        if (ctrl_id->oacs >> 3 & 1) {
+        if (ctrl->id->oacs >> 3 & 1) {
                 printf(KMSG_LOGLEVEL_INFO,
                        "Total/Unused NVM capacity: approx. %d/%dMB\n",
-                       ctrl_id->tnvmcap[1] >> 20, ctrl_id->unvmcap[1] >> 20);
+                       ctrl->id->tnvmcap[1] >> 20, ctrl->id->unvmcap[1] >> 20);
         }
 }
 
@@ -472,7 +503,7 @@ void send_cmd_sync(struct queue *queue,
 
         /* wait for completion */
         while ((queue->cq[queue->cq_head].status_field & 0x1) == 0) {
-                asm volatile("hlt");
+                asm volatile("pause");
         }
 
         if ((queue->cq[queue->cq_head].status_field >> 1) != 0) {

@@ -3,32 +3,19 @@
 #include "../libk/strutil.h"
 #include "../libk/printf.h"
 
-#include "fs.h"
-
-fd_t vfs_file_open(const char *path)
+fd_t vfs_file_open(const char *_path)
 {
-        if (strlen(path) > MAX_PATH_LENGTH) {
+        if (strlen(_path) > MAX_PATH_LENGTH) {
                 printf(KMSG_LOGLEVEL_WARN, "path too long, can't open file\n");
                 return -1;
         }
 
-        char p[MAX_PATH_LENGTH + 1];
-        strcpy(p, path);
+        char drive = _path[0];
+        const char *path = _path + 2;
 
-        size_t end = strfind(path, ':');
-        if (end == NPOS) {
-                printf(KMSG_LOGLEVEL_WARN, "invalid path\n");
-                return -1;
+        for (size_t mi = 0; mi < 26; mi++) {
+                printf(KMSG_LOGLEVEL_INFO, "processing path %s\n", path);
         }
 
-        p[end] = '\0';
-        const char *drive = p;
-        const char *path = p + end + 1;
-
-        for (size_t mi = 0; mi < MAX_MOUNTLIST_SIZE; mi++) {
-                const struct fs_mount *mount = &mountlist[mi];
-                if (strcmp(mount->name, drive) == 0) {
-                        printf(KMSG_LOGLEVEL_INFO, "processing path %s", path);
-                }
-        }
+        return 0;
 }

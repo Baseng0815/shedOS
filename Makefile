@@ -1,4 +1,4 @@
-export USER_CFLAGS 		:= -O0 -Wall -Werror -Wextra -Wno-missing-field-initializers -ggdb -pipe
+export USER_CFLAGS 		:= -O0 -Wall -Werror -Wextra -Wno-missing-field-initializers -Wno-unused-value -Wno-unused-variable -ggdb -pipe
 export MAKEOPTS 		:= -j12
 
 export TARGET 			:= x86_64-elf
@@ -27,6 +27,8 @@ qemu: iso
 	    -net none \
 	    -M q35 \
 	    -no-shutdown -no-reboot \
+	    -drive file=$(DEPENDENCIES)/nvme.img,if=none,id=nvm \
+	    -device nvme,serial=deadbeef,drive=nvm \
 	    -serial stdio -s -m $(QEMU_MEMORY) $(QEMU_FLAGS)
 
 iso: $(ISO)

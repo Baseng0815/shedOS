@@ -12,11 +12,13 @@ struct pci_addr {
         uint8_t function;
 };
 
+// common header
 struct pci_device_header {
-        uint32_t vendor_id;
-        uint32_t command;
-        uint32_t revision_id;
-        uint32_t cl_size; /* cache line size */
+        uint32_t vendor_id; // vendor and device id
+        uint32_t command; // command and status
+        uint32_t revision_id; // revision id and class code
+        uint32_t cl_size; // cache line size, master latency timer, hdr type
+                          // and BIST
 } __attribute__((packed));
 
 /* PCI hdr command */
@@ -49,6 +51,7 @@ struct pci_cap_hdr {
 #define PHS_SIG_SYSTEM_ERROR    (1UL << 14)
 #define PHS_PARITY_ERROR        (1UL << 15)
 
+// type 0: endpoint devices
 /* extended capabilities pointer is at 0x100, but we don't
  * care about that right now*/
 struct pci_device_endpoint {

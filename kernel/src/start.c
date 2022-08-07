@@ -25,6 +25,7 @@
 #include "libk/alloc.h"
 #include "pci/pci.h"
 #include "task/sched.h"
+#include "vfs/vfs.h"
 
 /* TODO remove, only for tests */
 #include "memory/vmm.h"
@@ -149,12 +150,14 @@ void _start(struct stivale2_struct *stivale2_struct)
         apic_initialize(madt);
         timer_initialize();
 
-        /* pci_init(); */
+        pci_init();
 
-        struct task *task_1 = task_create(kernel_table, elf_test_1);
-        task_1->id = task_new_tid();
-        task_1->next_task = task_1;
-        sched_run(task_1);
+        /* struct task *task_1 = task_create(kernel_table, elf_test_1); */
+        /* task_1->id = task_new_tid(); */
+        /* task_1->next_task = task_1; */
+        /* sched_run(task_1); */
+
+        vfs_file_open("A:/home/bastian/asdf.xyz");
 
         printf(KMSG_LOGLEVEL_CRIT, "Finish\n");
         for (;;) {
