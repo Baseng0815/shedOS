@@ -1,5 +1,5 @@
-#ifndef _STRINGUTIL_H
-#define _STRINGUTIL_H
+#ifndef _MEMUTIL_H
+#define _MEMUTIL_H
 
 #include <stddef.h>
 #include <stdint.h>

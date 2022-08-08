@@ -174,8 +174,12 @@ struct nvme_drive {
         struct namespace_id *id; // identify namespace capabilities
 };
 
-struct nvme_drive nvme_drives[26]; // 26 maximum drives
-static size_t nvme_drives_count = 0;
+struct nvme_drive nvme_drives[256]; // 26 maximum drives
+
+static void read(uint8_t *buf, size_t len,
+                 size_t offset, const struct drive *drive);
+static void read_blocks(uint8_t *buf, size_t block_count,
+                       size_t block_offset, struct nvme_drive *ndrive);
 
 static void create_admin_queue(struct nvme_controller *controller);
 static void ctrl_identify(struct nvme_controller *controller);
@@ -198,6 +202,8 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
         ep->hdr.command |= PHC_BUS_MASTER;
         ep->hdr.command |= PHC_MEM_SPACE;
         ep->hdr.command |= PHC_IO_SPACE;
+        // no interrupts for now
+        ep->hdr.command |= PHC_INTERRUPT_DISABLE;
 
         assert((ep->bar0 & 0x4) > 0,
                "NVMe BAR does not support 64-bit mapping.");
@@ -256,34 +262,52 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
         ctrl_identify(&controller);
 
         /* MSI-X */
-        configure_msix(ep);
+        /* configure_msix(ep); */
 
         printf(KMSG_LOGLEVEL_INFO, "Controller configured and reenabled.\n");
 
         namespaces_identify(&controller);
+}
 
-        /* uint8_t *md = (uint8_t*) */
-        /*         addr_ensure_higher((uint64_t)pmm_request_pages(1)); */
-        /* uint8_t *data = (uint8_t*) */
-        /*         addr_ensure_higher((uint64_t)pmm_request_pages(1)); */
+void read(uint8_t *buf, size_t len,
+          size_t offset, const struct drive *drive)
+{
+        size_t bs = drive->block_size;
 
-        /* /1* test read *1/ */
-        /* struct sq_entry cmd = { */
-        /*         .cdw0 = 0x2, */
-        /*         .nsid = nsid[0], */
-        /*         .mptr = addr_ensure_lower((uint64_t)md), */
-        /*         .prp1 = addr_ensure_lower((uint64_t)data), */
-        /*         .cdw10 = 0x44a000 / 512, .cdw11 = 0, /1* starting LBA *1/ */
-        /*         .cdw12 = 0 /1* number of LBAs - 1 *1/ */
-        /* }; */
-        /* send_cmd_sync(&io_queue, &cmd, NULL); */
+        // quick maths
+        size_t lba_start        = offset / bs;
+        size_t lba_start_offset = offset & (bs - 1);
+        size_t lba_end          = (offset + len + bs - 1) / bs;
 
-        /* /1* dump 256 qwords *1/ */
-        /* for (size_t i = 0; i < 16; i++) { */
-        /*         for (size_t j = 0; j < 16; j++) */
-        /*                 printf(KMSG_LOGLEVEL_NONE, "%x ", data[i * 16 + j]); */
-        /*         printf(KMSG_LOGLEVEL_NONE, "\n"); */
-        /* } */
+        size_t block_count  = lba_end - lba_start + 1;
+        size_t page_count   = (block_count * bs + 0xfff) / 0x1000;
+
+        uint8_t *buf_blocks = palloc(page_count);
+        read_blocks(buf_blocks, block_count,
+                    lba_start, &nvme_drives[drive->id]);
+        memcpy(buf, buf_blocks + lba_start_offset, len);
+
+        pfree(buf_blocks, page_count);
+}
+
+void read_blocks(uint8_t *buf, size_t block_count,
+          size_t block_offset, struct nvme_drive *ndrive)
+{
+        uint8_t *md = palloc(1);
+
+        struct sq_entry cmd = {
+                .cdw0 = 0x2,
+                .nsid = ndrive->nsid,
+                .mptr = (uint64_t)NULL,
+                .prp1 = addr_ensure_lower((uint64_t)buf),
+                .cdw10 = (block_offset >> 0 ) & 0xffffffff, /* starting LBA */
+                .cdw11 = (block_offset >> 32) & 0xffffffff,
+                .cdw12 = block_count - 1
+        };
+
+        send_cmd_sync(&ndrive->io_queue, &cmd, NULL);
+
+        pfree(md, 1);
 }
 
 void create_admin_queue(struct nvme_controller *ctrl)
@@ -372,10 +396,8 @@ void create_io_queue(struct nvme_drive *drive, struct nvme_controller *ctrl)
         /* allocate memory and initialize driver structures */
         const size_t sq_page_count = sizeof(struct sq_entry) * 256 / 0x1000;
         const size_t cq_page_count = sizeof(struct cq_entry) * 256 / 0x1000;
-        drive->io_queue.sq = (struct sq_entry*)
-                addr_ensure_higher((uint64_t)pmm_request_pages(sq_page_count));
-        drive->io_queue.cq = (struct cq_entry*)
-                addr_ensure_higher((uint64_t)pmm_request_pages(cq_page_count));
+        drive->io_queue.sq = palloc(sq_page_count);
+        drive->io_queue.cq = palloc(cq_page_count);
         drive->io_queue.sq_tail = 0;
         drive->io_queue.cq_head = 0;
 
@@ -394,7 +416,7 @@ void create_io_queue(struct nvme_drive *drive, struct nvme_controller *ctrl)
                 .cdw10 = 1 << 0 |   /* queue identifier */
                         255 << 16,  /* queue size - 1 */
                 .cdw11 = 1 << 0 |   /* physically contiguous */
-                        1 << 1 |    /* interrupts enabled */
+                        0 << 1 |    /* interrupts disabled for now */
                         0 << 16     /* MSI-X interrupt vector */
         };
 
@@ -433,18 +455,27 @@ void namespaces_identify(struct nvme_controller *ctrl)
         for (size_t i = 0; nsids[i] != 0; i++) {
                 printf(KMSG_LOGLEVEL_INFO,
                        "Processing namespace with id %d...\n", nsids[i]);
-                struct nvme_drive *ndrive = &nvme_drives[nvme_drives_count++];
+
+                // vfs drive
+                struct drive *drive;
+                drive_new(&drive);
+                drive->read = read;
+                printf(KMSG_LOGLEVEL_INFO, "VFS drive id: %d\n", drive->id);
+
+                struct nvme_drive *ndrive = &nvme_drives[drive->id];
+                ndrive->nsid = nsids[i];
                 create_io_queue(ndrive, ctrl);
 
                 // identify namespace
                 ndrive->id = palloc(1);
-                command.prp1    = addr_ensure_lower((uint64_t)&ndrive->id);
+                command.prp1    = addr_ensure_lower((uint64_t)ndrive->id);
                 command.cdw10   = 0;
                 command.nsid    = nsids[i];
                 send_cmd_sync(&ctrl->admin_queue, &command, NULL);
 
                 const struct lba_format *current_format =
                         &ndrive->id->lba_formats[ndrive->id->flbas & 0x3];
+                drive->block_size = 1 << current_format->lbads;
 
                 printf(KMSG_LOGLEVEL_INFO,
                        "Namespace size/capacity/utilization: %d/%d/%d blocks, "
@@ -452,15 +483,7 @@ void namespaces_identify(struct nvme_controller *ctrl)
                        ndrive->id->nsze, ndrive->id->ncap,
                        ndrive->id->nuse, 1 << current_format->lbads,
                        current_format->ms, current_format->rp);
-
-                struct drive *drive;
-                drive_new(&drive);
-                drive->type = DRIVE_TYPE_NVME;
-
         }
-
-        send_cmd_sync(&ctrl->admin_queue, &command, NULL);
-
 
         pfree(nsids, 1);
 }

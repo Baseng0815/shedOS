@@ -61,5 +61,5 @@ void *palloc(size_t n)
 
 void pfree(void *ptr, size_t n)
 {
-        vmm_release_at(kernel_table, ptr, n);
+        pmm_release_pages((void*)addr_ensure_lower((uint64_t)ptr), n);
 }

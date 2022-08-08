@@ -31,7 +31,7 @@ struct pci_device_header {
 #define PHC_PARITY_ERR_RESP     (1UL << 6)
 #define PHC_serr_ENABLE         (1UL << 8)
 #define PHC_FAST_B2B_ENABLE     (1UL << 9)
-#define PHC_INTERRUPT_DISABLE   (1UL << 10
+#define PHC_INTERRUPT_DISABLE   (1UL << 10)
 
 struct pci_cap_hdr {
         uint8_t cap_id;

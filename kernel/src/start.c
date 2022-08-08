@@ -26,6 +26,7 @@
 #include "pci/pci.h"
 #include "task/sched.h"
 #include "vfs/vfs.h"
+#include "vfs/drive.h"
 
 /* TODO remove, only for tests */
 #include "memory/vmm.h"
@@ -151,13 +152,17 @@ void _start(struct stivale2_struct *stivale2_struct)
         timer_initialize();
 
         pci_init();
+        uint8_t *buf = balloc(64, 0);
+        drives[0].read(buf, 64, 0, &drives[0]);
+        drives[0].read(buf, 64, 21, &drives[0]);
+        drives[0].read(buf, 64, 510, &drives[0]);
+
+        /* vfs_file_open("A:/home/bastian/asdf.xyz"); */
 
         /* struct task *task_1 = task_create(kernel_table, elf_test_1); */
         /* task_1->id = task_new_tid(); */
         /* task_1->next_task = task_1; */
         /* sched_run(task_1); */
-
-        vfs_file_open("A:/home/bastian/asdf.xyz");
 
         printf(KMSG_LOGLEVEL_CRIT, "Finish\n");
         for (;;) {

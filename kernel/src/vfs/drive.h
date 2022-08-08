@@ -8,14 +8,15 @@
 
 struct drive {
         uint8_t id;
-        uint8_t type;
         size_t block_size;
 
-        void (*read)(uint8_t *buf, size_t len, size_t offset);
+        void (*read)(uint8_t *buf, size_t block_count, size_t block_offset,
+                     const struct drive *drive);
 };
 
 void drive_new(struct drive **drive);
 
-extern struct drive drives[26];
+extern struct drive drives[256];
+extern size_t drives_count;
 
 #endif

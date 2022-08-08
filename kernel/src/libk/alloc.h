@@ -5,11 +5,11 @@
 #include <stdint.h>
 
 /* bump alloc */
-void *balloc(size_t, size_t);
+void *balloc(size_t n, size_t alignment);
 void bfree(void);
 
 /* page alloc */
-void *palloc(size_t);
-void pfree(void*, size_t);
+void *palloc(size_t n);
+void pfree(void*, size_t n);
 
 #endif

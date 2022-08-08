@@ -1,4 +1,4 @@
-export USER_CFLAGS 		:= -O0 -Wall -Werror -Wextra -Wno-missing-field-initializers -Wno-unused-value -Wno-unused-variable -ggdb -pipe
+export USER_CFLAGS 		:= -O0 -Wall -Werror -Wextra -Wno-missing-field-initializers  -Wno-unused -ggdb -pipe
 export MAKEOPTS 		:= -j12
 
 export TARGET 			:= x86_64-elf
