@@ -6,6 +6,8 @@
 
 static const uintptr_t BUMP_LOWER_BOUND = 0xffff810000000000UL;
 static const uintptr_t BUMP_UPPER_BOUND = 0xffff810200000000UL;
+static const uintptr_t PAGE_LOWER_BOUND = 0xffff810200000000UL;
+static const uintptr_t PAGE_UPPER_BOUND = 0xffff810400000000UL;
 
 /* a bump allocator works like a stack with element alignment, meaning
  * we can only free in LIFO order or free the whole pool at once */
@@ -13,7 +15,9 @@ struct bump_alloc {
         uintptr_t start;
         uintptr_t end;
         uintptr_t ptr;
-} bump = {
+};
+
+static struct bump_alloc bump = {
         .start  = BUMP_UPPER_BOUND,
         .end    = BUMP_UPPER_BOUND,
         .ptr    = BUMP_UPPER_BOUND

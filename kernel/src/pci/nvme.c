@@ -176,10 +176,10 @@ struct nvme_drive {
 
 struct nvme_drive nvme_drives[256]; // 26 maximum drives
 
-static void read(uint8_t *buf, size_t len,
-                 size_t offset, const struct drive *drive);
 static void read_blocks(uint8_t *buf, size_t block_count,
-                       size_t block_offset, struct nvme_drive *ndrive);
+                        size_t block_offset, const struct drive *drive);
+static void read_blocks_nvme(uint8_t *buf, size_t block_count,
+                        size_t block_offset, struct nvme_drive *ndrive);
 
 static void create_admin_queue(struct nvme_controller *controller);
 static void ctrl_identify(struct nvme_controller *controller);
@@ -230,6 +230,8 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
                 1UL << (12 + (controller.regs->cap >> 48 & 0xf));
         const uint32_t page_size_max =
                 1UL << (12 + (controller.regs->cap >> 52 & 0xf));
+        printf(KMSG_LOGLEVEL_INFO, "Minimum/maximum page size: %d/%d\n",
+               page_size_min, page_size_max);
         assert(page_size_max >= 0x1000 && page_size_min <= 0x1000,
                "The NVM controller can't handle pages of this size.");
 
@@ -269,29 +271,15 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
         namespaces_identify(&controller);
 }
 
-void read(uint8_t *buf, size_t len,
-          size_t offset, const struct drive *drive)
+void read_blocks(uint8_t *buf, size_t block_count,
+                 size_t block_offset, const struct drive *drive)
 {
-        size_t bs = drive->block_size;
-
-        // quick maths
-        size_t lba_start        = offset / bs;
-        size_t lba_start_offset = offset & (bs - 1);
-        size_t lba_end          = (offset + len + bs - 1) / bs;
-
-        size_t block_count  = lba_end - lba_start + 1;
-        size_t page_count   = (block_count * bs + 0xfff) / 0x1000;
-
-        uint8_t *buf_blocks = palloc(page_count);
-        read_blocks(buf_blocks, block_count,
-                    lba_start, &nvme_drives[drive->id]);
-        memcpy(buf, buf_blocks + lba_start_offset, len);
-
-        pfree(buf_blocks, page_count);
+        read_blocks_nvme(buf, block_count, block_offset,
+                         &nvme_drives[drive->id]);
 }
 
-void read_blocks(uint8_t *buf, size_t block_count,
-          size_t block_offset, struct nvme_drive *ndrive)
+void read_blocks_nvme(uint8_t *buf, size_t block_count,
+                        size_t block_offset, struct nvme_drive *ndrive)
 {
         uint8_t *md = palloc(1);
 
@@ -459,7 +447,7 @@ void namespaces_identify(struct nvme_controller *ctrl)
                 // vfs drive
                 struct drive *drive;
                 drive_new(&drive);
-                drive->read = read;
+                drive->read_blocks = read_blocks;
                 printf(KMSG_LOGLEVEL_INFO, "VFS drive id: %d\n", drive->id);
 
                 struct nvme_drive *ndrive = &nvme_drives[drive->id];
@@ -483,6 +471,8 @@ void namespaces_identify(struct nvme_controller *ctrl)
                        ndrive->id->nsze, ndrive->id->ncap,
                        ndrive->id->nuse, 1 << current_format->lbads,
                        current_format->ms, current_format->rp);
+
+                drive_finish_load(drive);
         }
 
         pfree(nsids, 1);
@@ -504,11 +494,11 @@ void ctrl_identify(struct nvme_controller *ctrl)
         trim_and_terminate(ctrl->id->fr, 8);
 
         printf(KMSG_LOGLEVEL_INFO,
-               "Model/Serial: %s/%s, Firmware Revision %s\n",
-               ctrl->id->sn, ctrl->id->mn, ctrl->id->fr);
+               "Model/Serial: %s/%s, firmware revision: %s, mdts: %d\n",
+               ctrl->id->sn, ctrl->id->mn, ctrl->id->fr, 2 << ctrl->id->mdts);
 
         /* TNVMCAP and UNVMCAP attribute supported */
-        if (ctrl->id->oacs >> 3 & 1) {
+        if (ctrl->id->oacs & 0x8) {
                 printf(KMSG_LOGLEVEL_INFO,
                        "Total/Unused NVM capacity: approx. %d/%dMB\n",
                        ctrl->id->tnvmcap[1] >> 20, ctrl->id->unvmcap[1] >> 20);

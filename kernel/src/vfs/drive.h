@@ -10,11 +10,14 @@ struct drive {
         uint8_t id;
         size_t block_size;
 
-        void (*read)(uint8_t *buf, size_t block_count, size_t block_offset,
-                     const struct drive *drive);
+        void (*read_blocks)(uint8_t *buf, size_t block_count,
+                            size_t block_offset, const struct drive *drive);
 };
 
 void drive_new(struct drive **drive);
+void drive_finish_load(const struct drive *drive);
+void drive_read(uint8_t *buf, size_t len, size_t offset,
+                const struct drive *drive);
 
 extern struct drive drives[256];
 extern size_t drives_count;

@@ -10,7 +10,7 @@ fd_t vfs_file_open(const char *_path)
                 return -1;
         }
 
-        char drive = _path[0];
+        char partition = _path[0];
         const char *path = _path + 2;
 
         for (size_t mi = 0; mi < 26; mi++) {

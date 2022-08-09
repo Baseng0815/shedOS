@@ -152,10 +152,6 @@ void _start(struct stivale2_struct *stivale2_struct)
         timer_initialize();
 
         pci_init();
-        uint8_t *buf = balloc(64, 0);
-        drives[0].read(buf, 64, 0, &drives[0]);
-        drives[0].read(buf, 64, 21, &drives[0]);
-        drives[0].read(buf, 64, 510, &drives[0]);
 
         /* vfs_file_open("A:/home/bastian/asdf.xyz"); */
 

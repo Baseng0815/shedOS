@@ -28,12 +28,12 @@ void *memcpy(void *dst, const void *src, size_t n)
         return dst;
 }
 
-void *memset(void *str, uint8_t c, size_t n)
+void *memset(void *dst, uint8_t c, size_t n)
 {
-        uint8_t *strp = (uint8_t*)str;
+        uint8_t *dstp = (uint8_t*)dst;
         for (size_t i = 0; i < n; i++) {
-                strp[i] = c;
+                dstp[i] = c;
         }
 
-        return str;
+        return dst;
 }
