@@ -137,7 +137,7 @@ void apic_initialize(const struct madt *madt)
         printf(KMSG_LOGLEVEL_OKAY, "Finished target apic.\n");
 }
 
-void apic_send_eoi()
+void apic_send_eoi(void)
 {
         lapic_mmio_regs[LAPIC_REG_EOI] = 0;
 }

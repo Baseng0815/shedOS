@@ -4,9 +4,9 @@
 #include "../stivale2.h"
 #include "sdt_structs.h"
 
-extern struct madt *madt;
-extern struct hpet *hpet;
-extern struct mcfg *mcfg;
+extern struct madt madt;
+extern struct hpet hpet;
+extern struct mcfg mcfg;
 
 void sdt_initialize(struct stivale2_struct_tag_rsdp*);
 

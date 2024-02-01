@@ -5,10 +5,10 @@
 
 #include <stdint.h>
 
-void timer_initialize();
+void timer_initialize(void);
 
 void timer_tick(const struct interrupt_frame *ifr, int dus);
-uint64_t timer_read_counter();
+uint64_t timer_read_counter(void);
 
 char *timer_format(char*);
 

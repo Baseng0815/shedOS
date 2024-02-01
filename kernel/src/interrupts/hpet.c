@@ -51,7 +51,7 @@
 static volatile uint64_t *hpet_mmio_regs;
 static uint32_t main_frequency;
 
-void hpet_initialize(struct hpet *hpet)
+void hpet_initialize(const struct hpet *hpet)
 {
         printf(KMSG_LOGLEVEL_INFO, "Initializing hpet...\n");
 
@@ -118,7 +118,7 @@ void hpet_initialize(struct hpet *hpet)
         printf(KMSG_LOGLEVEL_OKAY, "Initialized hpet.\n");
 }
 
-uint64_t hpet_read_counter()
+uint64_t hpet_read_counter(void)
 {
         return hpet_mmio_regs[HPET_REG_MAIN_COUNTER_VALUE] / (main_frequency / 1000000);
 }

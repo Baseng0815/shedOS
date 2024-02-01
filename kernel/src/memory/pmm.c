@@ -73,7 +73,7 @@ void *pmm_request_pages(size_t count)
         for (size_t pi = last_free; pi < total_memory / 0x1000; pi++) {
                 bool is_free = true;
                 for (size_t i = 0; i < count; i++) {
-                        if (bitmap_isset(&page_bitmap, pi)) {
+                        if (bitmap_isset(&page_bitmap, pi + i)) {
                                 is_free = false;
                                 break;
                         }

@@ -22,7 +22,6 @@ qemu: iso
 	    -enable-kvm \
 	    -cpu host \
 	    -vga std \
-	    -soundhw pcspk \
 	    -smp $$(nproc) \
 	    -net none \
 	    -M q35 \

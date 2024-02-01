@@ -10,12 +10,13 @@
 
 uint64_t timer_elapsed_us = 0;
 
-void timer_initialize()
+void timer_initialize(void)
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target timer.\n");
 
-        if (hpet) {
-                hpet_initialize(hpet);
+        // this is bad
+        if (hpet.hdr.signature[0] != 0x0) {
+                hpet_initialize(&hpet);
         }
 
         printf(KMSG_LOGLEVEL_OKAY, "Finished target timer.\n");
@@ -27,7 +28,7 @@ void timer_tick(const struct interrupt_frame *ifr, int dus)
         sched_tick(ifr);
 }
 
-uint64_t timer_read_counter()
+uint64_t timer_read_counter(void)
 {
         return timer_elapsed_us;
 }

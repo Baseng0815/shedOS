@@ -8,7 +8,7 @@ static struct idt_desc idt_descriptors[256] = { 0 };
 
 static void load_interrupt(uint8_t, uint64_t, uint8_t);
 
-void idt_initialize()
+void idt_initialize(void)
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target idt.\n");
 

@@ -9,8 +9,8 @@
    256 timers, each assignable to a specific task
    */
 
-void hpet_initialize(struct hpet*);
+void hpet_initialize(const struct hpet *hpet);
 
-uint64_t hpet_read_counter();
+uint64_t hpet_read_counter(void);
 
 #endif

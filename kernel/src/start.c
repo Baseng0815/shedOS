@@ -148,17 +148,17 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         /* interrupts */
         idt_initialize();
-        apic_initialize(madt);
+        apic_initialize(&madt);
         timer_initialize();
 
-        pci_init();
+        /* pci_init(); */
 
         /* vfs_file_open("A:/home/bastian/asdf.xyz"); */
 
-        /* struct task *task_1 = task_create(kernel_table, elf_test_1); */
-        /* task_1->id = task_new_tid(); */
-        /* task_1->next_task = task_1; */
-        /* sched_run(task_1); */
+        struct task *task_1 = task_create(kernel_table, elf_test_1);
+        task_1->id = task_new_tid();
+        task_1->next_task = task_1;
+        sched_run(task_1);
 
         printf(KMSG_LOGLEVEL_CRIT, "Finish\n");
         for (;;) {

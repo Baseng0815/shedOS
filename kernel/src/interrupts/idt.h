@@ -32,6 +32,6 @@ struct idt {
         uint64_t offset;
 } __attribute__((packed));
 
-void idt_initialize();
+void idt_initialize(void);
 
 #endif

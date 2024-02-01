@@ -179,7 +179,7 @@ struct nvme_drive nvme_drives[256]; // 26 maximum drives
 static void read_blocks(uint8_t *buf, size_t block_count,
                         size_t block_offset, const struct drive *drive);
 static void read_blocks_nvme(uint8_t *buf, size_t block_count,
-                        size_t block_offset, struct nvme_drive *ndrive);
+                             size_t block_offset, struct nvme_drive *ndrive);
 
 static void create_admin_queue(struct nvme_controller *controller);
 static void ctrl_identify(struct nvme_controller *controller);
@@ -274,12 +274,23 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
 void read_blocks(uint8_t *buf, size_t block_count,
                  size_t block_offset, const struct drive *drive)
 {
-        read_blocks_nvme(buf, block_count, block_offset,
-                         &nvme_drives[drive->id]);
+        // in case we exceed the maximum transfer amount
+        const uint32_t page_size_min =
+                1UL << (12 + (controller.regs->cap >> 48 & 0xf));
+        size_t max_blocks = ((1UL << controller.id->mdts) * page_size_min)
+                / drive->block_size;
+
+        size_t transfer_count = (block_count + (max_blocks - 1)) / max_blocks;
+        for (size_t ct = 0; ct < transfer_count; ct++) {
+                read_blocks_nvme(buf + ct * max_blocks * drive->block_size,
+                                 block_count,
+                                 block_offset + ct * max_blocks,
+                                 &nvme_drives[drive->id]);
+        }
 }
 
 void read_blocks_nvme(uint8_t *buf, size_t block_count,
-                        size_t block_offset, struct nvme_drive *ndrive)
+                      size_t block_offset, struct nvme_drive *ndrive)
 {
         uint8_t *md = palloc(1);
 
@@ -494,8 +505,9 @@ void ctrl_identify(struct nvme_controller *ctrl)
         trim_and_terminate(ctrl->id->fr, 8);
 
         printf(KMSG_LOGLEVEL_INFO,
-               "Model/Serial: %s/%s, firmware revision: %s, mdts: %d\n",
-               ctrl->id->sn, ctrl->id->mn, ctrl->id->fr, 2 << ctrl->id->mdts);
+               "Model/Serial: %s/%s, firmware revision: %s, "
+               "mpsmin %x, mdts: %d\n",
+               ctrl->id->sn, ctrl->id->mn, ctrl->id->fr, 1UL << ctrl->id->mdts);
 
         /* TNVMCAP and UNVMCAP attribute supported */
         if (ctrl->id->oacs & 0x8) {
