@@ -4,12 +4,14 @@
 #include <stddef.h>
 #include <stdint.h>
 
-/* bump alloc */
-void *balloc(size_t n, size_t alignment);
-void bfree(void);
+/* actual not-so-shitty alloc */
+void *malloc(size_t n, size_t alignment);
+void mfree(void *addr);
 
 /* page alloc */
 void *palloc(size_t n);
 void pfree(void*, size_t n);
+
+void _malloc_init(void);
 
 #endif

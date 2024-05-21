@@ -32,7 +32,7 @@ void partition_load_drive(const struct drive *drive)
                gpt.hdr.pentry_count, gpt.hdr.pentry_size,
                gpt.hdr.pentry_start_lba);
 
-        gpt.entries = balloc(gpt.hdr.pentry_count * gpt.hdr.pentry_size, 0);
+        gpt.entries = malloc(gpt.hdr.pentry_count * gpt.hdr.pentry_size, 0);
 
         // LBA 2..33 contain partition table entries
         uint8_t *lba2 = palloc((drive->block_size * 16 + 0xfff) / 0x1000);

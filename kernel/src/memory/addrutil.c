@@ -3,7 +3,7 @@
 const uint64_t VADDR_HIGHER = 0xffff800000000000UL;
 const uint64_t VADDR_KERNEL = 0xffffffff80000000UL;
 
-uint64_t addr_offset_higher(uint64_t p)
+uintptr_t addr_offset_higher(uint64_t p)
 {
         return p + VADDR_HIGHER;
 }

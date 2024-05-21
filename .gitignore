@@ -9,6 +9,7 @@ toolchain/*
 deps/testelf1
 deps/testelf2
 
+.cache/
 *.o
 *.d
 *.so

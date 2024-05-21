@@ -13,7 +13,7 @@ PML3
 PML2
 PML1 (its entries refer to the actual physical pages) */
 
-/* schematic of how the address space looks
+/* schematic of how the address space looks like
 mappings:
 0x0000000000000000-0x0000000100000000 -> 0xffff800000000000-0xffff800100000000
 0x0000000000000000-0x0000000080000000 -> 0xfffffff800000000-0xffffffffffffffff
@@ -21,7 +21,7 @@ every additional mmap entry           -> 0xffff800000000000-max
 
 regions:
 0xffff800000000000-0xffff810000000000 (up to 1024G for mmap entries)
-0xffff810000000000-0xffff810200000000 (4GB bump heap)
+0xffff810000000000-0xffff810200000000 (4GB heap)
 0xffff810200000000-0xffff810200001000 (page mapping for cow)
 0xffffffff80000000-0xffffffffffffffff (kernel mapped to last 2G) */
 

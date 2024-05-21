@@ -10,9 +10,9 @@
 #include "../libk/strutil.h"
 #include "../libk/memutil.h"
 
-struct madt madt;
-struct hpet hpet;
-struct mcfg mcfg;
+const struct madt *madt;
+const struct hpet *hpet;
+const struct mcfg *mcfg;
 
 static bool use_xsdt;
 static struct rsdt *rsdt;
@@ -56,25 +56,22 @@ void sdt_initialize(struct stivale2_struct_tag_rsdp *stivale_rsdp)
         }
 
         /* MADT */
-        const void *madt_ptr = find_sdt("APIC");
-        assert(madt_ptr != NULL, "MADT not present.");
-        memcpy(&madt, madt_ptr, sizeof(madt));
-        /* assert(madt_ptr && do_checksum_sdt(&madt.hdr), "MADT checksum invalid."); */
-        printf(KMSG_LOGLEVEL_INFO, "MADT at %a\n", madt_ptr);
+        madt = find_sdt("APIC");
+        assert(madt != NULL, "MADT not present.");
+        assert(madt && do_checksum_sdt(&madt->hdr), "MADT checksum invalid.");
+        printf(KMSG_LOGLEVEL_INFO, "MADT at %a\n", madt);
 
         /* HPET */
-        const void *hpet_ptr = find_sdt("HPET");
-        assert(hpet_ptr != NULL, "HPET not present.");
-        memcpy(&hpet, hpet_ptr, sizeof(hpet));
-        /* assert(do_checksum_sdt(&hpet.hdr), "HPET checksum invalid."); */
-        printf(KMSG_LOGLEVEL_INFO, "HPET at %a\n", hpet_ptr);
+        hpet = find_sdt("HPET");
+        assert(hpet != NULL, "HPET not present.");
+        assert(do_checksum_sdt(&hpet->hdr), "HPET checksum invalid.");
+        printf(KMSG_LOGLEVEL_INFO, "HPET at %a\n", hpet);
 
         /* MCFG */
-        const void *mcfg_ptr = find_sdt("MCFG");
-        assert(mcfg_ptr != NULL, "MCFG not present (PCIe not supported).");
-        memcpy(&mcfg, mcfg_ptr, sizeof(mcfg));
-        /* assert(do_checksum_sdt(&mcfg.hdr), "MCFG checksum invalid."); */
-        printf(KMSG_LOGLEVEL_INFO, "MCFG at %a\n", mcfg_ptr);
+        mcfg = find_sdt("MCFG");
+        assert(mcfg != NULL, "MCFG not present (PCIe not supported).");
+        assert(do_checksum_sdt(&mcfg->hdr), "MCFG checksum invalid.");
+        printf(KMSG_LOGLEVEL_INFO, "MCFG at %a\n", mcfg);
 
         printf(KMSG_LOGLEVEL_OKAY, "Finished target sdt.\n");
 }

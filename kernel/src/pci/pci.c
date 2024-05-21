@@ -12,7 +12,7 @@ void pci_init()
 {
         printf(KMSG_LOGLEVEL_INFO, "Reached target pci.\n");
 
-        size_t csbaas_count = (mcfg.hdr.length - sizeof(struct mcfg))
+        size_t csbaas_count = (mcfg->hdr.length - sizeof(struct mcfg))
                 / sizeof(struct mcfg_csbaas);
 
         printf(KMSG_LOGLEVEL_INFO,
@@ -21,7 +21,7 @@ void pci_init()
                csbaas_count);
 
         /* we only do one for now */
-        struct mcfg_csbaas *csbaas = &mcfg.csbaas[0];
+        const struct mcfg_csbaas *csbaas = &mcfg->csbaas[0];
         printf(KMSG_LOGLEVEL_INFO, "base address=%a, "
                "segment group number=%d, start/end bus number=%d/%d\n",
                csbaas->base_address, csbaas->seg_group_number,

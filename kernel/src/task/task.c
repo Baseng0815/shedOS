@@ -14,7 +14,7 @@ static tid_t tid_next = 0;
 struct task *task_create(uint64_t *vmap_parent, const uint8_t *elf_data)
 {
         /* allocate task structure */
-        struct task *task = balloc(sizeof(struct task), 0);
+        struct task *task = malloc(sizeof(struct task), 0);
         memset(task, 0, sizeof(struct task));
 
         printf(KMSG_LOGLEVEL_INFO, "Loading elf at %x\n", elf_data);

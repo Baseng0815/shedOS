@@ -13,7 +13,7 @@
 
 uint64_t syscall_fork(struct interrupt_frame *frame)
 {
-        struct task *new_task = balloc(sizeof(struct task), 0);
+        struct task *new_task = malloc(sizeof(struct task), 0);
         /* copy context from current process, including a fresh vmap */
         new_task->vmap      = paging_copy(current_task->vmap);
         new_task->regs      = frame->gprs;

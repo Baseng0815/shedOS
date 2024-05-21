@@ -15,8 +15,8 @@ void timer_initialize(void)
         printf(KMSG_LOGLEVEL_INFO, "Reached target timer.\n");
 
         // this is bad
-        if (hpet.hdr.signature[0] != 0x0) {
-                hpet_initialize(&hpet);
+        if (hpet->hdr.signature[0] != 0x0) {
+                hpet_initialize(hpet);
         }
 
         printf(KMSG_LOGLEVEL_OKAY, "Finished target timer.\n");

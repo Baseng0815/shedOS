@@ -10,6 +10,7 @@
 #include "memory/paging.h"
 #include "memory/addrutil.h"
 
+#include "src/libk/libk.h"
 #include "terminal/framebuffer.h"
 #include "terminal/terminal.h"
 
@@ -93,6 +94,7 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         pmm_initialize(mmap);
         paging_initialize(mmap);
+        libk_init();
 
         /* framebuffer and terminal */
         struct stivale2_struct_tag_framebuffer *fb =
@@ -148,7 +150,7 @@ void _start(struct stivale2_struct *stivale2_struct)
 
         /* interrupts */
         idt_initialize();
-        apic_initialize(&madt);
+        apic_initialize(madt);
         timer_initialize();
 
         /* pci_init(); */
