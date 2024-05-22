@@ -4,7 +4,8 @@
 #include "../memory/paging.h"
 #include "../memory/pmm.h"
 #include "../debug.h"
-#include "../vfs/drive.h"
+#include "../device/device.h"
+#include "../device/drive/drive.h"
 
 #include "../libk/printf.h"
 #include "../libk/strutil.h"
@@ -174,10 +175,8 @@ struct nvme_drive {
         struct namespace_id *id; // identify namespace capabilities
 };
 
-struct nvme_drive nvme_drives[256]; // 26 maximum drives
-
 static void read_blocks(uint8_t *buf, size_t block_count,
-                        size_t block_offset, const struct drive *drive);
+                        size_t block_offset, struct drive *drive);
 static void read_blocks_nvme(uint8_t *buf, size_t block_count,
                              size_t block_offset, struct nvme_drive *ndrive);
 
@@ -272,8 +271,10 @@ void nvme_initialize_device(struct pci_device_endpoint *ep,
 }
 
 void read_blocks(uint8_t *buf, size_t block_count,
-                 size_t block_offset, const struct drive *drive)
+                 size_t block_offset, struct drive *drive)
 {
+        struct nvme_drive *ndrive = drive->data;
+
         // in case we exceed the maximum transfer amount
         const uint32_t page_size_min =
                 1UL << (12 + (controller.regs->cap >> 48 & 0xf));
@@ -285,7 +286,7 @@ void read_blocks(uint8_t *buf, size_t block_count,
                 read_blocks_nvme(buf + ct * max_blocks * drive->block_size,
                                  block_count,
                                  block_offset + ct * max_blocks,
-                                 &nvme_drives[drive->id]);
+                                 ndrive);
         }
 }
 
@@ -455,13 +456,20 @@ void namespaces_identify(struct nvme_controller *ctrl)
                 printf(KMSG_LOGLEVEL_INFO,
                        "Processing namespace with id %d...\n", nsids[i]);
 
-                // vfs drive
-                struct drive *drive;
-                drive_new(&drive);
-                drive->read_blocks = read_blocks;
-                printf(KMSG_LOGLEVEL_INFO, "VFS drive id: %d\n", drive->id);
+                /* register device */
+                struct device *device = zmalloc(sizeof(struct device));
+                device->class = DCLASS_DRIVE;
+                device_register(device);
+                printf(KMSG_LOGLEVEL_INFO,
+                       "Device id for new drive: %d\n", device->id);
 
-                struct nvme_drive *ndrive = &nvme_drives[drive->id];
+                struct drive *drive = zmalloc(sizeof(struct drive));
+                drive->read_blocks = read_blocks;
+                device->data = drive;
+
+                struct nvme_drive *ndrive = zmalloc(sizeof(struct nvme_drive));
+                drive->data = ndrive;
+
                 ndrive->nsid = nsids[i];
                 create_io_queue(ndrive, ctrl);
 
@@ -483,7 +491,7 @@ void namespaces_identify(struct nvme_controller *ctrl)
                        ndrive->id->nuse, 1 << current_format->lbads,
                        current_format->ms, current_format->rp);
 
-                drive_finish_load(drive);
+                device_finalize(device);
         }
 
         pfree(nsids, 1);

@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stddef.h>
 
+typedef uint8_t part_id;
+
 struct drive;
 
 struct gpt_hdr {
@@ -35,11 +37,12 @@ struct gpt_entry {
 
 struct gpt {
         struct gpt_hdr hdr;
+        part_id id; /* TODO is this even necessary? */
         size_t entries_count;
         struct gpt_entry *entries;
         const struct drive *drive;
 };
 
-void partition_load_drive(const struct drive *drive);
+void partition_load_drive(struct drive *drive);
 
 #endif

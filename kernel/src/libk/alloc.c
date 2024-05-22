@@ -112,6 +112,13 @@ void *malloc(size_t n, size_t alignment)
         return (void*)((uintptr_t)hdr + sizeof(struct chunk_hdr));
 }
 
+void *zmalloc(size_t n)
+{
+        void *mem = malloc(n, 0);
+        memset(mem, 0, n);
+        return mem;
+}
+
 void mfree(void *addr)
 {
         struct chunk_hdr *hdr = CHUNK_HDR(addr);
@@ -139,6 +146,13 @@ void mfree(void *addr)
 void *palloc(size_t n)
 {
         return (void*)addr_offset_higher((uint64_t)pmm_request_pages(n));
+}
+
+void *zpalloc(size_t n)
+{
+        void *mem = palloc(n);
+        memset(mem, 0, n);
+        return mem;
 }
 
 void pfree(void *ptr, size_t n)

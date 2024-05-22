@@ -2,6 +2,12 @@
 
 #include "../libk/strutil.h"
 #include "../libk/printf.h"
+#include "src/vfs/partition.h"
+
+void vfs_register_drive(struct drive *drive)
+{
+        partition_load_drive(drive);
+}
 
 fd_t vfs_file_open(const char *_path)
 {
