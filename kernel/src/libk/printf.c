@@ -41,6 +41,17 @@ void _printf(va_list args, char fmtc)
                         strcpy(buf, str);
                         break;
                 }
+                case 'S': {
+                        /* wide string (16 bit) */
+                        const uint16_t *str = va_arg(args, const uint16_t*);
+                        size_t i = 0;
+                        while (str[i] != 0) {
+                                buf[i] = (char)str[i];
+                                i++;
+                        }
+                        buf[i] = '\0';
+                        break;
+                }
         }
 
         puts(buf);

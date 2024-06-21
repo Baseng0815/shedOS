@@ -65,6 +65,8 @@ void _malloc_init(void)
 
 void *malloc(size_t n, size_t alignment)
 {
+        // TODO implement alignment
+
         if (n == 0) {
                 // we don't want empty allocations
                 return NULL;

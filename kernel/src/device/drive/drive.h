@@ -10,6 +10,7 @@
 
 struct drive {
         size_t block_size;
+        /* function exposed to kernel */
         void (*read_blocks)(uint8_t *buf, size_t block_count,
                          size_t block_offset, struct drive *drive);
         void (*destroy)(void); /* TODO is this needed? (right now: no) */

@@ -152,8 +152,6 @@ void _start(struct stivale2_struct *stivale2_struct)
         apic_initialize(madt);
         timer_initialize();
 
-        pci_init();
-
         vfs_file_open("A:/home/bastian/asdf.xyz");
 
         struct task *task_1 = task_create(kernel_table, elf_test_1);

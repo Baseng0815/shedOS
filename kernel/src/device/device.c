@@ -1,11 +1,12 @@
 #include "device.h"
 #include "../libk/printf.h"
 #include "src/debug.h"
+#include "src/libk/util.h"
 #include "src/vfs/vfs.h"
 
 struct device *devices[255] = { 0 };
 
-void device_register(struct device *device)
+void device_register(TAKE struct device *device)
 {
         for (dev_id id = 0; id < 255; id++) {
                 if (devices[id] == NULL) {
@@ -18,7 +19,7 @@ void device_register(struct device *device)
         kernel_panic("Device capacity exceeded", __FILE__, __LINE__);
 }
 
-void device_finalize(struct device *device)
+void device_finalize(TAKE struct device *device)
 {
         switch (device->class) {
                 case DCLASS_DRIVE:

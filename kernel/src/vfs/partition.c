@@ -34,8 +34,8 @@ void partition_load_drive(struct drive *drive)
         gpt->entries = malloc(gpt->hdr.pentry_count * gpt->hdr.pentry_size, 0);
 
         // LBA 2..33 contain partition table entries
-        uint8_t *lba2 = palloc((drive->block_size * 16 + 0xfff) / 0x1000);
-        drive_read(lba2, drive->block_size * 16,
+        uint8_t *lba2 = palloc((drive->block_size * 32 + 0xfff) / 0x1000);
+        drive_read(lba2, drive->block_size * 32,
                    drive->block_size * gpt->hdr.pentry_start_lba, drive);
 
         gpt->entries_count = 0;
@@ -48,9 +48,9 @@ void partition_load_drive(struct drive *drive)
                         continue;
 
                 printf(KMSG_LOGLEVEL_INFO,
-                       "Partition %d spanning (%d,%d) found\n",
-                       gpt->entries_count, gpt_entry->first_lba,
-                       gpt_entry->last_lba);
+                       "Partition %d (%S) spanning (%d,%d) found\n",
+                       gpt->entries_count, gpt_entry->name,
+                       gpt_entry->first_lba, gpt_entry->last_lba);
 
                 gpt->entries[gpt->entries_count++] = *gpt_entry;
         }

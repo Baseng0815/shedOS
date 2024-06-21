@@ -11,6 +11,7 @@
 #include "../libk/strutil.h"
 #include "../libk/memutil.h"
 #include "../libk/alloc.h"
+#include "src/libk/util.h"
 
 // BAR0 registers
 struct regs {
@@ -277,14 +278,17 @@ void read_blocks(uint8_t *buf, size_t block_count,
 
         // in case we exceed the maximum transfer amount
         const uint32_t page_size_min =
-                1UL << (12 + (controller.regs->cap >> 48 & 0xf));
-        size_t max_blocks = ((1UL << controller.id->mdts) * page_size_min)
-                / drive->block_size;
+                1UL << (12 + ((controller.regs->cap >> 48) & 0xf));
+
+        /* TODO find out why it crashes when reading 32 blocks (i.e. 4 pages) */
+        /* size_t max_blocks = ((1UL << controller.id->mdts) * page_size_min) */
+        /*         / drive->block_size; */
+        size_t max_blocks = 16;
 
         size_t transfer_count = (block_count + (max_blocks - 1)) / max_blocks;
         for (size_t ct = 0; ct < transfer_count; ct++) {
                 read_blocks_nvme(buf + ct * max_blocks * drive->block_size,
-                                 block_count,
+                                 MIN(block_count, max_blocks),
                                  block_offset + ct * max_blocks,
                                  ndrive);
         }
@@ -293,8 +297,6 @@ void read_blocks(uint8_t *buf, size_t block_count,
 void read_blocks_nvme(uint8_t *buf, size_t block_count,
                       size_t block_offset, struct nvme_drive *ndrive)
 {
-        uint8_t *md = palloc(1);
-
         struct sq_entry cmd = {
                 .cdw0 = 0x2,
                 .nsid = ndrive->nsid,
@@ -306,8 +308,6 @@ void read_blocks_nvme(uint8_t *buf, size_t block_count,
         };
 
         send_cmd_sync(&ndrive->io_queue, &cmd, NULL);
-
-        pfree(md, 1);
 }
 
 void create_admin_queue(struct nvme_controller *ctrl)
